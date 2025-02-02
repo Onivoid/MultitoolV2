@@ -27,7 +27,7 @@ export function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader />
-            <SidebarContent className="overflow-x-hidden">
+            <SidebarContent className="overflow-x-hidden" data-tauri-drag-region>
                 <SidebarGroup>
                     <SidebarGroupLabel>
                         Pages
