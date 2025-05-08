@@ -21,7 +21,6 @@ import {
 import { Settings, Home, Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ColorPicker } from "@/components/custom/color-picker";
-import { DarkModeSelector } from "@/components/custom/darkmode-selector";
 
 export function AppSidebar() {
     return (

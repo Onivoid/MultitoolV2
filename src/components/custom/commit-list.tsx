@@ -2,14 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Commit } from "@/types/commit";
 import { Separator } from "@/components/ui/separator";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CircleHelp } from "lucide-react";
 
 const CommitsList = () => {
     const [commits, setCommits] = useState<Commit[]>([]);
