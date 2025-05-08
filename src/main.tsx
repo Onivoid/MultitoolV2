@@ -8,8 +8,8 @@ import ControlMenu from "@/components/custom/control-menu";
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <ControlMenu />
-      <AppRouter />
+        <ControlMenu />
+        <AppRouter />
     </ThemeProvider>
   </React.StrictMode>,
 );

@@ -21,7 +21,6 @@ const CommitsList = () => {
                 repo: "MultitoolV2",
             });
             setCommits(response as any);
-            console.log("Commits fetched:", response);
         } catch (error) {
             console.error("Error fetching commits:", error);
         }
@@ -32,47 +31,14 @@ const CommitsList = () => {
     }, []);
 
     return (
-        <div>
-            <div className="flex items-center gap-2">
-                <h3 className="text-2xl text-primary font-bold">Patchnotes</h3>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <CircleHelp className="h-5 w-5 hover:cursor-pointer" />
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <h2 className="text-primary font-bold text-lg">
-                                Comment lire les Patchnotes ?
-                            </h2>
-                        </DialogHeader>
-                        <ul className="pl-3">
-                            <li>
-                                <span className="text-primary">- Feat</span> :
-                                Nouvelle fonctionnalité
-                            </li>
-                            <li>
-                                <span className="text-primary">- Bugfix</span> :
-                                Correction de bug
-                            </li>
-                            <li>
-                                <span className="text-primary">
-                                    - Refactoring
-                                </span>{" "}
-                                : Modification de code
-                            </li>
-                            <li>
-                                <span className="text-primary">- Release</span>{" "}
-                                : Nouvelle version
-                            </li>
-                        </ul>
-                    </DialogContent>
-                </Dialog>
+        <div className="w-full">
+            <div className="flex items-center my-3">
+                <h3 className="text-2xl font-bold">Patchnotes</h3>
             </div>
-            <Separator className="my-2" />
             {!commits[0] ? (
                 <Skeleton className="h-[430px]" />
             ) : (
-                <ul className="overflow-y-scroll h-[430px] bg-zinc-900 p-5 rounded-xl">
+                <ul className="overflow-y-scroll h-[430px] bg-zinc-900/50 p-5 rounded-xl w-full">
                     {commits.map((commit, index) => (
                         <li key={index}>
                             <p className="text-lg font-bold text-zinc-200">
@@ -88,7 +54,7 @@ const CommitsList = () => {
                                         <li key={index}>{line}</li>
                                     ))}
                             </ul>
-                            <Separator className="my-5" />
+                            <Separator className="my-5 bg-foreground" />
                         </li>
                     ))}
                 </ul>

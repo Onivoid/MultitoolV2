@@ -2,32 +2,37 @@ import React, { useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/custom/app-sidebar";
 import { useState } from 'react';
+import { Toaster } from "@/components/ui/toaster";
+import { DragRegion } from '@/components/custom/drag-region';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
     const [path, setPath] = useState<string>('');
     const version = import.meta.env.VITE_APP_VERSION;
     useEffect(() => {
         if (window.location.pathname === '/') {
-            setPath('Home');
+            setPath('');
             return;
         } else {
             setPath(window.location.pathname.split('/').join(''));
         }
     }, [window.location.pathname]);
     return (
-        <main className="w-full h-screen max-h-screen max-w-full overflow-hidden" data-tauri-drag-region>
+        <DragRegion className="w-full h-screen max-h-screen max-w-full overflow-hidden">
             <SidebarProvider>
                 <AppSidebar />
-                <div className='flex items-center h-10 mt-2 ml-2'>
-                    <SidebarTrigger className='mt-1'/>
-                    <span className='mr-2 ml-1 text-primary font-bold'>|</span>
-                    <p>Multitool {version} {path ? `- ${path}` : null}</p>
+                <div className='flex h-full mt-2 ml-2 flex-col w-full overflow-hidden'>
+                    <div className='w-max-content flex items-center'>
+                        <SidebarTrigger className='mt-1'/>
+                        <span className='mr-2 ml-1 text-primary font-bold'>|</span>
+                        <p className='font-bold'>Multitool {version} {path ? `- ${path}` : null}</p>
+                    </div>
+                    <div className="flex w-full h-full">
+                        {children}
+                    </div>
                 </div>
+                <Toaster />
             </SidebarProvider>
-            <div className="flex justify-center items-center w-full h-full">
-                {children}
-            </div>
-        </main>
+        </DragRegion>
 )
 };
 

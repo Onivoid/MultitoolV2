@@ -11,8 +11,8 @@ function Home() {
                 delay: 0.2,
                 ease: [0, 0.71, 0.2, 1.01],
             }}
-            className="flex min-h-screen w-full flex-col pl-16 pr-4 pt-14"
-            data-tauri-drag-region 
+            className="flex w-full flex-col"
+             
         >
             <CommitsList />
         </motion.div>
