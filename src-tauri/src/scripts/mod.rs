@@ -4,3 +4,6 @@ pub mod gamepath;
 pub mod translation_functions;
 pub mod translations_links;
 pub mod translation_preferences;
+pub mod cache_functions;
+pub mod local_characters_functions;
+pub mod presets_list_functions;

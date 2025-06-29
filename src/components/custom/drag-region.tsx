@@ -17,29 +17,23 @@ export function DragRegion({ children, className = '' }: DragRegionProps) {
     if (!container) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Vérifier si l'élément cliqué est interactif
       const target = e.target as HTMLElement;
       const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || 
-                           target.closest('button, a, input, select, textarea, [role="button"]');
+                          target.closest('button, a, input, select, textarea, [role="button"]');
       
       if (!isInteractive) {
-        // Pour les éléments non-interactifs, activer le drag immédiatement
         appWindow.startDragging();
       } else {
-        // Pour les éléments interactifs, enregistrer la position initiale
         startPosRef.current = { x: e.clientX, y: e.clientY };
         isMouseDownRef.current = true;
       }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Si la souris est enfoncée sur un élément interactif et que nous détectons 
-      // un mouvement significatif, commencer le drag
       if (isMouseDownRef.current && startPosRef.current) {
         const deltaX = Math.abs(e.clientX - startPosRef.current.x);
         const deltaY = Math.abs(e.clientY - startPosRef.current.y);
         
-        // Si l'utilisateur a bougé la souris d'au moins 5 pixels, commencer le drag
         if (deltaX > 5 || deltaY > 5) {
           appWindow.startDragging();
           isMouseDownRef.current = false;

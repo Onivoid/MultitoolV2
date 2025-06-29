@@ -18,7 +18,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, Home, Languages } from "lucide-react";
+import { Settings, Home, Languages, BrushCleaning, SquareUserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ColorPicker } from "@/components/custom/color-picker";
 
@@ -44,6 +44,24 @@ export function AppSidebar() {
                                     <Link to="/traduction">
                                         <Languages />
                                         <span>Traduction</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                                <SidebarMenuButton tooltip={"Gestionnaire du cache"} className="hover:text-primary" asChild>
+                                    <Link to="/cache">
+                                        <BrushCleaning />
+                                        <span>Gestionnaire du Cache</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                                <SidebarMenuButton tooltip={"Gestionnaire de presets de Personnages"} className="hover:text-primary" asChild>
+                                    <Link to="/presets-local">
+                                        <SquareUserRound />
+                                        <span>Gestionnaire de presets de Personnages</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                                <SidebarMenuButton tooltip={"Téléchargement de Presets de Personnage"} className="hover:text-primary" asChild>
+                                    <Link to="/presets-remote">
+                                        <SquareUserRound />
+                                        <span>Téléchargement de Presets de Personnage</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

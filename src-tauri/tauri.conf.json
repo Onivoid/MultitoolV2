@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "sandbox",
+        "title": "MultiTool V2",
         "minWidth": 1000,
         "minHeight": 600,
         "center": true,

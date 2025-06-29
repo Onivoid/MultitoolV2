@@ -104,6 +104,5 @@ pub fn get_star_citizen_versions() -> VersionPaths {
             });
         }
     }
-
     VersionPaths { versions }
 }

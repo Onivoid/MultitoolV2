@@ -86,6 +86,9 @@
   body {
     @apply bg-primary/20 text-foreground;
   }
+  html{
+    overflow: hidden;
+  }
   *::-webkit-scrollbar-track {
     background-color: transparent;
     border-radius: 0.75rem;
@@ -95,7 +98,7 @@
       background-color: transparent;
   }
   *::-webkit-scrollbar-thumb {
-      background-color: rgb(113 113 122);
+      background-color: rgb(185, 185, 185);
       border-radius: 0.75rem;
   }
 }
