@@ -17,7 +17,7 @@ struct Output {
 
 #[command]
 pub fn get_character_informations(path: &Path) -> String {
-    let base_path = Path::new(&path);
+    let base_path = path;
     let custom_characters_path = base_path
         .join("user")
         .join("client")
