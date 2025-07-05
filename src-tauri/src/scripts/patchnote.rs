@@ -42,9 +42,18 @@ fn load_commit_cache(app: tauri::AppHandle) -> Result<Vec<Commit>, String> {
         return Ok(Vec::new()); // Return an empty list if cache doesn't exist
     }
 
-    let json_data = fs::read_to_string(cache_path).map_err(|e| e.to_string())?;
-    let data: Vec<Commit> = serde_json::from_str(&json_data).map_err(|e| e.to_string())?;
-    Ok(data)
+    let json_data = fs::read_to_string(&cache_path).map_err(|e| e.to_string())?;
+    match serde_json::from_str::<Vec<Commit>>(&json_data) {
+        Ok(data) => Ok(data),
+        Err(e) => {
+            // Log l'erreur et recréer le fichier de cache vide
+            eprintln!("Cache de commits invalide: {e}");
+            if let Err(remove_err) = fs::remove_file(&cache_path) {
+                eprintln!("Impossible de supprimer le cache invalide: {remove_err}");
+            }
+            Ok(Vec::new())
+        }
+    }
 }
 
 #[command]
