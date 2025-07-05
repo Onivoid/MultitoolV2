@@ -16,7 +16,7 @@ struct Output {
 }
 
 #[command]
-pub fn get_character_informations(path: &Path) -> String {
+pub fn get_character_informations(path: String) -> String {
     let base_path = path;
     let custom_characters_path = base_path
         .join("user")
@@ -77,7 +77,7 @@ pub fn delete_character(path: &str) -> bool {
 }
 
 #[command]
-pub fn open_characters_folder(path: &Path) -> Result<bool, String> {
+pub fn open_characters_folder(path: String) -> Result<bool, String> {
     let base_path = Path::new(&path);
     let custom_characters_path = base_path
         .join("user")
