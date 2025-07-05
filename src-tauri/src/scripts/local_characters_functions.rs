@@ -17,8 +17,12 @@ struct Output {
 
 #[command]
 pub fn get_character_informations(path: &Path) -> String {
-    let base_path = Path::new(&path);
-    let custom_characters_path = format!("{:?}\\user\\client\\0\\customcharacters", base_path);
+    let base_path = path;
+    let custom_characters_path = base_path
+        .join("user")
+        .join("client")
+        .join("0")
+        .join("customcharacters");
 
     let mut characters = Vec::new();
 
@@ -33,7 +37,11 @@ pub fn get_character_informations(path: &Path) -> String {
             }
         }
         Err(e) => {
-            println!("Erreur lors de l'accès au répertoire {}: {}", custom_characters_path, e);
+            println!(
+                "Erreur lors de l'accès au répertoire {}: {}",
+                custom_characters_path.display(),
+                e
+            );
         }
     }
 
@@ -71,10 +79,14 @@ pub fn delete_character(path: &str) -> bool {
 #[command]
 pub fn open_characters_folder(path: &Path) -> Result<bool, String> {
     let base_path = Path::new(&path);
-    let custom_characters_path = format!("{:?}\\user\\client\\0\\customcharacters", base_path);
+    let custom_characters_path = base_path
+        .join("user")
+        .join("client")
+        .join("0")
+        .join("customcharacters");
 
         // Vérifie si le chemin existe
-        if std::path::Path::new(&custom_characters_path).exists() {
+        if custom_characters_path.exists() {
             // Ouvre le dossier dans l'explorateur de fichiers
             Command::new("explorer")
                 .arg(&custom_characters_path)
@@ -82,6 +94,6 @@ pub fn open_characters_folder(path: &Path) -> Result<bool, String> {
                 .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
             Ok(true)
         } else {
-            Err(format!("Le dossier '{}' n'existe pas.", custom_characters_path))
+            Err(format!("Le dossier '{}' n'existe pas.", custom_characters_path.display()))
         }
 }
