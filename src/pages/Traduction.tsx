@@ -27,13 +27,13 @@ export default function Traduction() {
 
     const getDefaultTranslationsState = (): TranslationsChoosen => {
         if (!paths) return {};
-        
+
         const defaults: TranslationsChoosen = {};
-        
+
         Object.keys(paths.versions).forEach(version => {
             defaults[version] = { link: null, settingsEN: false };
         });
-        
+
         return defaults;
     };
 
