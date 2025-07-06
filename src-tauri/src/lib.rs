@@ -6,8 +6,8 @@ use scripts::gamepath::get_star_citizen_versions;
 use scripts::translation_functions::{is_game_translated, init_translation_files, is_translation_up_to_date, update_translation, uninstall_translation};
 use scripts::translation_preferences::{save_translations_selected, load_translations_selected};
 use scripts::translations_links::{get_translations, get_translation_by_setting};
-use scripts::cache_functions::{get_cache_informations, delete_folder, clear_cache, open_cache_folder};
-use scripts::local_characters_functions::{get_character_informations, delete_character, open_characters_folder};
+use scripts::cache_functions::{get_cache_informations, delete_folder};
+use scripts::local_characters_functions::{get_character_informations, delete_character, open_characters_folder, duplicate_character};
 use scripts::presets_list_functions::get_characters;
 use window_vibrancy::apply_acrylic;
 use tauri::{command, Manager};
@@ -53,11 +53,10 @@ pub fn run() {
             get_translation_by_setting,
             get_cache_informations,
             delete_folder,
-            clear_cache,
-            open_cache_folder,
             get_character_informations,
             delete_character,
             open_characters_folder,
+            duplicate_character,
             get_characters,
             open_external,
         ])

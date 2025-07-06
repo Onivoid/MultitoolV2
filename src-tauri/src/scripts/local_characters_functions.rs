@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 use tauri::command;
 use tokio::process::Command;
+use crate::scripts::gamepath::get_star_citizen_versions;
 
 #[derive(Serialize)]
 pub struct LocalCharacterInfo {
@@ -102,6 +103,50 @@ pub async fn open_characters_folder(path: String) -> Result<bool, String> {
         .spawn()
         .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
     
+    Ok(true)
+}
+
+#[command]
+pub fn duplicate_character(character_path: String) -> Result<bool, String> {
+    let versions = get_star_citizen_versions();
+    let source = Path::new(&character_path);
+
+    if !source.exists() {
+        return Err(format!("Le fichier '{}' n'existe pas.", character_path));
+    }
+
+    let file_name = match source.file_name() {
+        Some(name) => name,
+        None => return Err("Nom de fichier invalide".to_string()),
+    };
+
+    for info in versions.versions.values() {
+        let dest_dir = Path::new(&info.path)
+            .join("user")
+            .join("client")
+            .join("0")
+            .join("customcharacters");
+
+        if !dest_dir.exists() {
+            if let Err(e) = fs::create_dir_all(&dest_dir) {
+                return Err(format!(
+                    "Erreur lors de la création du dossier '{}': {}",
+                    dest_dir.display(),
+                    e
+                ));
+            }
+        }
+
+        let dest_file = dest_dir.join(file_name);
+        if let Err(e) = fs::copy(&source, dest_file) {
+            return Err(format!(
+                "Erreur lors de la copie vers '{}': {}",
+                dest_dir.display(),
+                e
+            ));
+        }
+    }
+
     Ok(true)
 }
 
