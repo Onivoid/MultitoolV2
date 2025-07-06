@@ -10,14 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
     const { toast } = useToast();
-    const handleOpenCharactersFolder = async () => {
+    const handleOpenCacheFolder = async () => {
         try {
-            const res = await invoke("open_characters_folder");
+            const res = await invoke("open_cache_folder");
             if (res) {
                 toast({
                     title: "Dossier ouvert",
-                    description: "Le dossier des personnages a bien été ouvert.",
-                    success: true,
+                    description: "Le dossier du cache a bien été ouvert.",
+                    success: "true",
                     duration: 3000,
                 });
             }
@@ -25,28 +25,28 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             toast({
                 title: "Erreur lors de l'ouverture",
                 description: `Une erreur est survenue : ${error}`,
-                success: false,
+                success: "false",
                 duration: 3000,
             });
         }
     };
-    const handleDuplicateCharacter = async () => {
+    const handleClearCache = async () => {
         try {
-            const res = await invoke("duplicate_character");
+            const res = await invoke("clear_cache");
             if (res) {
                 setCacheInfos([]);
                 toast({
-                    title: "Preset dupliqué",
-                    description: "Le preset a été copié sur toutes les versions.",
-                    success: true,
+                    title: "Cache nettoyé",
+                    description: "Le cache a bien été nettoyé.",
+                    success: "true",
                     duration: 3000,
                 });
             }
         } catch (error) {
             toast({
-                title: "Erreur lors de la duplication",
+                title: "Erreur lors du nettoyage",
                 description: `Une erreur est survenue : ${error}`,
-                success: false,
+                success: "false",
                 duration: 3000,
             });
         }
@@ -59,15 +59,15 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             <DropdownMenuContent>
                 <DropdownMenuItem
                     className="hover:cursor-pointer"
-                    onClick={handleDuplicateCharacter}
+                    onClick={handleClearCache}
                 >
-                    Dupliquer le preset
+                    Nettoyer le cache
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="hover:cursor-pointer"
-                    onClick={handleOpenCharactersFolder}
+                    onClick={handleOpenCacheFolder}
                 >
-                    Ouvrir le dossier des personnages
+                    Ouvrir le dossier du cache
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

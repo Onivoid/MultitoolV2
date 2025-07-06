@@ -88,18 +88,13 @@ pub fn delete_character(path: &str) -> bool {
 #[command]
 pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     let base_path = Path::new(&path);
-    let custom_characters_path = base_path
-        .join("user")
-        .join("client")
-        .join("0")
-        .join("customcharacters");
 
-    if !custom_characters_path.exists() {
-        return Err(format!("Le dossier '{}' n'existe pas.", custom_characters_path.display()));
+    if !base_path.exists() {
+        return Err(format!("Le dossier '{}' n'existe pas.", base_path.display()));
     }
 
     Command::new("explorer")
-        .arg(&custom_characters_path)
+        .arg(&base_path)
         .spawn()
         .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
     
@@ -120,12 +115,23 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
         None => return Err("Nom de fichier invalide".to_string()),
     };
 
+    // Obtenir le répertoire parent du fichier source pour comparaison
+    let source_dir = match source.parent() {
+        Some(dir) => dir,
+        None => return Err("Impossible de déterminer le répertoire source".to_string()),
+    };
+
     for info in versions.versions.values() {
         let dest_dir = Path::new(&info.path)
             .join("user")
             .join("client")
             .join("0")
             .join("customcharacters");
+
+        // Vérifier si le répertoire de destination est le même que celui du fichier source
+        if dest_dir == source_dir {
+            continue; // Ignorer ce répertoire et passer au suivant
+        }
 
         if !dest_dir.exists() {
             if let Err(e) = fs::create_dir_all(&dest_dir) {

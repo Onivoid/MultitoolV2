@@ -73,13 +73,13 @@ export default function Traduction() {
                     ? toast({
                         title: "Données chargées",
                         description: "Les données de traduction ont été chargées avec succès.",
-                        success: true,
+                        success: "true",
                         duration: 3000,
                     })
                     : toast({
                         title: "Erreur lors du chargement des données",
                         description: `Une erreur est survenue lors du chargement des données.`,
-                        success: false,
+                        success: "false",
                         duration: 3000,
                     });
             });
@@ -95,14 +95,14 @@ export default function Traduction() {
                 toast({
                     title: "Préférences de traduction sauvegardées",
                     description: `Les préférences de traduction ont été sauvegardées avec succès.`,
-                    success: true,
+                    success: "true",
                     duration: 3000,
                 });
             } catch (error) {
                 toast({
                     title: "Erreur lors de la sauvegarde des données",
                     description: `Une erreur est survenue lors de la sauvegarde des données : ${error}`,
-                    success: false,
+                    success: "false",
                     duration: 3000,
                 });
             }
@@ -208,7 +208,7 @@ export default function Traduction() {
                         toast({
                             title: "Traduction installée",
                             description: "La traduction a été installée avec succès.",
-                            success: true,
+                            success: "true",
                             duration: 3000,
                         });
 
@@ -217,7 +217,7 @@ export default function Traduction() {
                         toast({
                             title: "Erreur d'installation",
                             description: "Impossible de récupérer le lien de traduction.",
-                            success: false,
+                            success: "false",
                             duration: 3000,
                         });
                         setLoadingButtonId(null);
@@ -227,7 +227,7 @@ export default function Traduction() {
                     toast({
                         title: "Erreur d'installation",
                         description: `Erreur: ${error}`,
-                        success: false,
+                        success: "false",
                         duration: 3000,
                     });
                     setLoadingButtonId(null);
@@ -245,7 +245,7 @@ export default function Traduction() {
                     toast({
                         title: "Traduction installée",
                         description: "La traduction a été installée avec succès.",
-                        success: true,
+                        success: "true",
                         duration: 3000,
                     });
 
@@ -255,7 +255,7 @@ export default function Traduction() {
                     toast({
                         title: "Erreur d'installation",
                         description: `Erreur: ${error}`,
-                        success: false,
+                        success: "false",
                         duration: 3000,
                     });
                     setLoadingButtonId(null);
@@ -280,7 +280,7 @@ export default function Traduction() {
                 toast({
                     title: "Traduction mise à jour",
                     description: "La traduction a été mise à jour avec succès.",
-                    success: true,
+                    success: "true",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);
@@ -360,14 +360,14 @@ export default function Traduction() {
                             toast({
                                 title: "Traduction obsolète",
                                 description: "La traduction doit être mise à jour pour correspondre à cette configuration.",
-                                success: false,
+                                success: "false",
                                 duration: 5000,
                             });
                         } else {
                             toast({
                                 title: "Paramètres modifiés",
                                 description: "Vous pouvez mettre à jour la traduction pour appliquer les nouveaux paramètres.",
-                                success: true,
+                                success: "true",
                                 duration: 5000,
                             });
                         }
@@ -376,7 +376,7 @@ export default function Traduction() {
                     toast({
                         title: "Erreur de configuration",
                         description: "Impossible de récupérer les informations de traduction.",
-                        success: false,
+                        success: "false",
                         duration: 3000,
                     });
                 }
@@ -387,7 +387,7 @@ export default function Traduction() {
                 toast({
                     title: "Erreur de configuration",
                     description: `Une erreur est survenue: ${error}`,
-                    success: false,
+                    success: "false",
                     duration: 3000,
                 });
                 setLoadingButtonId(null);
@@ -427,7 +427,7 @@ export default function Traduction() {
                 toast({
                     title: "Traduction désinstallée",
                     description: "La traduction a été désinstallée avec succès.",
-                    success: true,
+                    success: "true",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);

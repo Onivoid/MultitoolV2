@@ -40,10 +40,27 @@ function LocalCharactersPresets() {
     }, [toast]);
 
     const updateLocalCharacters = useCallback((pathToRemove: string) => {
-        setLocalCharacters(prev => 
+        setLocalCharacters(prev =>
             prev.filter(character => character.path !== pathToRemove)
         );
     }, []);
+
+    // Fonction pour rafraîchir complètement les données
+    const refreshLocalCharacters = useCallback(async () => {
+        if (!gamePaths) return;
+
+        setIsLoading(true);
+        setLocalCharacters([]); // Vider les données existantes
+
+        const paths = Object.values(gamePaths.versions)
+            .map(version => version?.path)
+            .filter(Boolean);
+
+        for (const path of paths) {
+            await scanLocalCharacters(path);
+        }
+        setIsLoading(false);
+    }, [gamePaths, scanLocalCharacters]);
 
     // Récupération des versions de jeu au chargement
     useEffect(() => {
@@ -88,7 +105,7 @@ function LocalCharactersPresets() {
     // Animation des points de chargement
     useEffect(() => {
         if (!isLoading) return;
-        
+
         const interval = setInterval(() => {
             setLoadingDot(prev => prev === 3 ? 0 : prev + 1);
         }, 500);
@@ -133,7 +150,7 @@ function LocalCharactersPresets() {
             </div>
 
             <DataTable
-                columns={columns(toast, updateLocalCharacters)}
+                columns={columns(toast, updateLocalCharacters, refreshLocalCharacters)}
                 data={localCharacters}
             />
         </motion.div>

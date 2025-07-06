@@ -13,7 +13,7 @@
     "windows": [
       {
         "title": "MultiTool V2",
-        "minWidth": 1000,
+        "minWidth": 1230,
         "minHeight": 600,
         "center": true,
         "decorations": false,
