@@ -17,7 +17,7 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
                 toast({
                     title: "Dossier ouvert",
                     description: "Le dossier du cache a bien été ouvert.",
-                    success: true,
+                    success: "true",
                     duration: 3000,
                 });
             }
@@ -25,7 +25,7 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             toast({
                 title: "Erreur lors de l'ouverture",
                 description: `Une erreur est survenue : ${error}`,
-                success: false,
+                success: "false",
                 duration: 3000,
             });
         }
@@ -38,7 +38,7 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
                 toast({
                     title: "Cache nettoyé",
                     description: "Le cache a bien été nettoyé.",
-                    success: true,
+                    success: "true",
                     duration: 3000,
                 });
             }
@@ -46,7 +46,7 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             toast({
                 title: "Erreur lors du nettoyage",
                 description: `Une erreur est survenue : ${error}`,
-                success: false,
+                success: "false",
                 duration: 3000,
             });
         }

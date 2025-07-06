@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 use tauri::command;
 use tokio::process::Command;
+use crate::scripts::gamepath::get_star_citizen_versions;
 
 #[derive(Serialize)]
 pub struct LocalCharacterInfo {
@@ -87,21 +88,71 @@ pub fn delete_character(path: &str) -> bool {
 #[command]
 pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     let base_path = Path::new(&path);
-    let custom_characters_path = base_path
-        .join("user")
-        .join("client")
-        .join("0")
-        .join("customcharacters");
 
-    if !custom_characters_path.exists() {
-        return Err(format!("Le dossier '{}' n'existe pas.", custom_characters_path.display()));
+    if !base_path.exists() {
+        return Err(format!("Le dossier '{}' n'existe pas.", base_path.display()));
     }
 
     Command::new("explorer")
-        .arg(&custom_characters_path)
+        .arg(&base_path)
         .spawn()
         .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
     
+    Ok(true)
+}
+
+#[command]
+pub fn duplicate_character(character_path: String) -> Result<bool, String> {
+    let versions = get_star_citizen_versions();
+    let source = Path::new(&character_path);
+
+    if !source.exists() {
+        return Err(format!("Le fichier '{}' n'existe pas.", character_path));
+    }
+
+    let file_name = match source.file_name() {
+        Some(name) => name,
+        None => return Err("Nom de fichier invalide".to_string()),
+    };
+
+    // Obtenir le répertoire parent du fichier source pour comparaison
+    let source_dir = match source.parent() {
+        Some(dir) => dir,
+        None => return Err("Impossible de déterminer le répertoire source".to_string()),
+    };
+
+    for info in versions.versions.values() {
+        let dest_dir = Path::new(&info.path)
+            .join("user")
+            .join("client")
+            .join("0")
+            .join("customcharacters");
+
+        // Vérifier si le répertoire de destination est le même que celui du fichier source
+        if dest_dir == source_dir {
+            continue; // Ignorer ce répertoire et passer au suivant
+        }
+
+        if !dest_dir.exists() {
+            if let Err(e) = fs::create_dir_all(&dest_dir) {
+                return Err(format!(
+                    "Erreur lors de la création du dossier '{}': {}",
+                    dest_dir.display(),
+                    e
+                ));
+            }
+        }
+
+        let dest_file = dest_dir.join(file_name);
+        if let Err(e) = fs::copy(&source, dest_file) {
+            return Err(format!(
+                "Erreur lors de la copie vers '{}': {}",
+                dest_dir.display(),
+                e
+            ));
+        }
+    }
+
     Ok(true)
 }
 
