@@ -10,13 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
     const { toast } = useToast();
-    const handleOpenCacheFolder = async () => {
+    const handleOpenCharactersFolder = async () => {
         try {
-            const res = await invoke("open_cache_folder");
+            const res = await invoke("open_characters_folder");
             if (res) {
                 toast({
                     title: "Dossier ouvert",
-                    description: "Le dossier du cache a bien été ouvert.",
+                    description: "Le dossier des personnages a bien été ouvert.",
                     success: true,
                     duration: 3000,
                 });
@@ -30,21 +30,21 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             });
         }
     };
-    const handleClearCache = async () => {
+    const handleDuplicateCharacter = async () => {
         try {
-            const res = await invoke("clear_cache");
+            const res = await invoke("duplicate_character");
             if (res) {
                 setCacheInfos([]);
                 toast({
-                    title: "Cache nettoyé",
-                    description: "Le cache a bien été nettoyé.",
+                    title: "Preset dupliqué",
+                    description: "Le preset a été copié sur toutes les versions.",
                     success: true,
                     duration: 3000,
                 });
             }
         } catch (error) {
             toast({
-                title: "Erreur lors du nettoyage",
+                title: "Erreur lors de la duplication",
                 description: `Une erreur est survenue : ${error}`,
                 success: false,
                 duration: 3000,
@@ -59,15 +59,15 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
             <DropdownMenuContent>
                 <DropdownMenuItem
                     className="hover:cursor-pointer"
-                    onClick={handleClearCache}
+                    onClick={handleDuplicateCharacter}
                 >
-                    Nettoyer le cache
+                    Dupliquer le preset
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="hover:cursor-pointer"
-                    onClick={handleOpenCacheFolder}
+                    onClick={handleOpenCharactersFolder}
                 >
-                    Ouvrir le dossier du cache
+                    Ouvrir le dossier des personnages
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
