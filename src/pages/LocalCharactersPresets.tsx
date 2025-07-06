@@ -1,17 +1,19 @@
 import { motion } from 'framer-motion';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { columns, Character } from "@/components/custom/local-characters-presets/columns";
 import { DataTable } from "@/components/custom/local-characters-presets/data-table";
 import { useToast } from "@/hooks/use-toast";
 import { invoke } from "@tauri-apps/api/core";
 import { GamePaths, isGamePaths } from "@/types/translation";
 import { LocalCharactersResult } from "@/types/charactersList";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function LocalCharactersPresets() {
     const [localCharacters, setLocalCharacters] = useState<Character[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadingDot, setLoadingDot] = useState(0);
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
+    const [selectedVersion, setSelectedVersion] = useState<string>("all"); // Nouveau state
     const { toast } = useToast();
 
     const scanLocalCharacters = useCallback(async (gamePath: string) => {
@@ -113,6 +115,18 @@ function LocalCharactersPresets() {
         return () => clearInterval(interval);
     }, [isLoading]);
 
+    // Filtrer les données selon la version sélectionnée
+    const filteredCharacters = useMemo(() => {
+        if (selectedVersion === "all") return localCharacters;
+        return localCharacters.filter(character => character.version === selectedVersion);
+    }, [localCharacters, selectedVersion]);
+
+    // Obtenir la liste des versions disponibles
+    const availableVersions = useMemo(() => {
+        const versions = [...new Set(localCharacters.map(char => char.version))];
+        return versions.sort();
+    }, [localCharacters]);
+
     if (!gamePaths) {
         return (
             <div className="flex h-screen w-full items-center justify-center">
@@ -146,12 +160,24 @@ function LocalCharactersPresets() {
             className="flex flex-col w-full max-h-[calc(100vh-50px)]"
         >
             <div className="flex items-center gap-2 mb-4">
-                <h1 className="text-2xl my-5">Gestionnaire de presets de Personnages</h1>
+                <h1 className="text-2xl mt-5">Gestionnaire de presets de Personnages</h1>
             </div>
-
+            <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                    <SelectTrigger className="w-48 mb-2 bg-background/50">
+                        <SelectValue placeholder="Filtrer par version" />
+                    </SelectTrigger>
+                    <SelectContent className='bg-background/90'>
+                        <SelectItem value="all">Toutes les versions</SelectItem>
+                        {availableVersions.map(version => (
+                            <SelectItem key={version} value={version}>
+                                {version}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+            </Select>
             <DataTable
                 columns={columns(toast, updateLocalCharacters, refreshLocalCharacters)}
-                data={localCharacters}
+                data={filteredCharacters} // Utiliser les données filtrées
             />
         </motion.div>
     );
