@@ -8,7 +8,11 @@ import { Ellipsis } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 
-export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
+export default function ActionsMenu({
+    setLocalCharacters,
+}: {
+    setLocalCharacters: any;
+}) {
     const { toast } = useToast();
     const handleOpenCacheFolder = async () => {
         try {
@@ -34,7 +38,7 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
         try {
             const res = await invoke("clear_cache");
             if (res) {
-                setCacheInfos([]);
+                setLocalCharacters([]);
                 toast({
                     title: "Cache nettoyé",
                     description: "Le cache a bien été nettoyé.",

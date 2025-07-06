@@ -14,8 +14,8 @@ function LocalCharactersPresets() {
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
     const { toast } = useToast();
 
-    const scanCache = useCallback(async (gamePath: string) => {
-        console.log("ScanCache called with path:", gamePath);
+    const scanLocalCharacters = useCallback(async (gamePath: string) => {
+        console.log("scanLocalCharacters called with path:", gamePath);
         try {
             const result: LocalCharactersResult = JSON.parse(
                 await invoke("get_character_informations", { path: gamePath }),
@@ -77,13 +77,13 @@ function LocalCharactersPresets() {
                 .filter(Boolean);
 
             for (const path of paths) {
-                await scanCache(path);
+                await scanLocalCharacters(path);
             }
             setIsLoading(false);
         };
 
         scanAllPaths();
-    }, [gamePaths, scanCache]);
+    }, [gamePaths, scanLocalCharacters]);
 
     // Animation des points de chargement
     useEffect(() => {
