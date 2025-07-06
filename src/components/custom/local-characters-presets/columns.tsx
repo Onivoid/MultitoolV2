@@ -96,10 +96,6 @@ export const columns = (
             accessorKey: "version",
         },
         {
-            header: "Chemin",
-            accessorKey: "path",
-        },
-        {
             id: "actions",
             cell: ({ row }) => (
                 <>

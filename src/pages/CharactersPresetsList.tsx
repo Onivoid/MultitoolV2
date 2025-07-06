@@ -68,6 +68,7 @@ function CharactersPresetsList() {
                                 characterid={character.id}
                                 downloads={character._count.characterDownloads}
                                 likes={character._count.characterLikes}
+                                dnaurl={character.dnaUrl}
                             />
                         </motion.div>
                     ))}

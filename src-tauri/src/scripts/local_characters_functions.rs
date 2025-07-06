@@ -4,6 +4,8 @@ use std::path::Path;
 use tauri::command;
 use tokio::process::Command;
 use crate::scripts::gamepath::get_star_citizen_versions;
+use reqwest::blocking::Client;
+use regex::Regex;
 
 #[derive(Serialize)]
 pub struct LocalCharacterInfo {
@@ -153,6 +155,46 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
         }
     }
 
+    Ok(true)
+}
+
+#[command]
+pub fn download_character(dna_url: String, title: String) -> Result<bool, String> {
+    let versions = get_star_citizen_versions();
+    let first = versions
+        .versions
+        .values()
+        .next()
+        .ok_or_else(|| "Aucune version de Star Citizen trouvée".to_string())?;
+
+    let dest_dir = Path::new(&first.path)
+        .join("user")
+        .join("client")
+        .join("0")
+        .join("customcharacters");
+
+    if !dest_dir.exists() {
+        fs::create_dir_all(&dest_dir)
+            .map_err(|e| format!("Erreur lors de la création du dossier '{}': {}", dest_dir.display(), e))?;
+    }
+
+    let re = Regex::new(r#"[<>:"/\\|?*]"#).unwrap();
+    let sanitized = re.replace_all(&title, "_");
+    let file_path = dest_dir.join(format!("{}.chf", sanitized));
+
+    let client = Client::new();
+    let response = client
+        .get(&dna_url)
+        .send()
+        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+    let bytes = response
+        .bytes()
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+
+    fs::write(&file_path, &bytes)
+        .map_err(|e| format!("Erreur lors de l'écriture du fichier: {}", e))?;
+
+    duplicate_character(file_path.to_string_lossy().to_string())?;
     Ok(true)
 }
 

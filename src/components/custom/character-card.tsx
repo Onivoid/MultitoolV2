@@ -9,15 +9,37 @@ import {
 } from "@/components/ui/card";
 import { Lens } from "@/components/magicui/lens";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "@/hooks/use-toast";
 
 export function CharacterCard(
-    { url, name, owner, downloads, likes, characterid } : 
-    { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string }
+    { url, name, owner, downloads, likes, characterid, dnaurl } :
+    { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
 ) {
+    const { toast } = useToast();
 
     const openExternalLink = async (id: string) => {
         console.log("Opening external link for character ID:", id);
         await invoke("open_external", { url : `https://www.star-citizen-characters.com/character/${id}` });
+    };
+
+    const handleDownload = async () => {
+        try {
+            const res = await invoke("download_character", { dnaUrl: dnaurl, title: name });
+            if (res) {
+                toast({
+                    title: "Preset téléchargé",
+                    description: "Le preset a été ajouté dans vos versions.",
+                    success: "true",
+                    duration: 3000,
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Erreur",
+                description: `Une erreur est survenue : ${error}`,
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -49,7 +71,7 @@ export function CharacterCard(
                 </CardDescription>
             </CardContent>
             <CardFooter className="space-x-4">
-                <Button>Télécharger</Button>
+                <Button onClick={handleDownload}>Télécharger</Button>
             </CardFooter>
         </Card>
     );
