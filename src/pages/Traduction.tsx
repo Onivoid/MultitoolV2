@@ -4,7 +4,6 @@ import { invoke } from "@tauri-apps/api/core";
 import {
     GamePaths,
     isGamePaths,
-    TranslationOption,
     TranslationsChoosen,
 } from "@/types/translation";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export default function Traduction() {
     const [paths, setPaths] = useState<GamePaths | null>();
     const [earlyChecked, setEarlyChecked] = useState<boolean>(false);
-    const [translations, setTranslations] = useState<TranslationOption[] | null>(null);
     const [translationsSelected, setTranslationsSelected] = useState<TranslationsChoosen | null>(null);
     const [loadingButtonId, setLoadingButtonId] = useState<string | null>(null);
     const [dataFetched, setDataFetched] = useState<boolean>(false);
@@ -50,12 +48,6 @@ export default function Traduction() {
                 console.log("Récupération des traductions...");
                 const translationsData = await invoke("get_translations");
                 console.log("Données de traduction reçues:", translationsData);
-
-                if (Array.isArray(translationsData)) {
-                    setTranslations(translationsData as TranslationOption[]);
-                } else {
-                    console.warn("Format inattendu pour les données de traduction:", translationsData);
-                }
 
                 const savedPrefs: TranslationsChoosen = await invoke("load_translations_selected");
                 if (savedPrefs && typeof savedPrefs === "object") {

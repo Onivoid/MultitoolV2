@@ -2,53 +2,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Trash } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-
-export interface RemoteCharactersPresetsList {
-    body: Body;
-    path: string;
-    query: string;
-    cookies: any[];
-}
-
-export interface Body {
-    hasPrevPage: boolean;
-    hasNextPage: boolean;
-    rows: Row[];
-}
-
-export interface Row {
-    id: string;
-    createdAt: Date;
-    title: string;
-    tags: any[];
-    user: User;
-    previewUrl: string;
-    dnaUrl: string;
-    _count: Count;
-}
-
-export interface Count {
-    characterDownloads: number;
-    characterLikes: number;
-}
-
-export interface User {
-    id: string;
-    name: string;
-    image: string;
-    starCitizenHandle: string;
-}
-
-// Renommé pour correspondre au type utilisé dans columns.tsx
-export interface Character {
-    name: string;
-    path: string;
-    version: string;
-}
-
-export interface LocalCharactersResult {
-    characters: Character[];
-}
+import { LocalCharacter as Character } from "@/types/charactersList";
+export type { Character };
 
 const deleteCharacter = async (
     path: string,
