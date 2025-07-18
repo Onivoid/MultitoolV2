@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function CharacterCard(
     { url, name, owner, downloads, likes, characterid, dnaurl }:
-        { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
+    { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
 ) {
     const { toast } = useToast();
 
@@ -41,6 +41,7 @@ export function CharacterCard(
             });
         }
     };
+
     return (
         <Card className="relative max-w-md shadow-none bg-background/30 border-background/20">
             <CardHeader>
