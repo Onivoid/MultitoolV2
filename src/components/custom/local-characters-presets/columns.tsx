@@ -1,8 +1,10 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { Trash, Folder, FolderSync } from "lucide-react";
+import { Trash, Folder, FolderSync, Check, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { LocalCharacter as Character } from "@/types/charactersList";
+import { useState } from "react";
+import { PresetActionModal } from "./PresetActionModal";
 export type { Character };
 
 const deleteCharacter = async (
@@ -16,7 +18,6 @@ const deleteCharacter = async (
             description: `Le personnage a bien été supprimé.`,
             success: "true",
             duration: 3000,
-            isClosable: true,
         });
     } else {
         toast({
@@ -24,7 +25,6 @@ const deleteCharacter = async (
             description: `Une erreur est survenue lors de la suppression du personnage.`,
             success: "true",
             duration: 3000,
-            isClosable: true,
         });
     }
 };
@@ -84,60 +84,138 @@ const handleOpenCharactersFolder = async (
 
 export const columns = (
     toast: any,
-    updateLocalCharacters: (path: string) => void,
-    refreshData?: () => void // Ajouter le paramètre de refresh
-): ColumnDef<Character>[] => [
+    refreshData?: () => void,
+    availableVersions: string[] = []
+): ColumnDef<{ name: string; versions: { version: string; path: string }[]; }>[] => [
         {
             header: "Nom",
             accessorKey: "name",
         },
         {
-            header: "Version du jeu",
-            accessorKey: "version",
+            header: "Versions du jeu",
+            accessorKey: "versions",
+            cell: ({ row }) => {
+                const allVersions: string[] = availableVersions;
+                const character = row.original;
+                // Découper en groupes de 3
+                const chunked = [];
+                for (let i = 0; i < allVersions.length; i += 3) {
+                    chunked.push(allVersions.slice(i, i + 3));
+                }
+                return (
+                    <div className="flex gap-4">
+                        {chunked.map((group, idx) => (
+                            <div key={idx} className="flex flex-col gap-2">
+                                {group.map((version: string) => {
+                                    const found = character.versions.find(v => v.version === version);
+                                    const exists = found && found.path;
+                                    return (
+                                        <span key={version} className="flex items-center gap-1">
+                                            <span>{version}</span>
+                                            {exists
+                                                ? <Check className="text-green-500 h-3 w-3" />
+                                                : <X className="text-red-500 h-3 w-3" />}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                );
+            },
         },
         {
+            header: "Actions",
             id: "actions",
-            cell: ({ row }) => (
-                <>
-                    <button
-                        onClick={() =>
-                            deleteCharacter(row.original.path, toast)
-                                .then(() => updateLocalCharacters(row.original.path))
+            cell: ({ row }) => {
+                const character = row.original;
+                const [modalOpen, setModalOpen] = useState<false | "delete" | "open">(false);
+                const [pendingAction, setPendingAction] = useState<null | "delete" | "open">(null);
+
+                // Action à exécuter après sélection
+                const handleModalConfirm = async (selectedVersions: any) => {
+                    if (pendingAction === "delete") {
+                        // Supprimer le preset dans chaque version sélectionnée
+                        for (const v of selectedVersions) {
+                            if (v.path) await deleteCharacter(v.path, toast);
                         }
-                        aria-label="Supprimer le personnage"
-                    >
-                        <Trash
-                            strokeWidth={3}
-                            className="h-4 w-4 hover:text-red-500 hover:cursor-pointer"
-                        />
-                    </button>
-                    <button
-                        onClick={() =>
-                            duplicateCharacter(
-                                row.original.path,
-                                toast,
-                                refreshData
-                            )
+                        // Rafraîchir la liste des personnages après suppression
+                        if (typeof refreshData === "function") {
+                            await refreshData();
                         }
-                        aria-label="Dupliquer le personnage"
-                    >
-                        <FolderSync
-                            strokeWidth={3}
-                            className="h-4 w-4 hover:text-primary hover:cursor-pointer ml-2"
-                        />
-                    </button>
-                    <button
-                        onClick={() =>
-                            handleOpenCharactersFolder(row.original.path, toast)
+                    } else if (pendingAction === "open") {
+                        for (const v of selectedVersions) {
+                            if (v.path) await handleOpenCharactersFolder(v.path, toast);
                         }
-                        aria-label="Ouvrir le dossier des personnages"
-                    >
-                        <Folder
-                            strokeWidth={3}
-                            className="h-4 w-4 hover:text-primary hover:cursor-pointer ml-2"
+                    }
+                };
+
+                return (
+                    <div className="flex flex-col items-start gap-2">
+                        <div className="flex flex-row-reverse items-center gap-2">
+                            <span>Supprimer le personnage</span>
+                            <button
+                                onClick={() => {
+                                    setPendingAction("delete");
+                                    setModalOpen("delete");
+                                }}
+                                aria-label="Supprimer le personnage"
+                            >
+                                <Trash
+                                    strokeWidth={3}
+                                    className="h-4 w-4 hover:text-red-500 hover:cursor-pointer"
+                                />
+                            </button>
+                        </div>
+                        <div className="flex flex-row-reverse items-center gap-2">
+                            <span>Dupliquer le personnage</span>
+                            <button
+                                onClick={() => {
+                                    const path = character.versions.find(v => v.path)?.path;
+                                    if (path) {
+                                        duplicateCharacter(path, toast, refreshData);
+                                    } else {
+                                        toast({
+                                            title: "Erreur",
+                                            description: "Impossible de dupliquer : aucun chemin disponible.",
+                                            success: "false",
+                                            duration: 3000,
+                                        });
+                                    }
+                                }}
+                                aria-label="Dupliquer le personnage"
+                            >
+                                <FolderSync
+                                    strokeWidth={3}
+                                    className="h-4 w-4 hover:text-primary hover:cursor-pointer"
+                                />
+                            </button>
+                        </div>
+                        <div className="flex flex-row-reverse items-center gap-2">
+                            <span>Ouvrir le dossier des personnages</span>
+                            <button
+                                onClick={() => {
+                                    setPendingAction("open");
+                                    setModalOpen("open");
+                                }}
+                                aria-label="Ouvrir le dossier des personnages"
+                            >
+                                <Folder
+                                    strokeWidth={3}
+                                    className="h-4 w-4 hover:text-primary hover:cursor-pointer"
+                                />
+                            </button>
+                        </div>
+                        <PresetActionModal
+                            open={!!modalOpen}
+                            onClose={() => setModalOpen(false)}
+                            characterName={character.name}
+                            versions={character.versions}
+                            action={pendingAction === "delete" || pendingAction === "open" ? pendingAction : "open"}
+                            onConfirm={handleModalConfirm}
                         />
-                    </button>
-                </>
-            ),
+                    </div>
+                );
+            },
         },
     ];
