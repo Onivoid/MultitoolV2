@@ -12,14 +12,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 
 export function CharacterCard(
-    { url, name, owner, downloads, likes, characterid, dnaurl } :
-    { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
+    { url, name, owner, downloads, likes, characterid, dnaurl }:
+        { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
 ) {
     const { toast } = useToast();
 
     const openExternalLink = async (id: string) => {
         console.log("Opening external link for character ID:", id);
-        await invoke("open_external", { url : `https://www.star-citizen-characters.com/character/${id}` });
+        await invoke("open_external", { url: `https://www.star-citizen-characters.com/character/${id}` });
     };
 
     const handleDownload = async () => {
@@ -41,7 +41,6 @@ export function CharacterCard(
             });
         }
     };
-
     return (
         <Card className="relative max-w-md shadow-none bg-background/30 border-background/20">
             <CardHeader>
@@ -63,7 +62,7 @@ export function CharacterCard(
                     <p>Créateur : <span className="text-foreground truncate">{owner}</span></p>
                     <p>Nombre de téléchargement : <span className="text-foreground">{downloads}</span></p>
                     <p>Nombre de Like : <span className="text-foreground">{likes}</span></p>
-                    <p>Source : 
+                    <p>Source :
                         <a className="cursor-pointer text-blue-500 ml-1" onClick={() => openExternalLink(characterid)}>
                             StarCitizenCharacters
                         </a>
