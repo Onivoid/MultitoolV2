@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { invoke } from "@tauri-apps/api/core";
 import { GamePaths, isGamePaths } from "@/types/translation";
 import { LocalCharactersResult } from "@/types/charactersList";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function LocalCharactersPresets() {
     // Nouvelle structure : chaque personnage a une liste de versions et chemins associés
@@ -19,7 +18,6 @@ function LocalCharactersPresets() {
     const [isLoading, setIsLoading] = useState(true);
     const [loadingDot, setLoadingDot] = useState(0);
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
-    const [selectedVersion, setSelectedVersion] = useState<string>("all"); // Nouveau state
     const { toast } = useToast();
 
     // On regroupe les personnages par identifiant unique (ex: path ou name)
@@ -143,13 +141,7 @@ function LocalCharactersPresets() {
         return () => clearInterval(interval);
     }, [isLoading]);
 
-    // Filtrer les données selon la version sélectionnée
-    const filteredCharacters = useMemo(() => {
-        if (selectedVersion === "all") return localCharacters;
-        return localCharacters.filter(character =>
-            character.versions.some(v => v.version === selectedVersion)
-        );
-    }, [localCharacters, selectedVersion]);
+
 
     // Obtenir la liste des versions disponibles
     const availableVersions = useMemo(() => {
@@ -193,22 +185,9 @@ function LocalCharactersPresets() {
             <div className="flex items-center gap-2 mb-4">
                 <h1 className="text-2xl mt-5">Gestionnaire de presets de Personnages</h1>
             </div>
-            <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-                <SelectTrigger className="w-48 mb-2 bg-background/50">
-                    <SelectValue placeholder="Filtrer par version" />
-                </SelectTrigger>
-                <SelectContent className='bg-background/90'>
-                    <SelectItem value="all">Toutes les versions</SelectItem>
-                    {availableVersions.map(version => (
-                        <SelectItem key={version} value={version}>
-                            {version}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
             <DataTable
                 columns={columns(toast, refreshLocalCharacters, availableVersions)}
-                data={filteredCharacters} // Utiliser les données filtrées
+                data={localCharacters} // Utiliser les données filtrées
             />
         </motion.div>
     );
