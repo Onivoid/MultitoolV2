@@ -13,47 +13,74 @@ function CharactersPresetsList() {
     const hasInitialized = useRef(false);
     const [hasMore, setHasMore] = useState(true);
     const orderType = useRef<string>("download");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const lastSearchTerm = useRef<string>("");
 
-    const getCharacters = useCallback(async (nextPage?: number) => {
-        if (isLoading || !hasMore) return;
-        setIsLoading(true);
-        const pageToFetch = nextPage || page;
-        try {
-            const result: RemoteCharactersPresetsList = await invoke("get_characters", {
-                page: pageToFetch,
-                orderType: orderType.current,
-            });
-            console.log("RESULT : Fetching characters presets...");
-            console.log(result);
-            const newRows = result.body.rows;
-            if (newRows.length === 0) {
-                setHasMore(false);
-            } else {
-                setCharactersPresets(prev => {
-                    const existingIds = new Set(prev.map(c => c.id));
-                    const filtered = newRows.filter(c => !existingIds.has(c.id));
-                    return [...prev, ...filtered];
+    const getCharacters = useCallback(
+        async (nextPage?: number, newSearchTerm?: string) => {
+            if (isLoading || !hasMore) return;
+            setIsLoading(true);
+            const pageToFetch = nextPage || page;
+            const search = typeof newSearchTerm === "string" ? newSearchTerm : debouncedSearch;
+            try {
+                const result: RemoteCharactersPresetsList = await invoke("get_characters", {
+                    page: pageToFetch,
+                    orderType: orderType.current,
+                    search: search && search.length > 0 ? search : undefined,
                 });
-                setPage(pageToFetch + 1);
+                console.log("RESULT : Fetching characters presets...");
+                console.log(result);
+                const newRows = result.body.rows;
+                if (newRows.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setCharactersPresets(prev => {
+                        const existingIds = new Set(prev.map(c => c.id));
+                        const filtered = newRows.filter(c => !existingIds.has(c.id));
+                        return [...prev, ...filtered];
+                    });
+                    setPage(pageToFetch + 1);
+                }
+            } catch (error) {
+                console.error("Error fetching characters presets:", error);
+                toast({
+                    title: "Erreur de chargement",
+                    description: "Impossible de récupérer les personnages. Veuillez réessayer plus tard.",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching characters presets:", error);
-            toast({
-                title: "Erreur de chargement",
-                description: "Impossible de récupérer les personnages. Veuillez réessayer plus tard.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [hasMore, page]);
+        },
+        [hasMore, page, debouncedSearch]
+    );
+    // Debounce de la recherche
     useEffect(() => {
-        if (!hasInitialized.current && charactersPresets.length === 0 && !isLoading) {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 400);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchTerm]);
+
+    // Initial fetch ou changement de filtre
+    useEffect(() => {
+        // Refactor de la condition complexe pour plus de lisibilité
+        const isInitialLoad = !hasInitialized.current && charactersPresets.length === 0 && !isLoading;
+        const isSearchChanged = lastSearchTerm.current !== debouncedSearch;
+        const isSearchCleared = debouncedSearch === "" && lastSearchTerm.current !== "";
+        if (isInitialLoad || isSearchChanged || isSearchCleared) {
             hasInitialized.current = true;
-            getCharacters(1);
+            lastSearchTerm.current = debouncedSearch;
+            setCharactersPresets([]);
+            setPage(1);
+            setHasMore(true);
+            getCharacters(1, debouncedSearch);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [charactersPresets.length, isLoading, getCharacters]);
+    }, [debouncedSearch]);
 
     const gridRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -84,9 +111,19 @@ function CharactersPresetsList() {
             }}
             className="flex w-full flex-col"
         >
+            {/* Barre de recherche */}
+            <div className="w-full flex justify-center items-center my-4">
+                <input
+                    type="text"
+                    placeholder="Rechercher un personnage..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="border rounded px-4 py-2 w-full max-w-md shadow bg-background/30"
+                />
+            </div>
             <div
                 ref={gridRef}
-                className="grid grid-cols-3 xl:grid-cols-5 gap-4 max-h-[calc(100vh-50px)] overflow-x-hidden overflow-y-auto"
+                className="grid grid-cols-3 xl:grid-cols-5 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto"
             >
                 {charactersPresets.map((character, index) => {
                     // On réinitialise le delay à chaque batch de 12
