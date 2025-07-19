@@ -41,6 +41,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.4
         version: 1.1.4(@types/react-dom@18.3.2)(@types/react@18.3.14)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tabler/icons-react':
+        specifier: ^3.34.0
+        version: 3.34.0(react@18.3.1)
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1180,6 +1183,14 @@ packages:
     resolution: {integrity: sha512-ZvK2jBafvttJjoIdKm/Q/Bh7IJ1Ose9IBOwpOXcOvW3ikGTQGmKDgxTC6oCAzW6PynbkKP8+um1du81XJHZ0JA==}
     cpu: [x64]
     os: [win32]
+
+  '@tabler/icons-react@3.34.0':
+    resolution: {integrity: sha512-OpEIR2iZsIXECtAIMbn1zfKfQ3zKJjXyIZlkgOGUL9UkMCFycEiF2Y8AVfEQsyre/3FnBdlWJvGr0NU47n2TbQ==}
+    peerDependencies:
+      react: '>= 16'
+
+  '@tabler/icons@3.34.0':
+    resolution: {integrity: sha512-jtVqv0JC1WU2TTEBN32D9+R6mc1iEBuPwLnBsWaR02SIEciu9aq5806AWkCHuObhQ4ERhhXErLEK7Fs+tEZxiA==}
 
   '@tanstack/react-table@8.21.3':
     resolution: {integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==}
@@ -3098,6 +3109,13 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.28.1':
     optional: true
+
+  '@tabler/icons-react@3.34.0(react@18.3.1)':
+    dependencies:
+      '@tabler/icons': 3.34.0
+      react: 18.3.1
+
+  '@tabler/icons@3.34.0': {}
 
   '@tanstack/react-table@8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:

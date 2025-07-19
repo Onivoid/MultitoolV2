@@ -1,38 +1,38 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "sandbox",
-  "version": "0.1.0",
-  "identifier": "com.sandbox.app",
-  "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "MultiTool V2",
-        "minWidth": 1230,
-        "minHeight": 600,
-        "center": true,
-        "decorations": false,
-        "transparent": true
-      }
-    ],
-    "security": {
-      "csp": null
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "sandbox",
+    "version": "0.1.0",
+    "identifier": "com.sandbox.app",
+    "build": {
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "pnpm build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "MultiTool V2",
+                "minWidth": 1230,
+                "minHeight": 690,
+                "center": true,
+                "decorations": false,
+                "transparent": true
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ]
     }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  }
 }
