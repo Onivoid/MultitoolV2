@@ -20,8 +20,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, BrushCleaning } from "lucide-react";
-import { IconBrandYoutube, IconHome, IconBrandDiscord, IconBrandSpotifyFilled, IconBrandTwitch, IconCloud, IconBrandGithub, IconBrandSoundcloud, IconLanguage, IconUsers, IconDownload } from "@tabler/icons-react";
+import { Settings, BrushCleaning, Download } from "lucide-react";
+import { IconBrandYoutube, IconHome, IconBrandDiscord, IconBrandSpotifyFilled, IconBrandTwitch, IconCloud, IconBrandGithub, IconBrandSoundcloud, IconLanguage, IconUsers } from "@tabler/icons-react";
 // Menu principal
 const menuItems = [
     {
@@ -50,9 +50,15 @@ const menuItems = [
     },
     {
         path: "/presets-remote",
-        icon: <IconDownload size={20} />,
+        icon: <Download size={20} />,
         label: "Persos en ligne",
         tooltip: "Persos en ligne"
+    },
+    {
+        path: "/updates",
+        icon: <Download size={20} />,
+        label: "Mises à jour",
+        tooltip: "Mises à jour"
     }
 ];
 

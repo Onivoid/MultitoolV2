@@ -1,9 +1,9 @@
-pub mod theme_preferences;
-pub mod patchnote;
-pub mod gamepath;
-pub mod translation_functions;
-pub mod translations_links;
-pub mod translation_preferences;
 pub mod cache_functions;
+pub mod gamepath;
 pub mod local_characters_functions;
+pub mod patchnote;
 pub mod presets_list_functions;
+pub mod theme_preferences;
+pub mod translation_functions;
+pub mod translation_preferences;
+pub mod translations_links;

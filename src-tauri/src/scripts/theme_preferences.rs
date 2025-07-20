@@ -1,15 +1,16 @@
-use serde::{Serialize, Deserialize};
-use tauri::path::PathResolver;
-use tauri::Runtime;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use tauri::command;
+use tauri::path::PathResolver;
 use tauri::Manager;
+use tauri::Runtime;
 
 #[command]
 fn get_theme_config_file_path(path: &PathResolver<impl Runtime>) -> Result<PathBuf, String> {
-        let config_dir = path.app_config_dir()
-        .map_err(|_| "Impossible d'obtenir le répertoire de configuration de l'application".to_string())?;
+    let config_dir = path.app_config_dir().map_err(|_| {
+        "Impossible d'obtenir le répertoire de configuration de l'application".to_string()
+    })?;
     if !config_dir.exists() {
         fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
     }
@@ -28,7 +29,7 @@ pub struct IconSize {
 
 #[command]
 pub fn save_theme_selected(app: tauri::AppHandle, data: ThemeSelected) -> Result<(), String> {
-        let config_path = get_theme_config_file_path(app.path()).map_err(|e| e.to_string())?;
+    let config_path = get_theme_config_file_path(app.path()).map_err(|e| e.to_string())?;
     let json_data = serde_json::to_string(&data).map_err(|e| e.to_string())?;
     fs::write(config_path, json_data).map_err(|e| e.to_string())
 }

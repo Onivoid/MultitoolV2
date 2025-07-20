@@ -1,0 +1,161 @@
+name: Release Windows Builds
+
+on:
+    push:
+        branches:
+            - master
+        tags:
+            - "v*.*.*"
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    build:
+        name: Build Windows Release
+        runs-on: windows-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: latest
+
+            - name: Install Rust
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  targets: x86_64-pc-windows-msvc
+
+            - name: Rust cache
+              uses: swatinem/rust-cache@v2
+              with:
+                  workspaces: "./src-tauri -> target"
+
+            - name: Install frontend dependencies
+              run: pnpm install
+
+            - name: Build All Releases (Standard, Portable - Publics uniquement)
+              run: |
+                  # Utilise le script PowerShell corrigé pour builds cohérents
+                  .\scripts\build-release.ps1 public
+              env:
+                  TAURI_ENV_DISTRIBUTION: github
+
+            - name: Verify Build Artifacts
+              run: |
+                  Write-Host "=== Vérification des artifacts de build ===" -ForegroundColor Cyan
+
+                  if (Test-Path "builds/portable/MultitoolV2-Portable.exe") {
+                    Write-Host "✅ Portable: $(Get-Item 'builds/portable/MultitoolV2-Portable.exe' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
+                  } else {
+                    Write-Host "❌ Portable manquant" -ForegroundColor Red
+                    exit 1
+                  }
+
+                  if (Test-Path "builds/installer/MultitoolV2-Installer.msi") {
+                    Write-Host "✅ Installer: $(Get-Item 'builds/installer/MultitoolV2-Installer.msi' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
+                  } else {
+                    Write-Host "❌ Installer manquant" -ForegroundColor Red
+                    exit 1
+                  }
+
+                  if (Test-Path "builds/checksums.txt") {
+                    Write-Host "✅ Checksums disponibles" -ForegroundColor Green
+                    Write-Host "Contenu:" -ForegroundColor Yellow
+                    Get-Content "builds/checksums.txt"
+                  } else {
+                    Write-Host "❌ Checksums manquants" -ForegroundColor Red
+                    exit 1
+                  }
+
+                  # Vérification que Microsoft Store n'est PAS présent (privé)
+                  if (Test-Path "builds/MicrosoftStoreMSI/*") {
+                    Write-Host "ℹ️ MSI Microsoft Store détecté mais sera exclu de la release publique" -ForegroundColor Yellow
+                  }
+
+            - name: Create Release Notes
+              run: |
+                  $version = "${{ github.ref_name }}"
+                  $notes = @"
+                  # MultitoolV2 $version - Release Windows (Non-signé)
+
+                  ## ⚠️ Avertissement Sécurité - Builds Non-signés
+
+                  Cette application n'est **pas signée numériquement** (certificat coûteux pour un projet open-source).
+                  Windows SmartScreen affichera un avertissement - c'est **normal et attendu**.
+
+                  ## 📥 Options d'Installation Recommandées
+
+                  1. **🏆 RECOMMANDÉ - Version Portable** : Aucune installation, pas d'avertissement SmartScreen
+                  2. **💻 Installer Standard** : Avertissement SmartScreen attendu (cliquez "Informations complémentaires" → "Exécuter quand même")
+
+                  ## 🔐 Vérification de Sécurité
+
+                  - ✅ **Code source ouvert** : Entièrement auditable sur GitHub
+                  - ✅ **Build reproductible** : Workflow GitHub Actions public  
+                  - ✅ **Checksums SHA256** : Vérification d'intégrité fournie ci-dessous
+
+                  ## 📋 Checksums SHA256
+
+                  ``````
+                  $(Get-Content builds/checksums.txt -Raw)
+                  ``````
+
+                  ### Comment installer une app non-signée sur Windows :
+                  1. Téléchargez le fichier souhaité
+                  2. Si SmartScreen apparaît : **"Informations complémentaires"** → **"Exécuter quand même"**
+                  3. Ou utilisez la **version portable** (recommandé - pas d'installation)
+
+                  ### Vérifier l'intégrité (optionnel) :
+                  ``````powershell
+                  Get-FileHash MultitoolV2-Installer.msi -Algorithm SHA256
+                  Get-FileHash MultitoolV2-Portable.exe -Algorithm SHA256
+                  ``````
+
+                  ---
+                  **Pourquoi pas de signature ?** Les certificats de signature coûtent ~300€/an. 
+                  Pour un projet gratuit et open-source, nous privilégions la transparence totale du code.
+
+                  **Microsoft Store :** Une version signée par Microsoft sera disponible séparément sur le Microsoft Store.
+                  "@
+
+                  $notes | Out-File -FilePath "RELEASE_NOTES.md" -Encoding utf8
+
+            - name: Upload Release Assets (Public uniquement)
+              uses: softprops/action-gh-release@v1
+              with:
+                  body_path: RELEASE_NOTES.md
+                  files: |
+                      builds/portable/MultitoolV2-Portable.exe
+                      builds/installer/MultitoolV2-Installer.msi
+                      builds/checksums.txt
+                  prerelease: false
+                  generate_release_notes: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build Summary
+              run: |
+                  Write-Host ""
+                  Write-Host "🎉 RELEASE CRÉÉE AVEC SUCCÈS!" -ForegroundColor Green
+                  Write-Host "Version: ${{ github.ref_name }}" -ForegroundColor Cyan
+                  Write-Host ""
+                  Write-Host "📦 Artifacts publics dans GitHub Release:" -ForegroundColor Yellow
+                  Write-Host "  • MultitoolV2-Portable.exe (Recommandé)" -ForegroundColor White
+                  Write-Host "  • MultitoolV2-Installer.msi" -ForegroundColor White
+                  Write-Host "  • checksums.txt" -ForegroundColor White
+                  Write-Host ""
+                  Write-Host "🔒 Artifacts privés (Microsoft Store) exclus de la release publique" -ForegroundColor Magenta
+                  Write-Host ""
+                  Write-Host "🌐 Release disponible sur:" -ForegroundColor Cyan
+                  Write-Host "   https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" -ForegroundColor Blue

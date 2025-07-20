@@ -55,28 +55,36 @@ pub fn is_game_translated(path: String, lang: String) -> bool {
 }
 
 #[command]
-pub fn init_translation_files(path: String, lang: String, translation_link: String) -> Result<(), String> {
+pub fn init_translation_files(
+    path: String,
+    lang: String,
+    translation_link: String,
+) -> Result<(), String> {
     let base_path = Path::new(&path);
 
     // Vérifier et créer le dossier 'data'
     let data_path = base_path.join("data");
     if !data_path.exists() {
-        fs::create_dir(&data_path).map_err(|e| format!("Erreur lors de la création de 'data': {}", e))?;
+        fs::create_dir(&data_path)
+            .map_err(|e| format!("Erreur lors de la création de 'data': {}", e))?;
     }
 
     // Vérifier et créer le dossier 'Localization'
     let localization_path = data_path.join("Localization");
     if !localization_path.exists() {
-        fs::create_dir(&localization_path).map_err(|e| format!("Erreur lors de la création de 'Localization': {}", e))?;
+        fs::create_dir(&localization_path)
+            .map_err(|e| format!("Erreur lors de la création de 'Localization': {}", e))?;
     }
 
     // Obtenir le nom du dossier de langue
-    let lang_folder_name = get_language_folder(&lang).ok_or_else(|| "Langue non prise en charge".to_string())?;
+    let lang_folder_name =
+        get_language_folder(&lang).ok_or_else(|| "Langue non prise en charge".to_string())?;
 
     // Vérifier et créer le dossier de langue
     let lang_folder_path = localization_path.join(lang_folder_name);
     if !lang_folder_path.exists() {
-        fs::create_dir(&lang_folder_path).map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+        fs::create_dir(&lang_folder_path)
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
     }
 
     // Télécharger et écrire le fichier 'global.ini' avec UTF-8 BOM
@@ -97,12 +105,14 @@ pub fn init_translation_files(path: String, lang: String, translation_link: Stri
 
     // Créer ou mettre à jour 'user.cfg' à la racine
     let user_cfg_path = base_path.join("user.cfg");
-    let mut file = File::create(&user_cfg_path).map_err(|e| format!("Erreur lors de la création de 'user.cfg': {}", e))?;
+    let mut file = File::create(&user_cfg_path)
+        .map_err(|e| format!("Erreur lors de la création de 'user.cfg': {}", e))?;
     let cfg_content = format!(
         "g_language = {}\ng_languageAudio = english\n",
         lang_folder_name
     );
-    file.write_all(cfg_content.as_bytes()).map_err(|e| format!("Erreur lors de l'écriture dans 'user.cfg': {}", e))?;
+    file.write_all(cfg_content.as_bytes())
+        .map_err(|e| format!("Erreur lors de l'écriture dans 'user.cfg': {}", e))?;
 
     Ok(())
 }
@@ -165,11 +175,16 @@ pub fn is_translation_up_to_date(path: String, translation_link: String, lang: S
 }
 
 #[command]
-pub fn update_translation(path: String, lang: String, translation_link: String) -> Result<(), String> {
+pub fn update_translation(
+    path: String,
+    lang: String,
+    translation_link: String,
+) -> Result<(), String> {
     let base_path = Path::new(&path);
 
     // Obtenir le nom du dossier de langue
-    let lang_folder_name = get_language_folder(&lang).ok_or_else(|| "Langue non prise en charge".to_string())?;
+    let lang_folder_name =
+        get_language_folder(&lang).ok_or_else(|| "Langue non prise en charge".to_string())?;
 
     // Chemin vers le dossier de langue
     let lang_folder_path = base_path
@@ -179,7 +194,8 @@ pub fn update_translation(path: String, lang: String, translation_link: String) 
 
     // Vérifier et créer le dossier de langue s'il n'existe pas
     if !lang_folder_path.exists() {
-        fs::create_dir_all(&lang_folder_path).map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+        fs::create_dir_all(&lang_folder_path)
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
     }
 
     // Chemin vers le fichier 'global.ini' local
@@ -212,13 +228,15 @@ pub fn uninstall_translation(path: String) -> Result<(), String> {
     // Supprimer le dossier 'data'
     let data_path = base_path.join("data");
     if data_path.exists() {
-        fs::remove_dir_all(&data_path).map_err(|e| format!("Erreur lors de la suppression de 'data': {}", e))?;
+        fs::remove_dir_all(&data_path)
+            .map_err(|e| format!("Erreur lors de la suppression de 'data': {}", e))?;
     }
 
     // Supprimer le fichier 'user.cfg'
     let user_cfg_path = base_path.join("user.cfg");
     if user_cfg_path.exists() {
-        fs::remove_file(&user_cfg_path).map_err(|e| format!("Erreur lors de la suppression de 'user.cfg': {}", e))?;
+        fs::remove_file(&user_cfg_path)
+            .map_err(|e| format!("Erreur lors de la suppression de 'user.cfg': {}", e))?;
     }
 
     Ok(())

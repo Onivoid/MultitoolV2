@@ -1,9 +1,9 @@
-use std::env;
-use std::fs;
-use std::path::Path;
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::env;
+use std::fs;
+use std::path::Path;
 use tauri::command;
 
 fn get_log_file_path() -> Option<String> {
@@ -41,10 +41,7 @@ fn check_and_add_path(path: &str, check_exists: bool, sc_install_paths: &mut Vec
     }
 }
 
-fn get_game_install_path(
-    list_data: Vec<String>,
-    check_exists: bool,
-) -> Vec<String> {
+fn get_game_install_path(list_data: Vec<String>, check_exists: bool) -> Vec<String> {
     let mut sc_install_paths = Vec::new();
 
     // Expression régulière pour détecter les chemins avec des versions dynamiques
@@ -54,11 +51,7 @@ fn get_game_install_path(
     for line in list_data.iter().rev() {
         for cap in re.captures_iter(line) {
             if let Some(matched_path) = cap.get(0) {
-                check_and_add_path(
-                    matched_path.as_str(),
-                    check_exists,
-                    &mut sc_install_paths,
-                );
+                check_and_add_path(matched_path.as_str(), check_exists, &mut sc_install_paths);
             }
         }
     }
@@ -97,11 +90,14 @@ pub fn get_star_citizen_versions() -> VersionPaths {
     for path in &sc_install_paths {
         let version = get_game_channel_id(path);
         if version != "UNKNOWN" && !versions.contains_key(&version) {
-            versions.insert(version, VersionInfo {
-                path: path.clone(),
-                translated: false,
-                up_to_date: false,
-            });
+            versions.insert(
+                version,
+                VersionInfo {
+                    path: path.clone(),
+                    translated: false,
+                    up_to_date: false,
+                },
+            );
         }
     }
     VersionPaths { versions }

@@ -23,4 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Build artifacts
+builds/
+
 .env
+todo.md
