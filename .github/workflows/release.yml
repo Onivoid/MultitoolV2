@@ -29,6 +29,8 @@ jobs:
               uses: pnpm/action-setup@v2
               with:
                   version: latest
+            - name: Add pnpm to PATH
+              run: echo "$APPDATA\\pnpm" >> $GITHUB_PATH
 
             - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
