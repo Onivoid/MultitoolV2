@@ -19,18 +19,16 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "pnpm"
-
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
                   version: latest
-            - name: Add pnpm to PATH
-              run: echo "$APPDATA\\pnpm" >> $GITHUB_PATH
+
+            - name: Setup Node.js with pnpm cache
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
 
             - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
