@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from './use-toast';
+import { getBuildInfo } from '@/utils/buildInfo';
 
 interface UpdateInfo {
   version: string;
@@ -20,7 +21,6 @@ interface UseUpdaterState {
 
 interface UseUpdaterConfig {
   checkOnStartup?: boolean;
-  autoDownload?: boolean;
   enableAutoUpdater?: boolean;
   githubRepo?: string;
 }
@@ -46,6 +46,13 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     isInstalling: false
   });
 
+  const [buildInfo, setBuildInfo] = useState<any>(null);
+
+  // Charger les infos de build au démarrage
+  useEffect(() => {
+    getBuildInfo().then(setBuildInfo).catch(console.error);
+  }, []);
+
   // Récupérer les préférences utilisateur depuis localStorage
   const getAutoUpdateSetting = useCallback(() => {
     return localStorage.getItem('autoUpdate') !== 'false'; // Opt-out par défaut
@@ -65,12 +72,35 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
 
   // Déterminer si c'est un build non-signé
   const isUnsignedBuild = useCallback(() => {
-    // En mode dev, on simule un build non-signé
-    return true;
-  }, []);
+    if (!buildInfo) return true; // Par défaut, considérer non-signé
+    return !buildInfo.isSigned;
+  }, [buildInfo]);
+
+  // Vérifier si les mises à jour sont supportées
+  const canUpdate = useCallback(() => {
+    if (!buildInfo) return false;
+    // Microsoft Store gère ses propres mises à jour
+    return buildInfo.distribution !== 'microsoft-store' && buildInfo.canAutoUpdate;
+  }, [buildInfo]);
 
   // Vérifier les mises à jour
   const checkForUpdates = useCallback(async (silent = false) => {
+    // Vérifier d'abord si les mises à jour sont supportées
+    if (!canUpdate()) {
+      if (!silent) {
+        const message = buildInfo?.distribution === 'microsoft-store' 
+          ? "Les mises à jour sont gérées automatiquement par le Microsoft Store."
+          : "Les mises à jour automatiques ne sont pas supportées pour cette version.";
+        
+        toast({
+          title: "Mises à jour non supportées",
+          description: message,
+          variant: "default"
+        });
+      }
+      return;
+    }
+
     if (!enableAutoUpdater) {
       if (!silent) {
         toast({
@@ -109,10 +139,19 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     } finally {
       setState(prev => ({ ...prev, isChecking: false }));
     }
-  }, [enableAutoUpdater, toast]);
+  }, [enableAutoUpdater, canUpdate, buildInfo, toast]);
 
   // Télécharger la mise à jour
   const downloadUpdate = useCallback(async () => {
+    if (!canUpdate()) {
+      toast({
+        title: "Téléchargement non supporté",
+        description: "Veuillez télécharger manuellement depuis GitHub ou le Microsoft Store.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setState(prev => ({ ...prev, isDownloading: true, downloadProgress: 0 }));
 
     try {
@@ -150,7 +189,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
         variant: "destructive"
       });
     }
-  }, [toast]);
+  }, [canUpdate, toast]);
 
   // Ouvrir GitHub pour téléchargement manuel
   const openGitHubReleases = useCallback(async () => {
@@ -167,7 +206,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
 
   // Vérification au démarrage
   useEffect(() => {
-    if (checkOnStartup && getAutoUpdateSetting() && enableAutoUpdater) {
+    if (checkOnStartup && getAutoUpdateSetting() && enableAutoUpdater && canUpdate()) {
       // Attendre un peu après le démarrage
       const timer = setTimeout(() => {
         checkForUpdates(true);
@@ -175,7 +214,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
 
       return () => clearTimeout(timer);
     }
-  }, [checkOnStartup, checkForUpdates, getAutoUpdateSetting, enableAutoUpdater]);
+  }, [checkOnStartup, checkForUpdates, getAutoUpdateSetting, enableAutoUpdater, canUpdate]);
 
   return {
     ...state,
@@ -185,6 +224,8 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     isUnsignedBuild: isUnsignedBuild(),
     autoUpdateEnabled: getAutoUpdateSetting(),
     setAutoUpdateEnabled: setAutoUpdateSetting,
-    getGitHubReleaseUrl
+    getGitHubReleaseUrl,
+    canUpdate: canUpdate(),
+    distribution: buildInfo?.distribution || 'unknown'
   };
 } 
