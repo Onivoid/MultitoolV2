@@ -1,11 +1,11 @@
+use crate::scripts::gamepath::get_star_citizen_versions;
+use regex::Regex;
+use reqwest::blocking::Client;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use tauri::command;
 use tokio::process::Command;
-use crate::scripts::gamepath::get_star_citizen_versions;
-use reqwest::blocking::Client;
-use regex::Regex;
 
 #[derive(Serialize)]
 pub struct LocalCharacterInfo {
@@ -36,10 +36,12 @@ pub fn get_character_informations(path: String) -> Result<String, String> {
                 match entry {
                     Ok(entry) => {
                         let path = entry.path();
-                        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("chf") {
+                        if path.is_file()
+                            && path.extension().and_then(|s| s.to_str()) == Some("chf")
+                        {
                             if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
                                 let version = extract_version_from_path(&path);
-                                
+
                                 let character_info = LocalCharacterInfo {
                                     name: file_name.to_string(),
                                     path: path.to_string_lossy().to_string(),
@@ -77,7 +79,7 @@ pub fn delete_character(path: &str) -> bool {
     } else {
         return false; // On ne supprime que les fichiers de personnages
     };
-    
+
     match result {
         Ok(_) => true,
         Err(e) => {
@@ -92,14 +94,17 @@ pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     let base_path = Path::new(&path);
 
     if !base_path.exists() {
-        return Err(format!("Le dossier '{}' n'existe pas.", base_path.display()));
+        return Err(format!(
+            "Le dossier '{}' n'existe pas.",
+            base_path.display()
+        ));
     }
 
     Command::new("explorer")
         .arg(&base_path)
         .spawn()
         .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
-    
+
     Ok(true)
 }
 
@@ -174,8 +179,13 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
         .join("customcharacters");
 
     if !dest_dir.exists() {
-        fs::create_dir_all(&dest_dir)
-            .map_err(|e| format!("Erreur lors de la création du dossier '{}': {}", dest_dir.display(), e))?;
+        fs::create_dir_all(&dest_dir).map_err(|e| {
+            format!(
+                "Erreur lors de la création du dossier '{}': {}",
+                dest_dir.display(),
+                e
+            )
+        })?;
     }
 
     let re = Regex::new(r#"[<>:"/\\|?*]"#).unwrap();
@@ -201,12 +211,12 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
 fn extract_version_from_path(path: &Path) -> String {
     let path_str = path.to_string_lossy();
     let components: Vec<&str> = path_str.split('\\').collect();
-    
+
     for (i, component) in components.iter().enumerate() {
         if component == &"StarCitizen" && i + 1 < components.len() {
             return components[i + 1].to_string();
         }
     }
-    
+
     "Unknown".to_string()
 }

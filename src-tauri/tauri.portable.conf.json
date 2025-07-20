@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "Multitool",
-    "version": "2.0.0",
-    "identifier": "com.multitool.app",
+    "productName": "MultitoolV2-Portable",
+    "version": "0.1.0",
+    "identifier": "com.multitools.app.portable",
     "build": {
         "beforeDevCommand": "pnpm dev",
         "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
     "app": {
         "windows": [
             {
-                "title": "MultiTool V2",
+                "title": "MultiTool V2 - Portable",
                 "minWidth": 1230,
                 "minHeight": 690,
                 "center": true,
@@ -26,7 +26,7 @@
     },
     "bundle": {
         "active": true,
-        "targets": "all",
+        "targets": ["msi"],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",
@@ -37,15 +37,7 @@
     },
     "plugins": {
         "updater": {
-            "active": true,
-            "endpoints": [
-                "https://api.github.com/repos/Onivoid/MultitoolV2/releases/latest"
-            ],
-            "dialog": true,
-            "pubkey": "",
-            "windows": {
-                "installMode": "quiet"
-            }
+            "active": false
         }
     }
-}
+} 

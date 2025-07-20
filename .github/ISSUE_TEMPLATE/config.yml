@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord - Support Communautaire
+    url: https://discord.com/invite/aUEEdMdS6j
+    about: Rejoignez le Discord pour obtenir de l'aide rapidement et discuter avec la communauté
+  - name: 🛡️ Signaler une Vulnérabilité de Sécurité
+    url: https://github.com/Onivoid/MultitoolV2/security/advisories/new
+    about: Signalez de manière responsable une vulnérabilité de sécurité (ne pas créer d'issue publique)
+  - name: 💡 Discussions - Ideas & Questions
+    url: https://github.com/Onivoid/MultitoolV2/discussions
+    about: Pour les discussions générales, questions, et échange d'idées avec la communauté
+  - name: 📚 Documentation - BUILD.md
+    url: https://github.com/Onivoid/MultitoolV2/blob/main/BUILD.md
+    about: Instructions complètes pour compiler MultitoolV2 depuis le code source
+  - name: 🤝 Guide de Contribution
+    url: https://github.com/Onivoid/MultitoolV2/blob/main/CONTRIBUTING.md
+    about: Comment contribuer au projet - standards de code, processus de PR, etc. 

@@ -19,7 +19,8 @@ struct Output {
 
 #[command]
 pub fn get_cache_informations() -> String {
-    let appdata = env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
+    let appdata =
+        env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
     let star_citizen_path = format!("{}\\Star Citizen", appdata);
 
     let mut folders = Vec::new();
@@ -35,12 +36,16 @@ pub fn get_cache_informations() -> String {
             }
         }
         Err(e) => {
-            println!("Erreur lors de l'accès au répertoire {}: {}", star_citizen_path, e);
+            println!(
+                "Erreur lors de l'accès au répertoire {}: {}",
+                star_citizen_path, e
+            );
         }
     }
 
     let output = Output { folders };
-    let json_output = serde_json::to_string_pretty(&output).expect("Erreur lors de la sérialisation en JSON");
+    let json_output =
+        serde_json::to_string_pretty(&output).expect("Erreur lors de la sérialisation en JSON");
     json_output
 }
 
@@ -64,7 +69,9 @@ fn get_weight(path: &Path) -> String {
             let entry = entry.expect("Erreur lors de la lecture de l'entrée");
             let path = entry.path();
             if path.is_file() {
-                total_size += fs::metadata(&path).expect("Impossible de lire les métadonnées").len();
+                total_size += fs::metadata(&path)
+                    .expect("Impossible de lire les métadonnées")
+                    .len();
             } else if path.is_dir() {
                 total_size += get_folder_size(&path);
             }
@@ -82,7 +89,9 @@ fn get_folder_size(path: &Path) -> u64 {
         let entry = entry.expect("Erreur lors de la lecture de l'entrée");
         let path = entry.path();
         if path.is_file() {
-            total_size += fs::metadata(&path).expect("Impossible de lire les métadonnées").len();
+            total_size += fs::metadata(&path)
+                .expect("Impossible de lire les métadonnées")
+                .len();
         } else if path.is_dir() {
             total_size += get_folder_size(&path);
         }
@@ -107,9 +116,10 @@ pub fn delete_folder(path: &str) -> bool {
     }
 }
 
-#[command] 
+#[command]
 pub fn clear_cache() -> bool {
-    let appdata = env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
+    let appdata =
+        env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
     let star_citizen_path = format!("{}\\Star Citizen", appdata);
 
     if let Ok(entries) = fs::read_dir(&star_citizen_path) {
@@ -135,18 +145,19 @@ pub fn clear_cache() -> bool {
 
 #[command]
 pub fn open_cache_folder() -> Result<bool, String> {
-    let appdata = env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
+    let appdata =
+        env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
     let star_citizen_path = format!("{}\\Star Citizen", appdata);
 
-        // Vérifie si le chemin existe
-        if std::path::Path::new(&star_citizen_path).exists() {
-            // Ouvre le dossier dans l'explorateur de fichiers
-            Command::new("explorer")
-                .arg(&star_citizen_path)
-                .spawn()
-                .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
-            Ok(true)
-        } else {
-            Err(format!("Le dossier '{}' n'existe pas.", star_citizen_path))
-        }
+    // Vérifie si le chemin existe
+    if std::path::Path::new(&star_citizen_path).exists() {
+        // Ouvre le dossier dans l'explorateur de fichiers
+        Command::new("explorer")
+            .arg(&star_citizen_path)
+            .spawn()
+            .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
+        Ok(true)
+    } else {
+        Err(format!("Le dossier '{}' n'existe pas.", star_citizen_path))
+    }
 }
