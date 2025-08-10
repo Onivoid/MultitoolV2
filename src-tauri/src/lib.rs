@@ -1,5 +1,6 @@
 mod scripts;
 
+use is_elevated::is_elevated;
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
 };
@@ -26,6 +27,51 @@ async fn open_external(url: String, app_handle: tauri::AppHandle) -> Result<(), 
     match app_handle.shell().open(url, None) {
         Ok(_) => Ok(()),
         Err(e) => Err(e.to_string()),
+    }
+}
+
+#[command]
+async fn restart_as_admin() -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let exe_str = exe
+            .to_str()
+            .ok_or_else(|| "Chemin exécutable invalide".to_string())?;
+        // Échapper les quotes pour PowerShell
+        let escaped = exe_str.replace("'", "''");
+        Command::new("powershell")
+            .creation_flags(CREATE_NO_WINDOW)
+            .arg("-NoProfile")
+            .arg("-WindowStyle")
+            .arg("Hidden")
+            .arg("-Command")
+            .arg(format!(
+                "Start-Process -FilePath '{}' -Verb RunAs -WindowStyle Hidden",
+                escaped
+            ))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Élévation non supportée sur cette plateforme".to_string())
+    }
+}
+
+#[command]
+fn is_running_as_admin() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        is_elevated()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
     }
 }
 
@@ -69,6 +115,8 @@ pub fn run() {
             download_character,
             get_characters,
             open_external,
+            is_running_as_admin,
+            restart_as_admin,
             clear_cache,
             open_cache_folder,
         ])

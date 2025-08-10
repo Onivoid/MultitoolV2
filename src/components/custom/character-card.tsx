@@ -10,16 +10,19 @@ import {
 import { Lens } from "@/components/magicui/lens";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
+import logger from "@/utils/logger";
+import { toFriendlyFsError } from "@/utils/fs-permissions";
+import openExternal from "@/utils/external";
 
 export function CharacterCard(
     { url, name, owner, downloads, likes, characterid, dnaurl }:
-    { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
+        { url: string, name: string, owner: string, downloads: number, likes: number, characterid: string, dnaurl: string }
 ) {
     const { toast } = useToast();
 
     const openExternalLink = async (id: string) => {
-        console.log("Opening external link for character ID:", id);
-        await invoke("open_external", { url: `https://www.star-citizen-characters.com/character/${id}` });
+        logger.log("Opening external link for character ID:", id);
+        await openExternal(`https://www.star-citizen-characters.com/character/${id}`);
     };
 
     const handleDownload = async () => {
@@ -29,15 +32,16 @@ export function CharacterCard(
                 toast({
                     title: "Preset téléchargé",
                     description: "Le preset a été ajouté dans vos versions.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
             }
         } catch (error) {
             toast({
                 title: "Erreur",
-                description: `Une erreur est survenue : ${error}`,
+                description: toFriendlyFsError(error),
                 variant: "destructive",
+                duration: 4000,
             });
         }
     };

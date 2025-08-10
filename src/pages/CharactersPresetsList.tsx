@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { RemoteCharactersPresetsList, Row } from "@/types/charactersList";
 import { CharacterCard } from '@/components/custom/character-card';
+import logger from "@/utils/logger";
 
 function CharactersPresetsList() {
     const { toast } = useToast();
@@ -12,26 +13,36 @@ function CharactersPresetsList() {
     const [isLoading, setIsLoading] = useState(false);
     const hasInitialized = useRef(false);
     const [hasMore, setHasMore] = useState(true);
-    const orderType = useRef<string>("download");
+    const [sort, setSort] = useState<"latest" | "download">("latest");
+    const orderRef = useRef<"latest" | "download">("latest");
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const lastSearchTerm = useRef<string>("");
 
     const getCharacters = useCallback(
-        async (nextPage?: number, newSearchTerm?: string) => {
-            if (isLoading || !hasMore) return;
+        async (
+            nextPage?: number,
+            newSearchTerm?: string,
+            force = false
+        ) => {
+            if ((isLoading && !force) || !hasMore) return;
             setIsLoading(true);
             const pageToFetch = nextPage || page;
             const search = typeof newSearchTerm === "string" ? newSearchTerm : debouncedSearch;
+            const orderToUse = orderRef.current;
             try {
-                const result: RemoteCharactersPresetsList = await invoke("get_characters", {
+                const result: any = await invoke("get_characters", {
                     page: pageToFetch,
-                    orderType: orderType.current,
+                    orderType: orderRef.current,
                     search: search && search.length > 0 ? search : undefined,
                 });
-                console.log("RESULT : Fetching characters presets...");
-                console.log(result);
-                const newRows = result.body.rows;
+                logger.log('ORDER USED =>', orderToUse);
+                logger.log("RESULT : Fetching characters presets...");
+                logger.log(result);
+                if (result?.tauriDebug) {
+                    logger.log('TAURI DEBUG =>', result.tauriDebug);
+                }
+                const newRows = (result as RemoteCharactersPresetsList).body.rows;
                 if (newRows.length === 0) {
                     setHasMore(false);
                 } else {
@@ -43,7 +54,7 @@ function CharactersPresetsList() {
                     setPage(pageToFetch + 1);
                 }
             } catch (error) {
-                console.error("Error fetching characters presets:", error);
+                logger.error("Error fetching characters presets:", error);
                 toast({
                     title: "Erreur de chargement",
                     description: "Impossible de récupérer les personnages. Veuillez réessayer plus tard.",
@@ -53,7 +64,7 @@ function CharactersPresetsList() {
                 setIsLoading(false);
             }
         },
-        [hasMore, page, debouncedSearch]
+        [hasMore, page, debouncedSearch, isLoading]
     );
     // Debounce de la recherche
     useEffect(() => {
@@ -111,20 +122,45 @@ function CharactersPresetsList() {
             }}
             className="flex w-full flex-col"
         >
-            {/* Barre de recherche */}
-            <div className="w-full flex justify-center items-center my-4">
+            {/* Barre de recherche + Tri */}
+            <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-3 my-4">
                 <input
                     type="text"
                     placeholder="Rechercher un personnage..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="border rounded px-4 py-2 w-full max-w-md shadow bg-background/30"
+                    className="border rounded px-4 py-2 w-full md:max-w-md shadow bg-background/30"
                 />
+                <div className="flex items-center gap-2">
+                    {[
+                        { key: 'latest' as const, label: 'Récents' },
+                        { key: 'download' as const, label: 'Populaires' },
+                    ].map(opt => (
+                        <button
+                            key={opt.key}
+                            onClick={() => {
+                                orderRef.current = opt.key;
+                                setSort(opt.key);
+                                setCharactersPresets([]);
+                                setPage(1);
+                                setHasMore(true);
+                                // Forcer la requête même si un chargement était en cours
+                                getCharacters(1, debouncedSearch, true);
+                            }}
+                            className={`px-3 py-1 rounded border text-sm ${sort === opt.key ? 'bg-primary text-primary-foreground' : 'bg-background/30'}`}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
             </div>
             <div
                 ref={gridRef}
                 className="grid grid-cols-3 xl:grid-cols-5 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto"
             >
+                {charactersPresets.length === 0 && isLoading && Array.from({ length: 12 }).map((_, i) => (
+                    <div key={`skeleton-${i}`} className="h-64 rounded bg-background/30 animate-pulse" />
+                ))}
                 {charactersPresets.map((character, index) => {
                     // On réinitialise le delay à chaque batch de 12
                     const batchSize = 12;

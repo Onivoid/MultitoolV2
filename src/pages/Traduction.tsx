@@ -7,6 +7,7 @@ import {
     TranslationsChoosen,
 } from "@/types/translation";
 import { Button } from "@/components/ui/button";
+import logger from "@/utils/logger";
 import { Loader2, XCircle, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +23,15 @@ export default function Traduction() {
 
     const defaultLanguage = "fr";
     const { toast } = useToast();
+
+    const isProtectedPath = (p: string) => /:\\Program Files( \(x86\))?\\/i.test(p);
+    const toFriendlyFsError = (err: unknown) => {
+        const msg = String(err ?? "");
+        if (/Accès refusé|Access is denied|os error 5|Permission denied/i.test(msg)) {
+            return "Accès refusé. Essayez de lancer l'application en tant qu'administrateur ou installez le jeu en dehors de 'Program Files'.";
+        }
+        return msg;
+    };
 
     const getDefaultTranslationsState = (): TranslationsChoosen => {
         if (!paths) return {};
@@ -41,20 +51,20 @@ export default function Traduction() {
             try {
                 const versions = await invoke("get_star_citizen_versions");
                 if (isGamePaths(versions)) {
-                    console.log("Versions du jeu reçues:", versions);
+                    logger.log("Versions du jeu reçues:", versions);
                     setPaths(versions);
                 }
 
-                console.log("Récupération des traductions...");
+                logger.log("Récupération des traductions...");
                 const translationsData = await invoke("get_translations");
-                console.log("Données de traduction reçues:", translationsData);
+                logger.log("Données de traduction reçues:", translationsData);
 
                 const savedPrefs: TranslationsChoosen = await invoke("load_translations_selected");
                 if (savedPrefs && typeof savedPrefs === "object") {
-                    console.log("Préférences de traduction chargées:", savedPrefs);
+                    logger.log("Préférences de traduction chargées:", savedPrefs);
                     setTranslationsSelected(savedPrefs);
                 } else {
-                    console.log("Initialisation avec les préférences par défaut");
+                    logger.log("Initialisation avec les préférences par défaut");
                     setTranslationsSelected(getDefaultTranslationsState());
                 }
 
@@ -153,17 +163,25 @@ export default function Traduction() {
 
     const handleInstallTranslation = useCallback(
         async (versionPath: string, version: string) => {
-            console.log("Installation de la traduction pour la version:", version);
+            logger.log("Installation de la traduction pour la version:", version);
             if (!translationsSelected) return;
 
-            setLoadingButtonId(version);
+            setLoadingButtonId(`install-${version}`);
+            if (isProtectedPath(versionPath)) {
+                toast({
+                    title: "Chemin protégé",
+                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
+                    success: "false",
+                    duration: 5000,
+                });
+            }
 
             const versionSettings = translationsSelected[version as keyof TranslationsChoosen];
             if (!versionSettings || !versionSettings.link) {
-                console.log("Récupération de la traduction settings-fr...");
+                logger.log("Récupération de la traduction settings-fr...");
                 try {
                     const translationData = await invoke("get_translation_by_setting", { settingType: "settings-fr" });
-                    console.log("Données reçues:", translationData);
+                    logger.log("Données reçues:", translationData);
 
                     let link = null;
 
@@ -184,7 +202,7 @@ export default function Traduction() {
                         }
                     }
 
-                    console.log("Lien extrait:", link);
+                    logger.log("Lien extrait:", link);
 
                     if (link) {
                         const updatedTranslations = {
@@ -198,7 +216,7 @@ export default function Traduction() {
                         setTranslationsSelected(updatedTranslations);
                         saveSelectedTranslations(updatedTranslations);
 
-                        console.log("Installation avec lien:", link);
+                        logger.log("Installation avec lien:", link);
                         await invoke("init_translation_files", {
                             path: versionPath,
                             translationLink: link,
@@ -208,7 +226,7 @@ export default function Traduction() {
                         toast({
                             title: "Traduction installée",
                             description: "La traduction a été installée avec succès.",
-                            success: "true",
+                            variant: "success",
                             duration: 3000,
                         });
 
@@ -223,18 +241,18 @@ export default function Traduction() {
                         setLoadingButtonId(null);
                     }
                 } catch (error) {
-                    console.error("Erreur lors de la récupération du lien:", error);
+                    logger.error("Erreur lors de la récupération du lien:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${error}`,
-                        success: "false",
-                        duration: 3000,
+                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        variant: "destructive",
+                        duration: 4000,
                     });
                     setLoadingButtonId(null);
                 }
             } else {
                 try {
-                    console.log("Installation avec le lien existant:", versionSettings.link);
+                    logger.log("Installation avec le lien existant:", versionSettings.link);
 
                     await invoke("init_translation_files", {
                         path: versionPath,
@@ -245,18 +263,18 @@ export default function Traduction() {
                     toast({
                         title: "Traduction installée",
                         description: "La traduction a été installée avec succès.",
-                        success: "true",
+                        variant: "success",
                         duration: 3000,
                     });
 
                     if (paths) CheckTranslationsState(paths);
                 } catch (error) {
-                    console.error("Erreur d'installation:", error);
+                    logger.error("Erreur d'installation:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${error}`,
-                        success: "false",
-                        duration: 3000,
+                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        variant: "destructive",
+                        duration: 4000,
                     });
                     setLoadingButtonId(null);
                 }
@@ -271,20 +289,38 @@ export default function Traduction() {
             translationLink: string,
             buttonId: string,
         ) => {
-            setLoadingButtonId(buttonId);
-            invoke("update_translation", {
-                path: versionPath,
-                translationLink: translationLink,
-                lang: defaultLanguage,
-            }).then(() => {
+            setLoadingButtonId(`update-${buttonId}`);
+            if (isProtectedPath(versionPath)) {
+                toast({
+                    title: "Chemin protégé",
+                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
+                    success: "false",
+                    duration: 5000,
+                });
+            }
+            try {
+                await invoke("update_translation", {
+                    path: versionPath,
+                    translationLink: translationLink,
+                    lang: defaultLanguage,
+                });
                 toast({
                     title: "Traduction mise à jour",
                     description: "La traduction a été mise à jour avec succès.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);
-            });
+            } catch (error) {
+                toast({
+                    title: "Erreur de mise à jour",
+                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    variant: "destructive",
+                    duration: 4000,
+                });
+            } finally {
+                setLoadingButtonId(null);
+            }
         },
         [toast, paths, CheckTranslationsState],
     );
@@ -294,13 +330,13 @@ export default function Traduction() {
             if (!translationsSelected) return;
 
             const settingType = settingsEN ? "settings-en" : "settings-fr";
-            console.log(`Récupération de la traduction pour ${settingType}...`);
+            logger.log(`Récupération de la traduction pour ${settingType}...`);
 
             try {
                 setLoadingButtonId(`switch-${version}`);
 
                 const translationData = await invoke("get_translation_by_setting", { settingType });
-                console.log("Données reçues:", translationData);
+                logger.log("Données reçues:", translationData);
 
                 let link = null;
 
@@ -321,7 +357,7 @@ export default function Traduction() {
                     }
                 }
 
-                console.log("Lien extrait:", link);
+                logger.log("Lien extrait:", link);
 
                 if (link) {
                     const updatedTranslations = {
@@ -383,7 +419,7 @@ export default function Traduction() {
 
                 setLoadingButtonId(null);
             } catch (error) {
-                console.error("Erreur lors du changement de paramètres:", error);
+                logger.error("Erreur lors du changement de paramètres:", error);
                 toast({
                     title: "Erreur de configuration",
                     description: `Une erreur est survenue: ${error}`,
@@ -423,15 +459,23 @@ export default function Traduction() {
 
     const handleUninstallTranslation = useCallback(
         async (versionPath: string) => {
-            invoke("uninstall_translation", { path: versionPath }).then(() => {
+            try {
+                await invoke("uninstall_translation", { path: versionPath });
                 toast({
                     title: "Traduction désinstallée",
                     description: "La traduction a été désinstallée avec succès.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);
-            });
+            } catch (error) {
+                toast({
+                    title: "Erreur de désinstallation",
+                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    success: "false",
+                    duration: 4000,
+                });
+            }
         },
         [toast, paths, CheckTranslationsState],
     );
@@ -516,10 +560,10 @@ export default function Traduction() {
                             {!value.translated && (
                                 <Button
                                     size="sm"
-                                    disabled={loadingButtonId === key}
+                                    disabled={loadingButtonId === `install-${key}`}
                                     onClick={() => handleInstallTranslation(value.path, key)}
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `install-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Installation...
@@ -533,7 +577,7 @@ export default function Traduction() {
                                 <Button
                                     variant={"secondary"}
                                     size="sm"
-                                    disabled={loadingButtonId === key}
+                                    disabled={loadingButtonId === `update-${key}`}
                                     onClick={() =>
                                         handleUpdateTranslation(
                                             value.path,
@@ -542,7 +586,7 @@ export default function Traduction() {
                                         )
                                     }
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `update-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Mise à jour...
@@ -556,10 +600,17 @@ export default function Traduction() {
                                 <Button
                                     variant={"destructive"}
                                     size="sm"
-                                    disabled={loadingButtonId === key}
-                                    onClick={() => handleUninstallTranslation(value.path)}
+                                    disabled={loadingButtonId === `uninstall-${key}`}
+                                    onClick={async () => {
+                                        setLoadingButtonId(`uninstall-${key}`);
+                                        try {
+                                            await handleUninstallTranslation(value.path);
+                                        } finally {
+                                            setLoadingButtonId(null);
+                                        }
+                                    }}
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `uninstall-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Désinstallation...

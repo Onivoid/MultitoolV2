@@ -81,6 +81,24 @@
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
 }
+
+/* Utilitaire: halo pulsé doux pour le bouton admin */
+@keyframes admin-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 8px 3px rgba(250, 204, 21, 0.5);
+    }
+}
+
+@layer utilities {
+    .admin-pulse {
+        animation: admin-pulse 5s ease-in-out infinite;
+        will-change: box-shadow;
+    }
+}
 @layer base {
     * {
         @apply border-border;

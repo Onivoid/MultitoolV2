@@ -5,7 +5,7 @@ import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
-const TOAST_LIMIT = 1;
+const TOAST_LIMIT = 2;
 const TOAST_REMOVE_DELAY = 100000;
 
 type ToasterToast = ToastProps & {
@@ -143,6 +143,23 @@ type Toast = Omit<ToasterToast, "id">;
 function toast({ ...props }: Toast) {
     const id = genId();
 
+    const pickDefaultDuration = (
+        variant?: ToastProps["variant"],
+        provided?: number
+    ) => {
+        if (typeof provided === "number") return provided;
+        switch (variant) {
+            case "success":
+                return 2500;
+            case "warning":
+                return 3500;
+            case "destructive":
+                return 4000;
+            default:
+                return 3000;
+        }
+    };
+
     const update = (props: ToasterToast) =>
         dispatch({
             type: "UPDATE_TOAST",
@@ -155,6 +172,10 @@ function toast({ ...props }: Toast) {
         toast: {
             ...props,
             id,
+            duration: pickDefaultDuration(
+                props.variant,
+                (props as any).duration
+            ),
             open: true,
             onOpenChange: (open) => {
                 if (!open) dismiss();

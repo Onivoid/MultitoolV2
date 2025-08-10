@@ -30,13 +30,25 @@ export function SecurityWarning({ onContinue }: SecurityWarningProps) {
     const [open, setOpen] = useState(false);
     const [understood, setUnderstood] = useState(false);
     const [neverShowAgain, setNeverShowAgain] = useState(false);
+    const [shouldShow, setShouldShow] = useState(false);
 
-    // Vérifier si c'est le premier lancement
+    // Afficher seulement pour les builds non signés (GitHub/Portable)
     useEffect(() => {
-        const hasSeenWarning = localStorage.getItem('security-warning-seen');
-        if (!hasSeenWarning) {
-            setOpen(true);
-        }
+        const init = async () => {
+            try {
+                const { shouldShowSecurityWarning } = await import('@/utils/buildInfo');
+                const show = await shouldShowSecurityWarning();
+                setShouldShow(show);
+                const hasSeenWarning = localStorage.getItem('security-warning-seen');
+                if (show && !hasSeenWarning) {
+                    setOpen(true);
+                }
+            } catch {
+                // En cas d'erreur, ne rien afficher
+                setShouldShow(false);
+            }
+        };
+        void init();
     }, []);
 
     const handleContinue = () => {
@@ -52,6 +64,8 @@ export function SecurityWarning({ onContinue }: SecurityWarningProps) {
         setOpen(false);
         onContinue();
     };
+
+    if (!shouldShow) return null;
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

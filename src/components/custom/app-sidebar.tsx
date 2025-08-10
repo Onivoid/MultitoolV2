@@ -59,6 +59,12 @@ const menuItems = [
         icon: <Download size={20} />,
         label: "Mises à jour",
         tooltip: "Mises à jour"
+    },
+    {
+        path: "/patchnotes",
+        icon: <IconBrandGithub size={20} />,
+        label: "Patchnotes",
+        tooltip: "Patchnotes"
     }
 ];
 
@@ -101,7 +107,7 @@ const socialLinks = [
         tooltip: "Github"
     },
     {
-        href: "https://multitool.onivoid.fr/",
+        href: "https://multitoolv2.onivoid.fr/",
         icon: <IconCloud size={20} />,
         label: "Site web",
         tooltip: "Site web"
@@ -123,12 +129,14 @@ const externalServices = [
         tooltip: "SC Characters (Presets)"
     }
 ];
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ColorPicker } from "@/components/custom/color-picker";
 import { useSidebar } from "@/components/ui/sidebar";
+import openExternal from "@/utils/external";
 
 export function AppSidebar() {
     const { state } = useSidebar();
+    const location = useLocation();
     return (
         <Sidebar>
             <SidebarHeader />
@@ -144,7 +152,7 @@ export function AppSidebar() {
                                     state !== "collapsed" ? (
                                         <Tooltip key={item.path}>
                                             <TooltipTrigger asChild>
-                                                <SidebarMenuButton className="hover:text-primary" asChild>
+                                                <SidebarMenuButton className={`hover:text-primary ${location.pathname === item.path ? 'text-primary' : ''}`} asChild>
                                                     <Link to={item.path}>
                                                         {item.icon}
                                                         <span>{item.label}</span>
@@ -154,7 +162,7 @@ export function AppSidebar() {
                                             <TooltipContent side="right">{item.tooltip}</TooltipContent>
                                         </Tooltip>
                                     ) : (
-                                        <SidebarMenuButton key={item.path} className="hover:text-primary" asChild>
+                                        <SidebarMenuButton key={item.path} className={`hover:text-primary ${location.pathname === item.path ? 'text-primary' : ''}`} asChild>
                                             <Link to={item.path}>
                                                 {item.icon}
                                                 <span>{item.label}</span>
@@ -180,21 +188,24 @@ export function AppSidebar() {
                                     state !== "collapsed" ? (
                                         <Tooltip key={link.href}>
                                             <TooltipTrigger asChild>
-                                                <SidebarMenuButton className="hover:text-primary" asChild>
-                                                    <a href={link.href} target="_blank" rel="noopener noreferrer">
-                                                        {link.icon}
-                                                        <span>{link.label}</span>
-                                                    </a>
+                                                <SidebarMenuButton
+                                                    className="hover:text-primary"
+                                                    onClick={() => openExternal(link.href)}
+                                                >
+                                                    {link.icon}
+                                                    <span>{link.label}</span>
                                                 </SidebarMenuButton>
                                             </TooltipTrigger>
                                             <TooltipContent side="right">{link.tooltip}</TooltipContent>
                                         </Tooltip>
                                     ) : (
-                                        <SidebarMenuButton key={link.href} className="hover:text-primary" asChild>
-                                            <a href={link.href} target="_blank" rel="noopener noreferrer">
-                                                {link.icon}
-                                                <span>{link.label}</span>
-                                            </a>
+                                        <SidebarMenuButton
+                                            key={link.href}
+                                            className="hover:text-primary"
+                                            onClick={() => openExternal(link.href)}
+                                        >
+                                            {link.icon}
+                                            <span>{link.label}</span>
                                         </SidebarMenuButton>
                                     )
                                 )}
@@ -216,21 +227,24 @@ export function AppSidebar() {
                                     state !== "collapsed" ? (
                                         <Tooltip key={service.href}>
                                             <TooltipTrigger asChild>
-                                                <SidebarMenuButton className="hover:text-primary" asChild>
-                                                    <a href={service.href} target="_blank" rel="noopener noreferrer">
-                                                        {service.icon}
-                                                        <span>{service.label}</span>
-                                                    </a>
+                                                <SidebarMenuButton
+                                                    className="hover:text-primary"
+                                                    onClick={() => openExternal(service.href)}
+                                                >
+                                                    {service.icon}
+                                                    <span>{service.label}</span>
                                                 </SidebarMenuButton>
                                             </TooltipTrigger>
                                             <TooltipContent side="right">{service.tooltip}</TooltipContent>
                                         </Tooltip>
                                     ) : (
-                                        <SidebarMenuButton key={service.href} className="hover:text-primary" asChild>
-                                            <a href={service.href} target="_blank" rel="noopener noreferrer">
-                                                {service.icon}
-                                                <span>{service.label}</span>
-                                            </a>
+                                        <SidebarMenuButton
+                                            key={service.href}
+                                            className="hover:text-primary"
+                                            onClick={() => openExternal(service.href)}
+                                        >
+                                            {service.icon}
+                                            <span>{service.label}</span>
                                         </SidebarMenuButton>
                                     )
                                 )}

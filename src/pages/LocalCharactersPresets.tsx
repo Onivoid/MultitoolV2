@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { invoke } from "@tauri-apps/api/core";
 import { GamePaths, isGamePaths } from "@/types/translation";
 import { LocalCharactersResult } from "@/types/charactersList";
+import logger from "@/utils/logger";
+import { isProtectedPath } from "@/utils/fs-permissions";
 
 function LocalCharactersPresets() {
     // Nouvelle structure : chaque personnage a une liste de versions et chemins associés
@@ -97,11 +99,11 @@ function LocalCharactersPresets() {
             try {
                 const versions = await invoke("get_star_citizen_versions");
                 if (isGamePaths(versions)) {
-                    console.log("Versions du jeu reçues:", versions);
+                    logger.log("Versions du jeu reçues:", versions);
                     setGamePaths(versions);
                 }
             } catch (error) {
-                console.error("Erreur lors de la récupération des versions:", error);
+                logger.error("Erreur lors de la récupération des versions:", error);
                 toast({
                     title: "Erreur",
                     description: "Impossible de récupérer les versions de Star Citizen",
@@ -123,6 +125,14 @@ function LocalCharactersPresets() {
                 .map(([versionName, version]) => ({ versionName, path: version!.path }));
 
             for (const { path } of entries) {
+                if (isProtectedPath(path)) {
+                    toast({
+                        title: "Chemin protégé",
+                        description: "Certaines opérations peuvent nécessiter l'administrateur (bouclier en bas à droite).",
+                        variant: "warning",
+                        duration: 4000,
+                    });
+                }
                 await scanLocalCharacters(path);
             }
             setIsLoading(false);

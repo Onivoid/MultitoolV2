@@ -5,26 +5,33 @@ import { invoke } from "@tauri-apps/api/core";
 import { LocalCharacter as Character } from "@/types/charactersList";
 import { useState } from "react";
 import { PresetActionModal } from "./PresetActionModal";
+import logger from "@/utils/logger";
+import { isProtectedPath, toFriendlyFsError } from "@/utils/fs-permissions";
 export type { Character };
 
 const deleteCharacter = async (
     path: string,
     toast: any
 ) => {
-    const res = await invoke("delete_character", { path });
-    if (res) {
-        toast({
-            title: "Personnage supprimé",
-            description: `Le personnage a bien été supprimé.`,
-            success: "true",
-            duration: 3000,
-        });
-    } else {
+    try {
+        const res = await invoke("delete_character", { path });
+        if (res) {
+            toast({
+                title: "Personnage supprimé",
+                description: `Le personnage a bien été supprimé.`,
+                variant: "success",
+                duration: 3000,
+            });
+        } else {
+            throw new Error("Suppression échouée");
+        }
+    } catch (error) {
+        const description = toFriendlyFsError(error);
         toast({
             title: "Erreur lors de la suppression",
-            description: `Une erreur est survenue lors de la suppression du personnage.`,
-            success: "true",
-            duration: 3000,
+            description,
+            variant: "destructive",
+            duration: 4000,
         });
     }
 };
@@ -40,7 +47,7 @@ const duplicateCharacter = async (
             toast({
                 title: "Preset dupliqué",
                 description: "Le preset a été copié sur toutes les versions.",
-                success: "true",
+                variant: "success",
                 duration: 3000,
             });
             // Appeler le callback de succès
@@ -49,8 +56,8 @@ const duplicateCharacter = async (
     } catch (error) {
         toast({
             title: "Erreur lors de la duplication",
-            description: `Une erreur est survenue : ${error}`,
-            success: "false",
+            description: toFriendlyFsError(error),
+            variant: "destructive",
             duration: 3000,
         });
     }
@@ -62,21 +69,21 @@ const handleOpenCharactersFolder = async (
 ) => {
     const folderPath = path.split('\\').slice(0, -1).join('\\');
     try {
-        console.log("Chemin du dossier des personnages :", folderPath);
+        logger.log("Chemin du dossier des personnages :", folderPath);
         const res = await invoke("open_characters_folder", { path: folderPath });
         if (res) {
             toast({
                 title: "Dossier ouvert",
                 description: "Le dossier des personnages a bien été ouvert.",
-                success: "true",
+                variant: "success",
                 duration: 3000,
             });
         }
     } catch (error) {
         toast({
             title: "Erreur lors de l'ouverture",
-            description: `Une erreur est survenue : ${error}`,
-            success: "false",
+            description: toFriendlyFsError(error),
+            variant: "destructive",
             duration: 3000,
         });
     }

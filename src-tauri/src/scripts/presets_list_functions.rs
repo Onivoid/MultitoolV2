@@ -1,3 +1,4 @@
+use serde_json::Value;
 use tauri::command;
 
 /*
@@ -6,25 +7,28 @@ use tauri::command;
 #[command]
 pub async fn get_characters(
     page: Option<u32>,
-    order_type: Option<&str>,
-    search: Option<&str>,
+    order_type: Option<String>,
+    search: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let page = page.unwrap_or(1);
-    let order_type = order_type.unwrap_or("latest");
+    let order = order_type.as_deref().unwrap_or("latest");
+    let search_q = search.unwrap_or_default();
+
+    // Pass-through brut: latest ou download tels quels
     let mut url = format!(
         "https://www.star-citizen-characters.com/api/heads?page={}&orderBy={}",
-        page, order_type
+        page, order
     );
-    if let Some(search) = search {
-        if !search.is_empty() {
-            url.push_str(&format!("&search={}", urlencoding::encode(search)));
-        }
+    if !search_q.is_empty() {
+        url.push_str(&format!("&search={}", urlencoding::encode(&search_q)));
     }
-    let response = reqwest::get(url)
+
+    let resp: Value = reqwest::get(url)
         .await
         .map_err(|e| e.to_string())?
-        .json::<serde_json::Value>()
+        .json::<Value>()
         .await
         .map_err(|e| e.to_string())?;
-    Ok(response)
+
+    Ok(resp)
 }
