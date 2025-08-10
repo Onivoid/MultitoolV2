@@ -6,6 +6,7 @@ import ClearCache from '@/pages/ClearCache';
 import LocalCharactersPresets from '@/pages/LocalCharactersPresets';
 import CharactersPresetsList from '@/pages/CharactersPresetsList';
 import UpdatesPage from '@/pages/UpdatesPage';
+import PatchNotes from '@/pages/PatchNotes';
 
 const AppRouter = () => (
   <Router>
@@ -17,6 +18,7 @@ const AppRouter = () => (
         <Route path="/presets-local" element={<LocalCharactersPresets />} />
         <Route path='/presets-remote' element={<CharactersPresetsList />} />
         <Route path='/updates' element={<UpdatesPage />} />
+        <Route path='/patchnotes' element={<PatchNotes />} />
       </Routes>
     </Layout>
   </Router>

@@ -59,6 +59,12 @@ const menuItems = [
         icon: <Download size={20} />,
         label: "Mises à jour",
         tooltip: "Mises à jour"
+    },
+    {
+        path: "/patchnotes",
+        icon: <IconBrandGithub size={20} />,
+        label: "Patchnotes",
+        tooltip: "Patchnotes"
     }
 ];
 
