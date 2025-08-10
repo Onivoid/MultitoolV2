@@ -7,6 +7,7 @@ import {
     TranslationsChoosen,
 } from "@/types/translation";
 import { Button } from "@/components/ui/button";
+import logger from "@/utils/logger";
 import { Loader2, XCircle, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -41,20 +42,20 @@ export default function Traduction() {
             try {
                 const versions = await invoke("get_star_citizen_versions");
                 if (isGamePaths(versions)) {
-                    console.log("Versions du jeu reçues:", versions);
+                    logger.log("Versions du jeu reçues:", versions);
                     setPaths(versions);
                 }
 
-                console.log("Récupération des traductions...");
+                logger.log("Récupération des traductions...");
                 const translationsData = await invoke("get_translations");
-                console.log("Données de traduction reçues:", translationsData);
+                logger.log("Données de traduction reçues:", translationsData);
 
                 const savedPrefs: TranslationsChoosen = await invoke("load_translations_selected");
                 if (savedPrefs && typeof savedPrefs === "object") {
-                    console.log("Préférences de traduction chargées:", savedPrefs);
+                    logger.log("Préférences de traduction chargées:", savedPrefs);
                     setTranslationsSelected(savedPrefs);
                 } else {
-                    console.log("Initialisation avec les préférences par défaut");
+                    logger.log("Initialisation avec les préférences par défaut");
                     setTranslationsSelected(getDefaultTranslationsState());
                 }
 
@@ -153,17 +154,17 @@ export default function Traduction() {
 
     const handleInstallTranslation = useCallback(
         async (versionPath: string, version: string) => {
-            console.log("Installation de la traduction pour la version:", version);
+            logger.log("Installation de la traduction pour la version:", version);
             if (!translationsSelected) return;
 
             setLoadingButtonId(version);
 
             const versionSettings = translationsSelected[version as keyof TranslationsChoosen];
             if (!versionSettings || !versionSettings.link) {
-                console.log("Récupération de la traduction settings-fr...");
+                logger.log("Récupération de la traduction settings-fr...");
                 try {
                     const translationData = await invoke("get_translation_by_setting", { settingType: "settings-fr" });
-                    console.log("Données reçues:", translationData);
+                    logger.log("Données reçues:", translationData);
 
                     let link = null;
 
@@ -184,7 +185,7 @@ export default function Traduction() {
                         }
                     }
 
-                    console.log("Lien extrait:", link);
+                    logger.log("Lien extrait:", link);
 
                     if (link) {
                         const updatedTranslations = {
@@ -198,7 +199,7 @@ export default function Traduction() {
                         setTranslationsSelected(updatedTranslations);
                         saveSelectedTranslations(updatedTranslations);
 
-                        console.log("Installation avec lien:", link);
+                        logger.log("Installation avec lien:", link);
                         await invoke("init_translation_files", {
                             path: versionPath,
                             translationLink: link,
@@ -223,7 +224,7 @@ export default function Traduction() {
                         setLoadingButtonId(null);
                     }
                 } catch (error) {
-                    console.error("Erreur lors de la récupération du lien:", error);
+                    logger.error("Erreur lors de la récupération du lien:", error);
                     toast({
                         title: "Erreur d'installation",
                         description: `Erreur: ${error}`,
@@ -234,7 +235,7 @@ export default function Traduction() {
                 }
             } else {
                 try {
-                    console.log("Installation avec le lien existant:", versionSettings.link);
+                    logger.log("Installation avec le lien existant:", versionSettings.link);
 
                     await invoke("init_translation_files", {
                         path: versionPath,
@@ -251,7 +252,7 @@ export default function Traduction() {
 
                     if (paths) CheckTranslationsState(paths);
                 } catch (error) {
-                    console.error("Erreur d'installation:", error);
+                    logger.error("Erreur d'installation:", error);
                     toast({
                         title: "Erreur d'installation",
                         description: `Erreur: ${error}`,
@@ -294,13 +295,13 @@ export default function Traduction() {
             if (!translationsSelected) return;
 
             const settingType = settingsEN ? "settings-en" : "settings-fr";
-            console.log(`Récupération de la traduction pour ${settingType}...`);
+            logger.log(`Récupération de la traduction pour ${settingType}...`);
 
             try {
                 setLoadingButtonId(`switch-${version}`);
 
                 const translationData = await invoke("get_translation_by_setting", { settingType });
-                console.log("Données reçues:", translationData);
+                logger.log("Données reçues:", translationData);
 
                 let link = null;
 
@@ -321,7 +322,7 @@ export default function Traduction() {
                     }
                 }
 
-                console.log("Lien extrait:", link);
+                logger.log("Lien extrait:", link);
 
                 if (link) {
                     const updatedTranslations = {
@@ -383,7 +384,7 @@ export default function Traduction() {
 
                 setLoadingButtonId(null);
             } catch (error) {
-                console.error("Erreur lors du changement de paramètres:", error);
+                logger.error("Erreur lors du changement de paramètres:", error);
                 toast({
                     title: "Erreur de configuration",
                     description: `Une erreur est survenue: ${error}`,

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Download, Github, Store, AlertTriangle } from 'lucide-react';
+import openExternal from '@/utils/external';
 
 export default function UpdatesPage() {
 
@@ -14,11 +15,11 @@ export default function UpdatesPage() {
     });
 
     const handleOpenGitHub = () => {
-        window.open('https://github.com/Onivoid/MultitoolV2/releases', '_blank');
+        openExternal('https://github.com/Onivoid/MultitoolV2/releases');
     };
 
     const handleOpenStore = () => {
-        window.open('ms-windows-store://pdp/?productid=YourProductId', '_blank');
+        openExternal('ms-windows-store://pdp/?productid=YourProductId');
     };
 
     const getDistributionInfo = () => {

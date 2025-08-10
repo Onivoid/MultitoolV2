@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { RemoteCharactersPresetsList, Row } from "@/types/charactersList";
 import { CharacterCard } from '@/components/custom/character-card';
+import logger from "@/utils/logger";
 
 function CharactersPresetsList() {
     const { toast } = useToast();
@@ -29,8 +30,8 @@ function CharactersPresetsList() {
                     orderType: orderType.current,
                     search: search && search.length > 0 ? search : undefined,
                 });
-                console.log("RESULT : Fetching characters presets...");
-                console.log(result);
+                logger.log("RESULT : Fetching characters presets...");
+                logger.log(result);
                 const newRows = result.body.rows;
                 if (newRows.length === 0) {
                     setHasMore(false);
@@ -43,7 +44,7 @@ function CharactersPresetsList() {
                     setPage(pageToFetch + 1);
                 }
             } catch (error) {
-                console.error("Error fetching characters presets:", error);
+                logger.error("Error fetching characters presets:", error);
                 toast({
                     title: "Erreur de chargement",
                     description: "Impossible de récupérer les personnages. Veuillez réessayer plus tard.",

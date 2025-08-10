@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { LocalCharacter as Character } from "@/types/charactersList";
 import { useState } from "react";
 import { PresetActionModal } from "./PresetActionModal";
+import logger from "@/utils/logger";
 export type { Character };
 
 const deleteCharacter = async (
@@ -62,7 +63,7 @@ const handleOpenCharactersFolder = async (
 ) => {
     const folderPath = path.split('\\').slice(0, -1).join('\\');
     try {
-        console.log("Chemin du dossier des personnages :", folderPath);
+        logger.log("Chemin du dossier des personnages :", folderPath);
         const res = await invoke("open_characters_folder", { path: folderPath });
         if (res) {
             toast({
