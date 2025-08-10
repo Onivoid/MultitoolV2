@@ -35,6 +35,7 @@ export default function AdminElevateButton() {
         >
             <button
                 aria-label="Relancer en admin"
+                title="Relancer en administrateur"
                 onClick={async () => {
                     try {
                         await invoke("restart_as_admin");

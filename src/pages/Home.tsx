@@ -27,33 +27,33 @@ function Home() {
                         </p>
                         <Separator className="my-6" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <Link to="/traduction">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/traduction" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <Globe2 className="h-4 w-4" /> Traductions
                                 </Button>
                             </Link>
-                            <Link to="/cache">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/cache" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <Brush className="h-4 w-4" /> Gestion du cache
                                 </Button>
                             </Link>
-                            <Link to="/presets-local">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/presets-local" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <Users className="h-4 w-4" /> Persos locaux
                                 </Button>
                             </Link>
-                            <Link to="/presets-remote">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/presets-remote" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <Download className="h-4 w-4" /> Persos en ligne
                                 </Button>
                             </Link>
-                            <Link to="/updates">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/updates" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <FileText className="h-4 w-4" /> Mises à jour
                                 </Button>
                             </Link>
-                            <Link to="/patchnotes">
-                                <Button variant="secondary" className="w-full justify-start gap-2">
+                            <Link to="/patchnotes" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <FileText className="h-4 w-4" /> Patchnotes
                                 </Button>
                             </Link>
