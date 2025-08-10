@@ -24,6 +24,15 @@ export default function Traduction() {
     const defaultLanguage = "fr";
     const { toast } = useToast();
 
+    const isProtectedPath = (p: string) => /:\\Program Files( \(x86\))?\\/i.test(p);
+    const toFriendlyFsError = (err: unknown) => {
+        const msg = String(err ?? "");
+        if (/Accès refusé|Access is denied|os error 5|Permission denied/i.test(msg)) {
+            return "Accès refusé. Essayez de lancer l'application en tant qu'administrateur ou installez le jeu en dehors de 'Program Files'.";
+        }
+        return msg;
+    };
+
     const getDefaultTranslationsState = (): TranslationsChoosen => {
         if (!paths) return {};
 
@@ -157,7 +166,15 @@ export default function Traduction() {
             logger.log("Installation de la traduction pour la version:", version);
             if (!translationsSelected) return;
 
-            setLoadingButtonId(version);
+            setLoadingButtonId(`install-${version}`);
+            if (isProtectedPath(versionPath)) {
+                toast({
+                    title: "Chemin protégé",
+                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
+                    success: "false",
+                    duration: 5000,
+                });
+            }
 
             const versionSettings = translationsSelected[version as keyof TranslationsChoosen];
             if (!versionSettings || !versionSettings.link) {
@@ -209,7 +226,7 @@ export default function Traduction() {
                         toast({
                             title: "Traduction installée",
                             description: "La traduction a été installée avec succès.",
-                            success: "true",
+                            variant: "success",
                             duration: 3000,
                         });
 
@@ -227,9 +244,9 @@ export default function Traduction() {
                     logger.error("Erreur lors de la récupération du lien:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${error}`,
-                        success: "false",
-                        duration: 3000,
+                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        variant: "destructive",
+                        duration: 4000,
                     });
                     setLoadingButtonId(null);
                 }
@@ -246,7 +263,7 @@ export default function Traduction() {
                     toast({
                         title: "Traduction installée",
                         description: "La traduction a été installée avec succès.",
-                        success: "true",
+                        variant: "success",
                         duration: 3000,
                     });
 
@@ -255,9 +272,9 @@ export default function Traduction() {
                     logger.error("Erreur d'installation:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${error}`,
-                        success: "false",
-                        duration: 3000,
+                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        variant: "destructive",
+                        duration: 4000,
                     });
                     setLoadingButtonId(null);
                 }
@@ -272,20 +289,38 @@ export default function Traduction() {
             translationLink: string,
             buttonId: string,
         ) => {
-            setLoadingButtonId(buttonId);
-            invoke("update_translation", {
-                path: versionPath,
-                translationLink: translationLink,
-                lang: defaultLanguage,
-            }).then(() => {
+            setLoadingButtonId(`update-${buttonId}`);
+            if (isProtectedPath(versionPath)) {
+                toast({
+                    title: "Chemin protégé",
+                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
+                    success: "false",
+                    duration: 5000,
+                });
+            }
+            try {
+                await invoke("update_translation", {
+                    path: versionPath,
+                    translationLink: translationLink,
+                    lang: defaultLanguage,
+                });
                 toast({
                     title: "Traduction mise à jour",
                     description: "La traduction a été mise à jour avec succès.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);
-            });
+            } catch (error) {
+                toast({
+                    title: "Erreur de mise à jour",
+                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    variant: "destructive",
+                    duration: 4000,
+                });
+            } finally {
+                setLoadingButtonId(null);
+            }
         },
         [toast, paths, CheckTranslationsState],
     );
@@ -424,15 +459,23 @@ export default function Traduction() {
 
     const handleUninstallTranslation = useCallback(
         async (versionPath: string) => {
-            invoke("uninstall_translation", { path: versionPath }).then(() => {
+            try {
+                await invoke("uninstall_translation", { path: versionPath });
                 toast({
                     title: "Traduction désinstallée",
                     description: "La traduction a été désinstallée avec succès.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
                 if (paths) CheckTranslationsState(paths);
-            });
+            } catch (error) {
+                toast({
+                    title: "Erreur de désinstallation",
+                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    success: "false",
+                    duration: 4000,
+                });
+            }
         },
         [toast, paths, CheckTranslationsState],
     );
@@ -517,10 +560,10 @@ export default function Traduction() {
                             {!value.translated && (
                                 <Button
                                     size="sm"
-                                    disabled={loadingButtonId === key}
+                                    disabled={loadingButtonId === `install-${key}`}
                                     onClick={() => handleInstallTranslation(value.path, key)}
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `install-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Installation...
@@ -534,7 +577,7 @@ export default function Traduction() {
                                 <Button
                                     variant={"secondary"}
                                     size="sm"
-                                    disabled={loadingButtonId === key}
+                                    disabled={loadingButtonId === `update-${key}`}
                                     onClick={() =>
                                         handleUpdateTranslation(
                                             value.path,
@@ -543,7 +586,7 @@ export default function Traduction() {
                                         )
                                     }
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `update-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Mise à jour...
@@ -557,10 +600,17 @@ export default function Traduction() {
                                 <Button
                                     variant={"destructive"}
                                     size="sm"
-                                    disabled={loadingButtonId === key}
-                                    onClick={() => handleUninstallTranslation(value.path)}
+                                    disabled={loadingButtonId === `uninstall-${key}`}
+                                    onClick={async () => {
+                                        setLoadingButtonId(`uninstall-${key}`);
+                                        try {
+                                            await handleUninstallTranslation(value.path);
+                                        } finally {
+                                            setLoadingButtonId(null);
+                                        }
+                                    }}
                                 >
-                                    {loadingButtonId === key ? (
+                                    {loadingButtonId === `uninstall-${key}` ? (
                                         <>
                                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                                             Désinstallation...

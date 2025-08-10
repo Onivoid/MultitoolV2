@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { GamePaths, isGamePaths } from "@/types/translation";
 import { LocalCharactersResult } from "@/types/charactersList";
 import logger from "@/utils/logger";
+import { isProtectedPath } from "@/utils/fs-permissions";
 
 function LocalCharactersPresets() {
     // Nouvelle structure : chaque personnage a une liste de versions et chemins associés
@@ -124,6 +125,14 @@ function LocalCharactersPresets() {
                 .map(([versionName, version]) => ({ versionName, path: version!.path }));
 
             for (const { path } of entries) {
+                if (isProtectedPath(path)) {
+                    toast({
+                        title: "Chemin protégé",
+                        description: "Certaines opérations peuvent nécessiter l'administrateur (bouclier en bas à droite).",
+                        variant: "warning",
+                        duration: 4000,
+                    });
+                }
                 await scanLocalCharacters(path);
             }
             setIsLoading(false);

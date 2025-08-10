@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/utils/theme-provider";
 import ControlMenu from "@/components/custom/control-menu";
 import { BorderBeam } from "@/components/magicui/border-beam";
 import { SecurityWarning } from "@/components/custom/SecurityWarning";
+import AdminElevateButton from "@/components/custom/AdminElevateButton";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -13,6 +14,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <SecurityWarning onContinue={() => { }} />
       <ControlMenu />
       <AppRouter />
+      <AdminElevateButton />
       <BorderBeam duration={8} size={150} colorFrom="#FAFAFA" colorTo="#FAFAFA" />
       <BorderBeam delay={4} duration={8} size={150} colorFrom="#FAFAFA" colorTo="#FAFAFA" />
     </ThemeProvider>

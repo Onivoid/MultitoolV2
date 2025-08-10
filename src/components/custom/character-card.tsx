@@ -11,6 +11,7 @@ import { Lens } from "@/components/magicui/lens";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 import logger from "@/utils/logger";
+import { toFriendlyFsError } from "@/utils/fs-permissions";
 import openExternal from "@/utils/external";
 
 export function CharacterCard(
@@ -31,15 +32,16 @@ export function CharacterCard(
                 toast({
                     title: "Preset téléchargé",
                     description: "Le preset a été ajouté dans vos versions.",
-                    success: "true",
+                    variant: "success",
                     duration: 3000,
                 });
             }
         } catch (error) {
             toast({
                 title: "Erreur",
-                description: `Une erreur est survenue : ${error}`,
+                description: toFriendlyFsError(error),
                 variant: "destructive",
+                duration: 4000,
             });
         }
     };
