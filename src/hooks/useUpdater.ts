@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "./use-toast";
-import { getBuildInfo } from "@/utils/buildInfo";
+import { getBuildInfo, compareVersions } from "@/utils/buildInfo";
 import openExternal from "@/utils/external";
 import logger from "@/utils/logger";
 
@@ -32,7 +32,7 @@ const DEFAULT_GITHUB_REPO = "Onivoid/MultitoolV2";
 export function useUpdater(config: UseUpdaterConfig = {}) {
     const {
         checkOnStartup = false,
-        enableAutoUpdater = true,
+        enableAutoUpdater = false,
         githubRepo = DEFAULT_GITHUB_REPO,
     } = config;
 
@@ -49,6 +49,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     });
 
     const [buildInfo, setBuildInfo] = useState<any>(null);
+    const [latestVersion, setLatestVersion] = useState<string | null>(null);
 
     // Charger les infos de build au démarrage
     useEffect(() => {
@@ -94,14 +95,12 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     // Vérifier les mises à jour
     const checkForUpdates = useCallback(
         async (silent = false) => {
-            // Vérifier d'abord si les mises à jour sont supportées
             if (!canUpdate()) {
                 if (!silent) {
                     const message =
                         buildInfo?.distribution === "microsoft-store"
                             ? "Les mises à jour sont gérées automatiquement par le Microsoft Store."
                             : "Les mises à jour automatiques ne sont pas supportées pour cette version.";
-
                     toast({
                         title: "Mises à jour non supportées",
                         description: message,
@@ -111,36 +110,67 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
                 return;
             }
 
-            if (!enableAutoUpdater) {
-                if (!silent) {
-                    toast({
-                        title: "Auto-updater désactivé",
-                        description:
-                            "Les mises à jour automatiques sont désactivées. Téléchargez manuellement depuis GitHub.",
-                        variant: "default",
-                    });
-                }
-                return;
-            }
-
             setState((prev) => ({ ...prev, isChecking: true, error: null }));
 
             try {
-                // Simulation d'une vérification en mode dev
-                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const res = await fetch(
+                    `https://api.github.com/repos/${githubRepo}/releases/latest`,
+                    {
+                        headers: { Accept: "application/vnd.github+json" },
+                    }
+                );
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                const tag: string = json.tag_name || ""; // ex: v2.1.0
+                const remoteVersion = tag.startsWith("v") ? tag.slice(1) : tag;
+                setLatestVersion(remoteVersion || null);
 
-                if (!silent) {
-                    toast({
-                        title: "Aucune mise à jour",
-                        description: "Vous utilisez déjà la dernière version.",
-                        variant: "default",
-                    });
+                const localVersion: string = buildInfo?.version;
+                if (
+                    remoteVersion &&
+                    localVersion &&
+                    compareVersions(remoteVersion, localVersion) === 1
+                ) {
+                    const notes: string = json.body || "";
+                    const pubDate: string =
+                        json.published_at || new Date().toISOString();
+                    setState((prev) => ({
+                        ...prev,
+                        updateAvailable: true,
+                        updateInfo: {
+                            version: remoteVersion,
+                            notes,
+                            pub_date: pubDate,
+                        },
+                    }));
+
+                    if (!silent) {
+                        toast({
+                            title: `Mise à jour disponible: v${remoteVersion}`,
+                            description:
+                                "Ouvrez la page GitHub pour télécharger la nouvelle version.",
+                            variant: "default",
+                        });
+                    }
+                } else {
+                    setState((prev) => ({
+                        ...prev,
+                        updateAvailable: false,
+                        updateInfo: null,
+                    }));
+                    if (!silent) {
+                        toast({
+                            title: "Aucune mise à jour",
+                            description:
+                                "Vous utilisez déjà la dernière version.",
+                            variant: "default",
+                        });
+                    }
                 }
             } catch (error) {
                 const errorMessage =
                     error instanceof Error ? error.message : "Erreur inconnue";
                 setState((prev) => ({ ...prev, error: errorMessage }));
-
                 if (!silent) {
                     toast({
                         title: "Erreur de vérification",
@@ -152,7 +182,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
                 setState((prev) => ({ ...prev, isChecking: false }));
             }
         },
-        [enableAutoUpdater, canUpdate, buildInfo, toast]
+        [enableAutoUpdater, canUpdate, buildInfo, toast, githubRepo]
     );
 
     // Télécharger la mise à jour
@@ -261,5 +291,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
         getGitHubReleaseUrl,
         canUpdate: canUpdate(),
         distribution: buildInfo?.distribution || "unknown",
+        currentVersion: buildInfo?.version || "",
+        latestVersion,
     };
 }

@@ -10,7 +10,7 @@ export default function UpdatesPage() {
 
     const updater = useUpdater({
         checkOnStartup: false,
-        enableAutoUpdater: true,
+        enableAutoUpdater: false,
         githubRepo: 'Onivoid/MultitoolV2'
     });
 
@@ -85,7 +85,7 @@ export default function UpdatesPage() {
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="font-medium">MultitoolV2 v2.0.0</p>
+                            <p className="font-medium">MultitoolV2 v{updater.currentVersion || 'inconnue'}</p>
                             <p className="text-sm text-muted-foreground">
                                 {distInfo.description}
                             </p>
@@ -100,16 +100,14 @@ export default function UpdatesPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {updater.canUpdate && (
-                            <Button
-                                onClick={() => updater.checkForUpdates(false)}
-                                disabled={updater.isChecking}
-                                className="flex items-center gap-2"
-                            >
-                                <Download className="h-4 w-4" />
-                                {updater.isChecking ? 'Vérification...' : 'Vérifier les mises à jour'}
-                            </Button>
-                        )}
+                        <Button
+                            onClick={() => updater.checkForUpdates(false)}
+                            disabled={updater.isChecking}
+                            className="flex items-center gap-2"
+                        >
+                            <Download className="h-4 w-4" />
+                            {updater.isChecking ? 'Vérification...' : 'Vérifier les mises à jour'}
+                        </Button>
 
                         {updater.distribution === 'microsoft-store' ? (
                             <Button
@@ -127,7 +125,9 @@ export default function UpdatesPage() {
                                 className="flex items-center gap-2"
                             >
                                 <Github className="h-4 w-4" />
-                                Voir sur GitHub
+                                {updater.latestVersion
+                                    ? `Télécharger v${updater.latestVersion}`
+                                    : 'Voir sur GitHub'}
                             </Button>
                         )}
                     </div>
