@@ -3,7 +3,7 @@
 # public = standard + portable (pour GitHub releases publiques, sans Microsoft Store)
 
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [ValidateSet("standard", "portable", "msix", "all", "public")]
     [string]$Type = "standard",
     
@@ -27,7 +27,8 @@ try {
     $pnpmVersion = pnpm --version
     Write-Host "Node.js: $nodeVersion" -ForegroundColor Green
     Write-Host "pnpm: $pnpmVersion" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Error "Node.js ou pnpm non trouve. Installez Node.js et pnpm d'abord."
     exit 1
 }
@@ -38,7 +39,8 @@ try {
     $cargoVersion = cargo --version
     Write-Host "Rust: $rustVersion" -ForegroundColor Green
     Write-Host "Cargo: $cargoVersion" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Error "Rust non trouve. Installez Rust d'abord"
     exit 1
 }
@@ -47,9 +49,35 @@ try {
 try {
     $tauriVersion = pnpm tauri --version
     Write-Host "Tauri CLI: $tauriVersion" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "Tauri CLI non trouve, installation..." -ForegroundColor Yellow
     pnpm add -D @tauri-apps/cli
+}
+
+# Verifier WiX Toolset pour la generation MSI (Windows)
+if ($env:OS -match "Windows") {
+    try {
+        $wixVersion = wix --version
+        Write-Host "WiX: $wixVersion" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "WiX non trouve, tentative d'installation via dotnet tool..." -ForegroundColor Yellow
+        try {
+            dotnet tool install --global wix --version 4.* | Out-Null
+            # Ajouter le dossier des outils dotnet au PATH pour la session courante si besoin
+            $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
+            if (Test-Path $dotnetTools) {
+                $env:PATH = "$dotnetTools;$env:PATH"
+            }
+            $wixVersion = wix --version
+            Write-Host "WiX installe: $wixVersion" -ForegroundColor Green
+        }
+        catch {
+            Write-Error "Echec de l'installation de WiX. Assurez-vous que .NET SDK est installe et reessayez."
+            exit 1
+        }
+    }
 }
 
 # Clean si demande
@@ -96,7 +124,8 @@ function Build-Version {
         # Executer la commande directement avec Invoke-Expression
         if ($ConfigFile) {
             $fullCmd = "pnpm tauri build --target x86_64-pc-windows-msvc --config `"$ConfigFile`""
-        } else {
+        }
+        else {
             $fullCmd = "pnpm tauri build --target x86_64-pc-windows-msvc"
         }
         
@@ -107,21 +136,25 @@ function Build-Version {
             if ($LASTEXITCODE -ne 0) {
                 $exitCode = $LASTEXITCODE
             }
-        } catch {
+        }
+        catch {
             $exitCode = 1
         }
         
         if ($exitCode -eq 0) {
             Write-Host "Build $BuildType termine avec succes" -ForegroundColor Green
             return $true
-        } else {
+        }
+        else {
             Write-Host "Build $BuildType echoue avec le code $exitCode" -ForegroundColor Red
             return $false
         }
-    } catch {
+    }
+    catch {
         Write-Host "Erreur lors du build $BuildType : $($_.Exception.Message)" -ForegroundColor Red
         return $false
-    } finally {
+    }
+    finally {
         # Nettoyage des variables d'environnement
         foreach ($var in $EnvVars.Keys) {
             Remove-Item "env:$var" -ErrorAction SilentlyContinue
@@ -143,7 +176,7 @@ switch ($Type) {
     
     "portable" {
         $success = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars @{
-            "TAURI_ENV_PORTABLE" = "true"
+            "TAURI_ENV_PORTABLE"     = "true"
             "TAURI_ENV_DISTRIBUTION" = "github"
         }
         if ($success) { $builds += "portable" }
@@ -167,7 +200,7 @@ switch ($Type) {
         
         # Portable
         $success2 = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars @{
-            "TAURI_ENV_PORTABLE" = "true"
+            "TAURI_ENV_PORTABLE"     = "true"
             "TAURI_ENV_DISTRIBUTION" = "github"
         }
         if ($success2) { $builds += "portable" }
@@ -190,7 +223,7 @@ switch ($Type) {
         
         # Portable
         $success2 = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars @{
-            "TAURI_ENV_PORTABLE" = "true"
+            "TAURI_ENV_PORTABLE"     = "true"
             "TAURI_ENV_DISTRIBUTION" = "github"
         }
         if ($success2) { $builds += "portable" }
@@ -225,7 +258,8 @@ if ($GenerateChecksums -and $builds.Count -gt 0) {
                 Write-Host "   $line" -ForegroundColor DarkGray
             }
             Write-Host "Checksums sauvegardes dans $bundlePath\$checksumFile" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "Aucun fichier trouve pour les checksums" -ForegroundColor Yellow
         }
         
@@ -280,17 +314,20 @@ if ($builds.Count -gt 0) {
             if ($_.Name -like "*MultitoolV2-Portable*") {
                 # MSI Portable (ignoré - on utilise l'EXE portable)
                 Write-Host "   • MSI Portable ignoré (utilisation de l'EXE portable)" -ForegroundColor Yellow
-            } elseif ($_.Name -like "*Multitool_2.0.0*" -and -not $msiStandardFound) {
+            }
+            elseif (-not $msiStandardFound -and ($_.Name -match '^Multitool_.*\.msi$')) {
                 # MSI Standard  
                 Copy-Item $_.FullName "$installerDir/MultitoolV2-Installer.msi" -Force
                 Write-Host "   • Installer MSI: MultitoolV2-Installer.msi" -ForegroundColor Green
                 $msiStandardFound = $true
-            } elseif ($builds -contains "msix" -and $_.Name -like "*MultitoolV2_0.1.0*" -and -not $msiStoreFound) {
+            }
+            elseif (($builds -contains "msix") -and -not $msiStoreFound -and ($_.Name -match '^MultitoolV2_.*\.msi$')) {
                 # MSI Microsoft Store (seulement si build MSIX demandé)
                 Copy-Item $_.FullName "$msStoreDir/MultitoolV2-MicrosoftStore.msi" -Force
                 Write-Host "   • Microsoft Store MSI: MultitoolV2-MicrosoftStore.msi" -ForegroundColor Green
                 $msiStoreFound = $true
-            } else {
+            }
+            else {
                 Write-Host "   • MSI ignoré: $($_.Name)" -ForegroundColor Gray
             }
         }
