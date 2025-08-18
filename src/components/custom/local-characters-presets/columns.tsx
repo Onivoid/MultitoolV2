@@ -6,7 +6,7 @@ import { LocalCharacter as Character } from "@/types/charactersList";
 import { useState } from "react";
 import { PresetActionModal } from "./PresetActionModal";
 import logger from "@/utils/logger";
-import { isProtectedPath, toFriendlyFsError } from "@/utils/fs-permissions";
+import { toFriendlyFsError } from "@/utils/fs-permissions";
 export type { Character };
 
 const deleteCharacter = async (
