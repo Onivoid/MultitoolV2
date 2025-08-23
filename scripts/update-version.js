@@ -62,6 +62,7 @@ function updateVersion(version) {
     // Chemins des fichiers
     const packageJsonPath = path.join(rootDir, 'package.json');
     const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
+    const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 
     // Vérifier que les fichiers existent
     if (!fs.existsSync(packageJsonPath)) {
@@ -74,17 +75,28 @@ function updateVersion(version) {
         process.exit(1);
     }
 
+    if (!fs.existsSync(cargoTomlPath)) {
+        log('red', '❌ Cargo.toml non trouvé');
+        process.exit(1);
+    }
+
     // Lire les fichiers JSON
     log('yellow', '📖 Lecture des fichiers...');
     const packageJson = readJsonFile(packageJsonPath);
     const tauriConfig = readJsonFile(tauriConfigPath);
 
+    // Lire le Cargo.toml
+    const cargoContent = fs.readFileSync(cargoTomlPath, 'utf8');
+
     // Sauvegarder les versions actuelles
     const oldPackageVersion = packageJson.version;
     const oldTauriVersion = tauriConfig.version;
+    const cargoVersionMatch = cargoContent.match(/version\s*=\s*"([^"]+)"/);
+    const oldCargoVersion = cargoVersionMatch ? cargoVersionMatch[1] : 'non trouvée';
 
     log('cyan', `Version actuelle package.json: ${oldPackageVersion}`);
     log('cyan', `Version actuelle tauri.conf.json: ${oldTauriVersion}`);
+    log('cyan', `Version actuelle Cargo.toml: ${oldCargoVersion}`);
 
     // Mettre à jour les versions
     log('yellow', '✏️  Mise à jour de package.json...');
@@ -95,17 +107,30 @@ function updateVersion(version) {
     tauriConfig.version = version;
     writeJsonFile(tauriConfigPath, tauriConfig);
 
+    log('yellow', '✏️  Mise à jour de Cargo.toml...');
+    const updatedCargoContent = cargoContent.replace(
+        /version\s*=\s*"[^"]+"/,
+        `version = "${version}"`
+    );
+    fs.writeFileSync(cargoTomlPath, updatedCargoContent, 'utf8');
+
     // Vérification
     log('yellow', '🔍 Vérification des fichiers mis à jour...');
     const updatedPackage = readJsonFile(packageJsonPath);
     const updatedTauri = readJsonFile(tauriConfigPath);
+    const finalCargoContent = fs.readFileSync(cargoTomlPath, 'utf8');
+    const updatedCargoVersionMatch = finalCargoContent.match(/version\s*=\s*"([^"]+)"/);
+    const updatedCargoVersion = updatedCargoVersionMatch ? updatedCargoVersionMatch[1] : 'erreur';
 
-    if (updatedPackage.version === version && updatedTauri.version === version) {
+    if (updatedPackage.version === version && 
+        updatedTauri.version === version && 
+        updatedCargoVersion === version) {
         log('green', '✅ Version mise à jour avec succès !');
         console.log('');
         log('cyan', 'Fichiers mis à jour :');
         log('white', `  - package.json: ${updatedPackage.version}`);
         log('white', `  - tauri.conf.json: ${updatedTauri.version}`);
+        log('white', `  - Cargo.toml: ${updatedCargoVersion}`);
         console.log('');
         log('cyan', 'Étapes suivantes recommandées :');
         log('white', '  1. Vérifiez que l\'application fonctionne : pnpm tauri dev');
@@ -115,6 +140,7 @@ function updateVersion(version) {
         log('white', '  5. Lancez le build release : .\\scripts\\build-release.ps1');
     } else {
         log('red', '❌ Erreur lors de la vérification des versions');
+        log('red', `Package: ${updatedPackage.version}, Tauri: ${updatedTauri.version}, Cargo: ${updatedCargoVersion}`);
         process.exit(1);
     }
 }

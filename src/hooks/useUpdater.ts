@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { getBuildInfo } from "@/utils/buildInfo";
-import { compareVersions } from "@/utils/version";
+import { compareVersions, getAppVersion } from "@/utils/version";
 import openExternal from "@/utils/external";
 import logger from "@/utils/logger";
 
@@ -51,10 +51,29 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
 
     const [buildInfo, setBuildInfo] = useState<any>(null);
     const [latestVersion, setLatestVersion] = useState<string | null>(null);
+    const [currentVersion, setCurrentVersion] = useState<string>("");
 
     // Charger les infos de build au démarrage
     useEffect(() => {
-        getBuildInfo().then(setBuildInfo).catch(logger.error);
+        // Charger les informations de build
+        getBuildInfo()
+            .then((info) => {
+                setBuildInfo(info);
+                setCurrentVersion(info.version || "");
+            })
+            .catch(logger.error);
+
+        // Récupérer aussi la version directement via l'API Tauri
+        getAppVersion()
+            .then((version) => {
+                setCurrentVersion(version || "");
+            })
+            .catch((error) => {
+                logger.error(
+                    "Erreur lors de la récupération de la version:",
+                    error
+                );
+            });
     }, []);
 
     // Récupérer les préférences utilisateur depuis localStorage
@@ -292,7 +311,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
         getGitHubReleaseUrl,
         canUpdate: canUpdate(),
         distribution: buildInfo?.distribution || "unknown",
-        currentVersion: buildInfo?.version || "",
+        currentVersion: currentVersion || "inconnue",
         latestVersion,
     };
 }

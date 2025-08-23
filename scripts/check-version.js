@@ -54,6 +54,7 @@ function checkVersions() {
     // Chemins des fichiers
     const packageJsonPath = path.join(rootDir, 'package.json');
     const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
+    const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 
     // Lire les versions
     const packageJson = readJsonFile(packageJsonPath);
@@ -63,22 +64,39 @@ function checkVersions() {
         process.exit(1);
     }
 
+    // Lire la version du Cargo.toml
+    let cargoVersion = 'non trouvée';
+    try {
+        const cargoContent = fs.readFileSync(cargoTomlPath, 'utf8');
+        const cargoVersionMatch = cargoContent.match(/version\s*=\s*"([^"]+)"/);
+        cargoVersion = cargoVersionMatch ? cargoVersionMatch[1] : 'non trouvée';
+    } catch (error) {
+        log('yellow', '⚠️  Impossible de lire Cargo.toml');
+    }
+
     const packageVersion = packageJson.version;
     const tauriVersion = tauriConfig.version;
 
     log('cyan', 'Versions trouvées :');
     log('white', `  package.json: ${packageVersion}`);
     log('white', `  tauri.conf.json: ${tauriVersion}`);
+    log('white', `  Cargo.toml: ${cargoVersion}`);
     console.log('');
 
     // Vérifier la cohérence
-    if (packageVersion === tauriVersion) {
+    if (packageVersion === tauriVersion && tauriVersion === cargoVersion) {
         log('green', '✅ Toutes les versions sont cohérentes !');
         console.log('');
         log('green', `Version actuelle : ${packageVersion}`);
     } else {
         log('red', '❌ Incohérence détectée dans les versions !');
         console.log('');
+        if (packageVersion !== tauriVersion) {
+            log('yellow', `⚠️  package.json (${packageVersion}) ≠ tauri.conf.json (${tauriVersion})`);
+        }
+        if (tauriVersion !== cargoVersion) {
+            log('yellow', `⚠️  tauri.conf.json (${tauriVersion}) ≠ Cargo.toml (${cargoVersion})`);
+        }
         log('yellow', 'Pour corriger, utilisez :');
         log('white', '  node scripts/update-version.js X.Y.Z');
         console.log('');
