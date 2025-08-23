@@ -153,15 +153,15 @@ export function AppSidebar() {
         if (!buildInfo) return menuItems; // Afficher tous les items si pas encore chargé
 
         return menuItems.filter(item => {
-            // Masquer la page "Mises à jour" pour Microsoft Store
+            // Masquer la page "Mises à jour" UNIQUEMENT pour Microsoft Store
+            // Pour toutes les autres distributions (github, portable, unknown), afficher
             if (item.path === "/updates" && buildInfo.distribution === "microsoft-store") {
                 return false;
             }
+            // Afficher pour toutes les autres distributions
             return true;
         });
-    };
-
-    const filteredMenuItems = getFilteredMenuItems();
+    }; const filteredMenuItems = getFilteredMenuItems();
     return (
         <Sidebar>
             <SidebarHeader />
