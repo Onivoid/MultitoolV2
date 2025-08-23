@@ -1,7 +1,7 @@
 {
     "name": "multitoolv2",
     "private": true,
-    "version": "2.1.3",
+    "version": "2.1.4",
     "type": "module",
     "proxy": "https://multitool.onivoid.fr",
     "scripts": {
