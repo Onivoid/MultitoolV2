@@ -669,8 +669,7 @@ export default function Traduction() {
                     {/* Description d'en-tête */}
                     <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Installez et gérez les traductions françaises de Star Citizen.
-                            Les traductions sont fournies par la communauté SCEFRA.
+                            Installez et gérez la traduction française de Star Citizen. La traduction vous est fournie par la communauté de SCEFRA.
                         </p>
                     </div>
 
