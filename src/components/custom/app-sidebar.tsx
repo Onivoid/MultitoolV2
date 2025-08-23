@@ -141,24 +141,19 @@ export function AppSidebar() {
     const location = useLocation();
     const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
 
-    // Charger les informations de build au démarrage
     useEffect(() => {
         getBuildInfo()
             .then(setBuildInfo)
-            .catch(console.error);
+            .catch(() => { });
     }, []);
 
-    // Filtrer les éléments du menu selon la distribution
     const getFilteredMenuItems = () => {
-        if (!buildInfo) return menuItems; // Afficher tous les items si pas encore chargé
+        if (!buildInfo) return menuItems;
 
         return menuItems.filter(item => {
-            // Masquer la page "Mises à jour" UNIQUEMENT pour Microsoft Store
-            // Pour toutes les autres distributions (github, portable, unknown), afficher
             if (item.path === "/updates" && buildInfo.distribution === "microsoft-store") {
                 return false;
             }
-            // Afficher pour toutes les autres distributions
             return true;
         });
     }; const filteredMenuItems = getFilteredMenuItems();

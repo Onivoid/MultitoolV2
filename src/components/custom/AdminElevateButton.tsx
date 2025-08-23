@@ -14,10 +14,8 @@ export default function AdminElevateButton() {
         const check = async () => {
             try {
                 const res = await invoke<boolean>("is_running_as_admin");
-                console.log("Admin status:", res);
                 setIsAdmin(res);
             } catch (error) {
-                console.log("Error checking admin status:", error);
                 setIsAdmin(true);
             }
         };

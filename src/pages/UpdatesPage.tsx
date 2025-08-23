@@ -14,11 +14,7 @@ export default function UpdatesPage() {
         githubRepo: 'Onivoid/MultitoolV2'
     });
 
-    // Utiliser la même méthode que dans le layout
     const currentVersion = formatVersion(getAppVersionSync());
-
-    // Debug log pour vérifier la détection de distribution
-    console.log('UpdatesPage - Distribution detected:', updater.distribution);
 
     const handleOpenGitHub = () => {
         openExternal('https://github.com/Onivoid/MultitoolV2/releases');
