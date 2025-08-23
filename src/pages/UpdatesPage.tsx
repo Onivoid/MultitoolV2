@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Download, Github, Store, AlertTriangle } from 'lucide-react';
 import openExternal from '@/utils/external';
+import { formatVersion } from '@/utils/version';
 
 export default function UpdatesPage() {
 
@@ -85,7 +86,7 @@ export default function UpdatesPage() {
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="font-medium">MultitoolV2 v{updater.currentVersion || 'inconnue'}</p>
+                            <p className="font-medium">MultitoolV2 {formatVersion(updater.currentVersion || 'inconnue')}</p>
                             <p className="text-sm text-muted-foreground">
                                 {distInfo.description}
                             </p>
@@ -126,7 +127,7 @@ export default function UpdatesPage() {
                             >
                                 <Github className="h-4 w-4" />
                                 {updater.latestVersion
-                                    ? `Télécharger v${updater.latestVersion}`
+                                    ? `Télécharger ${formatVersion(updater.latestVersion)}`
                                     : 'Voir sur GitHub'}
                             </Button>
                         )}

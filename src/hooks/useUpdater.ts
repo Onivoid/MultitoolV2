@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "./use-toast";
-import { getBuildInfo, compareVersions } from "@/utils/buildInfo";
+import { getBuildInfo } from "@/utils/buildInfo";
+import { compareVersions } from "@/utils/version";
 import openExternal from "@/utils/external";
 import logger from "@/utils/logger";
 
