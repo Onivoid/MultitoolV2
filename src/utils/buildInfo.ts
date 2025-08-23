@@ -44,9 +44,11 @@ export function detectDistribution(): BuildInfo["distribution"] {
         return "microsoft-store";
     }
 
+    // Pour portable : c'est une variante de GitHub, pas une distribution séparée
     if (process.env.TAURI_ENV_PORTABLE === "true") {
-        if (import.meta.env.DEV) console.log("Detected: Portable");
-        return "portable";
+        if (import.meta.env.DEV)
+            console.log("Detected: GitHub (Portable variant)");
+        return "github"; // Portable est considéré comme une variante de GitHub
     }
 
     if (process.env.TAURI_ENV_DISTRIBUTION === "github") {
@@ -98,6 +100,13 @@ export function isBuildSigned(
 }
 
 /**
+ * Détermine si c'est une version portable
+ */
+export function isPortableBuild(): boolean {
+    return process.env.TAURI_ENV_PORTABLE === "true";
+}
+
+/**
  * Détermine si les mises à jour automatiques sont supportées
  */
 export function canAutoUpdate(
@@ -138,7 +147,7 @@ export async function getBuildInfo(
         version,
         distribution,
         isSigned: isBuildSigned(distribution),
-        isPortable: distribution === "portable",
+        isPortable: isPortableBuild(), // Utilise la nouvelle fonction
         canAutoUpdate: canAutoUpdate(distribution),
         githubRepo,
         buildDate: process.env.TAURI_ENV_BUILD_DATE,
