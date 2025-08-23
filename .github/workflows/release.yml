@@ -45,14 +45,23 @@ jobs:
             - name: Install frontend dependencies
               run: pnpm install
 
-            - name: Build All Releases (Standard, Portable - Publics uniquement)
+            - name: Build Standard Release (GitHub Distribution)
               run: |
-                  # IMPORTANT: S'assurer qu'aucune variable MS Store n'est définie
-                  $env:TAURI_ENV_MS_STORE = $null
+                  Write-Host "🏗️ Building Standard (GitHub)..." -ForegroundColor Green
                   $env:TAURI_ENV_DISTRIBUTION = "github"
-                  Write-Host "🏗️ Building GitHub releases (Standard + Portable)..." -ForegroundColor Green
-                  Write-Host "Variables: MS_STORE=$env:TAURI_ENV_MS_STORE, DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION" -ForegroundColor Yellow
-                  .\scripts\build-release.ps1 public
+                  $env:TAURI_ENV_MS_STORE = $null
+                  $env:TAURI_ENV_PORTABLE = $null
+                  Write-Host "Variables: DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION, MS_STORE=$env:TAURI_ENV_MS_STORE, PORTABLE=$env:TAURI_ENV_PORTABLE" -ForegroundColor Yellow
+                  .\scripts\build-release.ps1 standard
+
+            - name: Build Portable Release (Portable Distribution)
+              run: |
+                  Write-Host "📦 Building Portable..." -ForegroundColor Green
+                  $env:TAURI_ENV_PORTABLE = "true"
+                  $env:TAURI_ENV_DISTRIBUTION = "github"
+                  $env:TAURI_ENV_MS_STORE = $null
+                  Write-Host "Variables: DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION, MS_STORE=$env:TAURI_ENV_MS_STORE, PORTABLE=$env:TAURI_ENV_PORTABLE" -ForegroundColor Yellow
+                  .\scripts\build-release.ps1 portable
 
             - name: Build Microsoft Store Release (for internal use)
               run: |

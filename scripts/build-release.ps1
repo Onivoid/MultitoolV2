@@ -168,24 +168,45 @@ $bundlePath = "src-tauri/target/x86_64-pc-windows-msvc/release/bundle"
 
 switch ($Type) {
     "standard" {
-        $success = Build-Version -BuildType "Standard (Non-signe)" -EnvVars @{
-            "TAURI_ENV_DISTRIBUTION" = "github"
+        # Utiliser les variables d'environnement existantes ou fallback
+        $distribution = if ($env:TAURI_ENV_DISTRIBUTION) { $env:TAURI_ENV_DISTRIBUTION } else { "github" }
+        $envVars = @{
+            "TAURI_ENV_DISTRIBUTION" = $distribution
         }
+        # S'assurer que MS_STORE et PORTABLE sont désactivés
+        if ($env:TAURI_ENV_MS_STORE) { $envVars["TAURI_ENV_MS_STORE"] = $null }
+        if ($env:TAURI_ENV_PORTABLE) { $envVars["TAURI_ENV_PORTABLE"] = $null }
+        
+        $success = Build-Version -BuildType "Standard (Non-signe)" -EnvVars $envVars
         if ($success) { $builds += "standard" }
     }
     
     "portable" {
-        $success = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars @{
-            "TAURI_ENV_PORTABLE"     = "true"
-            "TAURI_ENV_DISTRIBUTION" = "github"
+        # Utiliser les variables d'environnement existantes ou fallback
+        $distribution = if ($env:TAURI_ENV_DISTRIBUTION) { $env:TAURI_ENV_DISTRIBUTION } else { "github" }
+        $portable = if ($env:TAURI_ENV_PORTABLE) { $env:TAURI_ENV_PORTABLE } else { "true" }
+        $envVars = @{
+            "TAURI_ENV_PORTABLE"     = $portable
+            "TAURI_ENV_DISTRIBUTION" = $distribution
         }
+        # S'assurer que MS_STORE est désactivé
+        if ($env:TAURI_ENV_MS_STORE) { $envVars["TAURI_ENV_MS_STORE"] = $null }
+        
+        $success = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars $envVars
         if ($success) { $builds += "portable" }
     }
     
     "msix" {
-        $success = Build-Version -BuildType "MSIX (Microsoft Store)" -ConfigFile "src-tauri/tauri.microsoftstore.conf.json" -EnvVars @{
-            "TAURI_ENV_MS_STORE" = "true"
+        # Utiliser les variables d'environnement existantes ou fallback
+        $msStore = if ($env:TAURI_ENV_MS_STORE) { $env:TAURI_ENV_MS_STORE } else { "true" }
+        $envVars = @{
+            "TAURI_ENV_MS_STORE" = $msStore
         }
+        # S'assurer que PORTABLE et DISTRIBUTION sont désactivés pour MS Store
+        if ($env:TAURI_ENV_PORTABLE) { $envVars["TAURI_ENV_PORTABLE"] = $null }
+        if ($env:TAURI_ENV_DISTRIBUTION) { $envVars["TAURI_ENV_DISTRIBUTION"] = $null }
+        
+        $success = Build-Version -BuildType "MSIX (Microsoft Store)" -ConfigFile "src-tauri/tauri.microsoftstore.conf.json" -EnvVars $envVars
         if ($success) { $builds += "msix" }
     }
     
