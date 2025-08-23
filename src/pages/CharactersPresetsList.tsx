@@ -122,6 +122,14 @@ function CharactersPresetsList() {
             }}
             className="flex w-full flex-col"
         >
+            {/* Description d'en-tête */}
+            <div className="my-4 p-4 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    Parcourez et téléchargez des presets de personnages partagés par la communauté SC Characters.
+                    Trouvez l'apparence parfaite pour votre personnage Star Citizen.
+                </p>
+            </div>
+
             {/* Barre de recherche + Tri */}
             <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-3 my-4">
                 <input

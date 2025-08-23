@@ -58,6 +58,15 @@ export default function ClearCache() {
                 <h1 className="text-2xl my-5">Gestionnaire du cache</h1>
                 <ActionsMenu setCacheInfos={setCacheInfos} />
             </div>
+
+            {/* Description d'en-tête */}
+            <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    Nettoyez les fichiers temporaires de Star Citizen pour résoudre les problèmes de performance
+                    et libérer de l'espace disque. Supprimez les shaders, logs et autres fichiers de cache.
+                </p>
+            </div>
+
             <DataTable
                 columns={columns(toast, updateCacheInfos)}
                 data={cacheInfos}

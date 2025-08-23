@@ -28,14 +28,21 @@ fn get_launcher_log_list() -> Vec<String> {
 
 fn check_and_add_path(path: &str, check_exists: bool, sc_install_paths: &mut Vec<String>) {
     let path = path.replace("\\\\", "\\");
-    if !path.is_empty() && !sc_install_paths.contains(&path.to_string()) {
+    // Normaliser le chemin en supprimant les backslashes à la fin
+    let normalized_path = path.trim_end_matches('\\').to_string();
+
+    if !normalized_path.is_empty()
+        && !sc_install_paths
+            .iter()
+            .any(|existing_path| existing_path.trim_end_matches('\\') == normalized_path)
+    {
         if !check_exists {
-            sc_install_paths.push(path.to_string());
+            sc_install_paths.push(normalized_path);
         } else {
-            let exe_path = format!("{}\\Bin64\\StarCitizen.exe", path);
-            let data_p4k_path = format!("{}\\Data.p4k", path);
+            let exe_path = format!("{}\\Bin64\\StarCitizen.exe", normalized_path);
+            let data_p4k_path = format!("{}\\Data.p4k", normalized_path);
             if Path::new(&exe_path).exists() && Path::new(&data_p4k_path).exists() {
-                sc_install_paths.push(path.to_string());
+                sc_install_paths.push(normalized_path);
             }
         }
     }
@@ -61,10 +68,12 @@ fn get_game_install_path(list_data: Vec<String>, check_exists: bool) -> Vec<Stri
 
 fn get_game_channel_id(install_path: &str) -> String {
     // Expression régulière pour capturer la version à la fin du chemin après "StarCitizen\\"
-    let re = Regex::new(r"StarCitizen\\([A-Za-z0-9_\\.\\@-]+)$").unwrap();
+    let re = Regex::new(r"StarCitizen\\([A-Za-z0-9_\\.\\@-]+)\\?$").unwrap();
     if let Some(cap) = re.captures(install_path) {
         if let Some(version) = cap.get(1) {
-            return version.as_str().to_string();
+            let version_str = version.as_str();
+            // Normaliser en supprimant les backslashes à la fin
+            return version_str.trim_end_matches('\\').to_string();
         }
     }
     "UNKNOWN".to_string()
@@ -88,12 +97,15 @@ pub fn get_star_citizen_versions() -> VersionPaths {
 
     let mut versions = HashMap::new();
     for path in &sc_install_paths {
-        let version = get_game_channel_id(path);
+        // Normaliser le chemin en supprimant les backslashes à la fin
+        let normalized_path = path.trim_end_matches('\\').to_string();
+        let version = get_game_channel_id(&normalized_path);
+
         if version != "UNKNOWN" && !versions.contains_key(&version) {
             versions.insert(
                 version,
                 VersionInfo {
-                    path: path.clone(),
+                    path: normalized_path,
                     translated: false,
                     up_to_date: false,
                 },

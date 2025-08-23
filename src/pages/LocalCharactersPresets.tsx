@@ -20,6 +20,7 @@ function LocalCharactersPresets() {
     const [isLoading, setIsLoading] = useState(true);
     const [loadingDot, setLoadingDot] = useState(0);
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
+    const [isAdmin, setIsAdmin] = useState<boolean>(true); // Supposer admin par défaut pour éviter flash de toast
     const { toast } = useToast();
 
     // On regroupe les personnages par identifiant unique (ex: path ou name)
@@ -93,7 +94,7 @@ function LocalCharactersPresets() {
         setIsLoading(false);
     }, [gamePaths, scanLocalCharacters]);
 
-    // Récupération des versions de jeu au chargement
+    // Récupération des versions de jeu et statut admin au chargement
     useEffect(() => {
         const getGameVersions = async () => {
             try {
@@ -112,7 +113,21 @@ function LocalCharactersPresets() {
             }
         };
 
-        getGameVersions();
+        const checkAdminStatus = async () => {
+            try {
+                const adminStatus = await invoke<boolean>("is_running_as_admin");
+                setIsAdmin(adminStatus);
+            } catch (error) {
+                logger.error("Erreur lors de la vérification du statut admin:", error);
+                setIsAdmin(false);
+            }
+        };
+
+        Promise.all([getGameVersions(), checkAdminStatus()]);
+
+        // Vérification périodique du statut admin (toutes les 5 secondes)
+        const adminCheckInterval = setInterval(checkAdminStatus, 5000);
+        return () => clearInterval(adminCheckInterval);
     }, [toast]);
 
     // Scanner le cache quand les chemins sont disponibles
@@ -125,7 +140,7 @@ function LocalCharactersPresets() {
                 .map(([versionName, version]) => ({ versionName, path: version!.path }));
 
             for (const { path } of entries) {
-                if (isProtectedPath(path)) {
+                if (isProtectedPath(path) && !isAdmin) {
                     toast({
                         title: "Chemin protégé",
                         description: "Certaines opérations peuvent nécessiter l'administrateur (bouclier en bas à droite).",
@@ -195,6 +210,15 @@ function LocalCharactersPresets() {
             <div className="flex items-center gap-2 mb-4">
                 <h1 className="text-2xl mt-5">Gestionnaire de presets de Personnages</h1>
             </div>
+
+            {/* Description d'en-tête */}
+            <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    Gérez vos configurations de personnages sauvegardées localement.
+                    Importez, exportez et organisez vos presets entre différentes versions du jeu.
+                </p>
+            </div>
+
             <DataTable
                 columns={columns(toast, refreshLocalCharacters, availableVersions)}
                 data={localCharacters} // Utiliser les données filtrées
