@@ -47,17 +47,22 @@ jobs:
 
             - name: Build All Releases (Standard, Portable - Publics uniquement)
               run: |
-                  # Utilise le script PowerShell corrigé pour builds cohérents
+                  # IMPORTANT: S'assurer qu'aucune variable MS Store n'est définie
+                  $env:TAURI_ENV_MS_STORE = $null
+                  $env:TAURI_ENV_DISTRIBUTION = "github"
+                  Write-Host "🏗️ Building GitHub releases (Standard + Portable)..." -ForegroundColor Green
+                  Write-Host "Variables: MS_STORE=$env:TAURI_ENV_MS_STORE, DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION" -ForegroundColor Yellow
                   .\scripts\build-release.ps1 public
-              env:
-                  TAURI_ENV_DISTRIBUTION: github
 
             - name: Build Microsoft Store Release (for internal use)
               run: |
+                  # IMPORTANT: Définir explicitement les variables MS Store
+                  $env:TAURI_ENV_MS_STORE = "true"
+                  $env:TAURI_ENV_DISTRIBUTION = $null
+                  $env:TAURI_ENV_PORTABLE = $null
                   Write-Host "🏪 Building Microsoft Store version..." -ForegroundColor Magenta
+                  Write-Host "Variables: MS_STORE=$env:TAURI_ENV_MS_STORE, DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION" -ForegroundColor Yellow
                   .\scripts\build-release.ps1 msix
-              env:
-                  TAURI_ENV_MS_STORE: "true"
 
             - name: Rename Microsoft Store MSI for Release
               run: |
