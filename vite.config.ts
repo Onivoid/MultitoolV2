@@ -16,6 +16,17 @@ export default defineConfig(async () => ({
     plugins: [react()],
     define: {
         "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
+        // Injecter les variables d'environnement Tauri pour la détection de distribution
+        "process.env.TAURI_ENV_MS_STORE": JSON.stringify(
+            process.env.TAURI_ENV_MS_STORE
+        ),
+        "process.env.TAURI_ENV_PORTABLE": JSON.stringify(
+            process.env.TAURI_ENV_PORTABLE
+        ),
+        "process.env.TAURI_ENV_DISTRIBUTION": JSON.stringify(
+            process.env.TAURI_ENV_DISTRIBUTION
+        ),
+        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
     },
     resolve: {
         alias: {

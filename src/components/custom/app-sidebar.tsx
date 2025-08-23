@@ -133,10 +133,35 @@ import { Link, useLocation } from "react-router-dom";
 import { ColorPicker } from "@/components/custom/color-picker";
 import { useSidebar } from "@/components/ui/sidebar";
 import openExternal from "@/utils/external";
+import { useEffect, useState } from "react";
+import { getBuildInfo, BuildInfo } from "@/utils/buildInfo";
 
 export function AppSidebar() {
     const { state } = useSidebar();
     const location = useLocation();
+    const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
+
+    // Charger les informations de build au démarrage
+    useEffect(() => {
+        getBuildInfo()
+            .then(setBuildInfo)
+            .catch(console.error);
+    }, []);
+
+    // Filtrer les éléments du menu selon la distribution
+    const getFilteredMenuItems = () => {
+        if (!buildInfo) return menuItems; // Afficher tous les items si pas encore chargé
+
+        return menuItems.filter(item => {
+            // Masquer la page "Mises à jour" pour Microsoft Store
+            if (item.path === "/updates" && buildInfo.distribution === "microsoft-store") {
+                return false;
+            }
+            return true;
+        });
+    };
+
+    const filteredMenuItems = getFilteredMenuItems();
     return (
         <Sidebar>
             <SidebarHeader />
@@ -148,7 +173,7 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                {menuItems.map(item =>
+                                {filteredMenuItems.map(item =>
                                     state !== "collapsed" ? (
                                         <Tooltip key={item.path}>
                                             <TooltipTrigger asChild>

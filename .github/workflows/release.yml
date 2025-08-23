@@ -52,6 +52,30 @@ jobs:
               env:
                   TAURI_ENV_DISTRIBUTION: github
 
+            - name: Build Microsoft Store Release (for internal use)
+              run: |
+                  Write-Host "🏪 Building Microsoft Store version..." -ForegroundColor Magenta
+                  .\scripts\build-release.ps1 msix
+              env:
+                  TAURI_ENV_MS_STORE: "true"
+
+            - name: Rename Microsoft Store MSI for Release
+              run: |
+                  if (Test-Path "builds/MicrosoftStoreMSI") {
+                      $storeMsi = Get-ChildItem "builds/MicrosoftStoreMSI/*.msi" | Select-Object -First 1
+                      if ($storeMsi) {
+                          $newName = "MultitoolV2-Installer-MSStore.msi"
+                          $newPath = "builds/$newName"
+                          Copy-Item $storeMsi.FullName -Destination $newPath
+                          Write-Host "✅ Microsoft Store MSI copié vers: $newName" -ForegroundColor Green
+                          
+                          # Ajouter au fichier checksums
+                          $hash = (Get-FileHash $newPath -Algorithm SHA256).Hash.ToLower()
+                          Add-Content -Path "builds/checksums.txt" -Value "$hash  $newName"
+                          Write-Host "✅ Checksum ajouté pour $newName" -ForegroundColor Green
+                      }
+                  }
+
             - name: Verify Build Artifacts
               run: |
                   Write-Host "=== Vérification des artifacts de build ===" -ForegroundColor Cyan
@@ -79,9 +103,12 @@ jobs:
                     exit 1
                   }
 
-                  # Vérification que Microsoft Store n'est PAS présent (privé)
-                  if (Test-Path "builds/MicrosoftStoreMSI/*") {
-                    Write-Host "ℹ️ MSI Microsoft Store détecté mais sera exclu de la release publique" -ForegroundColor Yellow
+                  # Vérification que Microsoft Store MSI est créé
+                  if (Test-Path "builds/MultitoolV2-Installer-MSStore.msi") {
+                    Write-Host "✅ MS Store MSI: $(Get-Item 'builds/MultitoolV2-Installer-MSStore.msi' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
+                  } else {
+                    Write-Host "❌ MS Store MSI manquant" -ForegroundColor Red
+                    exit 1
                   }
 
             - name: Create Release Notes
@@ -95,10 +122,11 @@ jobs:
                   Cette application n'est **pas signée numériquement** (certificat coûteux pour un projet open-source).
                   Windows SmartScreen affichera un avertissement - c'est **normal et attendu**.
 
-                  ## 📥 Options d'Installation Recommandées
+                  ## 📥 Options d'Installation
 
                   1. **🏆 RECOMMANDÉ - Version Portable** : Aucune installation, pas d'avertissement SmartScreen
                   2. **💻 Installer Standard** : Avertissement SmartScreen attendu (cliquez "Informations complémentaires" → "Exécuter quand même")
+                  3. **🏪 MS Store Distribution** : Version préparée pour Microsoft Store (avec variables d'environnement MS Store)
 
                   ## 🔐 Vérification de Sécurité
 
@@ -139,6 +167,7 @@ jobs:
                   files: |
                       builds/portable/MultitoolV2-Portable.exe
                       builds/installer/MultitoolV2-Installer.msi
+                      builds/MultitoolV2-Installer-MSStore.msi
                       builds/checksums.txt
                   prerelease: false
                   generate_release_notes: false
@@ -151,12 +180,16 @@ jobs:
                   Write-Host "🎉 RELEASE CRÉÉE AVEC SUCCÈS!" -ForegroundColor Green
                   Write-Host "Version: ${{ github.ref_name }}" -ForegroundColor Cyan
                   Write-Host ""
-                  Write-Host "📦 Artifacts publics dans GitHub Release:" -ForegroundColor Yellow
+                  Write-Host "📦 Artifacts dans GitHub Release:" -ForegroundColor Yellow
                   Write-Host "  • MultitoolV2-Portable.exe (Recommandé)" -ForegroundColor White
-                  Write-Host "  • MultitoolV2-Installer.msi" -ForegroundColor White
+                  Write-Host "  • MultitoolV2-Installer.msi (Standard)" -ForegroundColor White  
+                  Write-Host "  • MultitoolV2-Installer-MSStore.msi (MS Store Distribution)" -ForegroundColor Magenta
                   Write-Host "  • checksums.txt" -ForegroundColor White
                   Write-Host ""
-                  Write-Host "🔒 Artifacts privés (Microsoft Store) exclus de la release publique" -ForegroundColor Magenta
+                  Write-Host "🏪 Artifact MS Store Distribution:" -ForegroundColor Magenta
+                  Write-Host "   MultitoolV2-Installer-MSStore.msi contient TAURI_ENV_MS_STORE=true" -ForegroundColor White
+                  Write-Host "   → Page 'Mises à jour' masquée dans la sidebar" -ForegroundColor White
+                  Write-Host "   → Warnings GitHub non-signé masqués" -ForegroundColor White
                   Write-Host ""
                   Write-Host "🌐 Release disponible sur:" -ForegroundColor Cyan
                   Write-Host "   https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" -ForegroundColor Blue

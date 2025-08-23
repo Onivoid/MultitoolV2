@@ -17,6 +17,9 @@ export default function UpdatesPage() {
     // Utiliser la même méthode que dans le layout
     const currentVersion = formatVersion(getAppVersionSync());
 
+    // Debug log pour vérifier la détection de distribution
+    console.log('UpdatesPage - Distribution detected:', updater.distribution);
+
     const handleOpenGitHub = () => {
         openExternal('https://github.com/Onivoid/MultitoolV2/releases');
     };
@@ -198,6 +201,25 @@ export default function UpdatesPage() {
                                     📦 <strong>Version portable</strong> - Pas d'installation requise
                                 </p>
                             )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Debug Info (Développement uniquement) */}
+            {import.meta.env.DEV && (
+                <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                            🐛 Debug Info (DEV)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-yellow-700 dark:text-yellow-300">
+                        <div className="space-y-1 text-xs">
+                            <p>Distribution détectée: <strong>{updater.distribution}</strong></p>
+                            <p>TAURI_ENV_MS_STORE: <strong>{process.env.TAURI_ENV_MS_STORE || 'undefined'}</strong></p>
+                            <p>TAURI_ENV_PORTABLE: <strong>{process.env.TAURI_ENV_PORTABLE || 'undefined'}</strong></p>
+                            <p>TAURI_ENV_DISTRIBUTION: <strong>{process.env.TAURI_ENV_DISTRIBUTION || 'undefined'}</strong></p>
                         </div>
                     </CardContent>
                 </Card>

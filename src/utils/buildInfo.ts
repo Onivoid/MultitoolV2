@@ -27,34 +27,62 @@ const DEFAULT_GITHUB_REPO = "Onivoid/MultitoolV2"; // À remplacer par le vrai r
  * Détecte la source d'installation de l'application
  */
 export function detectDistribution(): BuildInfo["distribution"] {
+    // Debug log des variables d'environnement (DEV uniquement)
+    if (import.meta.env.DEV) {
+        console.log("Build Detection - Environment Variables:", {
+            TAURI_ENV_MS_STORE: process.env.TAURI_ENV_MS_STORE,
+            TAURI_ENV_PORTABLE: process.env.TAURI_ENV_PORTABLE,
+            TAURI_ENV_DISTRIBUTION: process.env.TAURI_ENV_DISTRIBUTION,
+            NODE_ENV: process.env.NODE_ENV,
+        });
+    }
+
     // Vérifier les variables d'environnement injectées au build
+    // Attention: les variables d'env sont toujours des strings
     if (process.env.TAURI_ENV_MS_STORE === "true") {
+        if (import.meta.env.DEV) console.log("Detected: Microsoft Store");
         return "microsoft-store";
     }
 
     if (process.env.TAURI_ENV_PORTABLE === "true") {
+        if (import.meta.env.DEV) console.log("Detected: Portable");
         return "portable";
     }
 
     if (process.env.TAURI_ENV_DISTRIBUTION === "github") {
+        if (import.meta.env.DEV) console.log("Detected: GitHub");
         return "github";
     }
 
     // Vérifications basées sur l'environnement d'exécution
     try {
         // Si l'app est dans un dossier Microsoft/WindowsApps, c'est probablement Store
-        if (window.location.href.includes("WindowsApps")) {
+        if (
+            typeof window !== "undefined" &&
+            window.location &&
+            window.location.href.includes("WindowsApps")
+        ) {
+            if (import.meta.env.DEV)
+                console.log("Detected: Microsoft Store (via path)");
             return "microsoft-store";
         }
 
         // Si l'app a certaines propriétés spécifiques au portable
-        if (localStorage.getItem("PORTABLE_MODE") === "true") {
+        if (
+            typeof localStorage !== "undefined" &&
+            localStorage.getItem("PORTABLE_MODE") === "true"
+        ) {
+            if (import.meta.env.DEV)
+                console.log("Detected: Portable (via localStorage)");
             return "portable";
         }
 
         // Par défaut, considérer comme GitHub
+        if (import.meta.env.DEV) console.log("Detected: GitHub (fallback)");
         return "github";
-    } catch {
+    } catch (error) {
+        if (import.meta.env.DEV)
+            console.log("Detection failed, returning unknown:", error);
         return "unknown";
     }
 }
