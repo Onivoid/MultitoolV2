@@ -8,7 +8,7 @@ import {
 } from "@/types/translation";
 import { Button } from "@/components/ui/button";
 import logger from "@/utils/logger";
-import { Loader2, XCircle, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, XCircle, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ export default function Traduction() {
     const [translationsSelected, setTranslationsSelected] = useState<TranslationsChoosen | null>(null);
     const [loadingButtonId, setLoadingButtonId] = useState<string | null>(null);
     const [dataFetched, setDataFetched] = useState<boolean>(false);
+    const [isAdmin, setIsAdmin] = useState<boolean>(true); // Supposer admin par défaut pour éviter flash de toast
 
     const defaultLanguage = "fr";
     const { toast } = useToast();
@@ -76,10 +77,20 @@ export default function Traduction() {
             }
         };
 
+        const checkAdminStatus = async () => {
+            try {
+                const adminStatus = await invoke<boolean>("is_running_as_admin");
+                setIsAdmin(adminStatus);
+            } catch (error) {
+                console.error("Erreur lors de la vérification du statut admin:", error);
+                setIsAdmin(false);
+            }
+        };
+
         if (!dataFetched) {
             setDataFetched(true);
-            fetchData().then((status) => {
-                status
+            Promise.all([fetchData(), checkAdminStatus()]).then(([dataStatus]) => {
+                dataStatus
                     ? toast({
                         title: "Données chargées",
                         description: "Les données de traduction ont été chargées avec succès.",
@@ -94,6 +105,10 @@ export default function Traduction() {
                     });
             });
         }
+
+        // Vérification périodique du statut admin (toutes les 5 secondes)
+        const adminCheckInterval = setInterval(checkAdminStatus, 5000);
+        return () => clearInterval(adminCheckInterval);
     }, []);
 
     const saveSelectedTranslations = useCallback(
@@ -167,7 +182,7 @@ export default function Traduction() {
             if (!translationsSelected) return;
 
             setLoadingButtonId(`install-${version}`);
-            if (isProtectedPath(versionPath)) {
+            if (isProtectedPath(versionPath) && !isAdmin) {
                 toast({
                     title: "Chemin protégé",
                     description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
@@ -280,7 +295,7 @@ export default function Traduction() {
                 }
             }
         },
-        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage],
+        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage, isAdmin],
     );
 
     const handleUpdateTranslation = useCallback(
@@ -290,7 +305,7 @@ export default function Traduction() {
             buttonId: string,
         ) => {
             setLoadingButtonId(`update-${buttonId}`);
-            if (isProtectedPath(versionPath)) {
+            if (isProtectedPath(versionPath) && !isAdmin) {
                 toast({
                     title: "Chemin protégé",
                     description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
@@ -322,7 +337,7 @@ export default function Traduction() {
                 setLoadingButtonId(null);
             }
         },
-        [toast, paths, CheckTranslationsState],
+        [toast, paths, CheckTranslationsState, isAdmin],
     );
 
     const handleSettingsToggle = useCallback(
@@ -498,7 +513,7 @@ export default function Traduction() {
                 <div className="w-full rounded-lg border border-primary/50 bg-card/50 hover:bg-card/60 shadow-sm p-2 duration-150 ease-in-out">
                     <div className="grid grid-cols-12 gap-2">
                         {/* Nom */}
-                        <div className="flex justify-start items-center col-span-2">
+                        <div className="flex justify-start items-center col-span-1">
                             <p className="font-medium text-sm">
                                 {key}
                             </p>
@@ -521,8 +536,8 @@ export default function Traduction() {
                         </div>
 
                         {/* Switch pour settings FR/EN */}
-                        <div className="flex justify-center items-center gap-2 col-span-2">
-                            <span className="text-sm">FR</span>
+                        <div className="flex justify-center items-center gap-2 col-span-3">
+                            <span className="text-sm">Français</span>
                             {loadingButtonId === `switch-${key}` ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
@@ -532,7 +547,7 @@ export default function Traduction() {
                                     disabled={loadingButtonId !== null}
                                 />
                             )}
-                            <span className="text-sm">EN</span>
+                            <span className="text-sm">Anglais</span>
                         </div>
 
                         {/* État de la traduction */}
@@ -556,7 +571,7 @@ export default function Traduction() {
                         </div>
 
                         {/* Boutons d'action */}
-                        <div className="flex justify-end items-center col-span-4">
+                        <div className="flex justify-end items-center gap-2 col-span-4">
                             {!value.translated && (
                                 <Button
                                     size="sm"
@@ -651,15 +666,31 @@ export default function Traduction() {
                     className="w-full max-w-full flex flex-col
                     gap-2 mt-5 overflow-y-scroll overflow-x-hidden pr-3 pb-3"
                 >
+                    {/* Description d'en-tête */}
+                    <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                            Installez et gérez les traductions françaises de Star Citizen.
+                            Les traductions sont fournies par la communauté SCEFRA.
+                        </p>
+                    </div>
+
                     <div className="grid grid-cols-12 pr-4 gap-5">
-                        <p className="col-span-2 font-bold">
+                        <p className="col-span-1 font-bold">
                             Version
                         </p>
                         <p className="col-span-2 text-center font-bold">
                             Chemin
                         </p>
-                        <p className="col-span-2 text-center font-bold">
-                            Settings
+                        <p className="col-span-3 text-center font-bold flex items-center justify-center gap-1">
+                            Paramètres
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Langue des paramètres du jeu</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </p>
                         <p className="col-span-2 text-center font-bold">
                             État

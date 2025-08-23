@@ -8,14 +8,16 @@ export default function AdminElevateButton() {
     const visibleOverride = useAdminStore((s) => s.visible);
     const { toast } = useToast();
     const [hover, setHover] = useState(false);
-    const [isAdmin, setIsAdmin] = useState<boolean>(true);
+    const [isAdmin, setIsAdmin] = useState<boolean>(false); // Changé à false pour voir le bouton en dev
 
     useEffect(() => {
         const check = async () => {
             try {
                 const res = await invoke<boolean>("is_running_as_admin");
+                console.log("Admin status:", res);
                 setIsAdmin(res);
-            } catch {
+            } catch (error) {
+                console.log("Error checking admin status:", error);
                 setIsAdmin(true);
             }
         };
