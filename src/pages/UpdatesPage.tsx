@@ -5,36 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { useUpdater } from '@/hooks/useUpdater';
 import { Download, Github, Store, AlertTriangle } from 'lucide-react';
 import openExternal from '@/utils/external';
-import { formatVersion, getAppVersion } from '@/utils/version';
-import { useState } from 'react';
+import { formatVersion, getAppVersionSync } from '@/utils/version';
 
 export default function UpdatesPage() {
-
     const updater = useUpdater({
         checkOnStartup: false,
         enableAutoUpdater: false,
         githubRepo: 'Onivoid/MultitoolV2'
     });
 
-    // Debug: afficher les valeurs dans la console
-    console.log('UpdatesPage - Version info:', {
-        currentVersion: updater.currentVersion,
-        distribution: updater.distribution,
-        latestVersion: updater.latestVersion
-    });
-
-    // Test de récupération directe de la version
-    const [testVersion, setTestVersion] = useState<string>('');
-
-    const handleTestVersion = async () => {
-        try {
-            const version = await getAppVersion();
-            setTestVersion(version);
-            console.log('Version récupérée directement:', version);
-        } catch (error) {
-            console.error('Erreur de récupération de version:', error);
-        }
-    };
+    // Utiliser la même méthode que dans le layout
+    const currentVersion = formatVersion(getAppVersionSync());
 
     const handleOpenGitHub = () => {
         openExternal('https://github.com/Onivoid/MultitoolV2/releases');
@@ -107,7 +88,7 @@ export default function UpdatesPage() {
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="font-medium">MultitoolV2 {formatVersion(updater.currentVersion || 'inconnue')}</p>
+                            <p className="font-medium">MultitoolV2 {currentVersion}</p>
                             <p className="text-sm text-muted-foreground">
                                 {distInfo.description}
                             </p>
@@ -129,14 +110,6 @@ export default function UpdatesPage() {
                         >
                             <Download className="h-4 w-4" />
                             {updater.isChecking ? 'Vérification...' : 'Vérifier les mises à jour'}
-                        </Button>
-
-                        <Button
-                            variant="secondary"
-                            onClick={handleTestVersion}
-                            className="flex items-center gap-2"
-                        >
-                            🔍 Test Version {testVersion ? `(${testVersion})` : ''}
                         </Button>
 
                         {updater.distribution === 'microsoft-store' ? (
