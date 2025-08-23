@@ -33,8 +33,8 @@ const menuItems = [
     {
         path: "/traduction",
         icon: <IconLanguage size={20} />,
-        label: "Traduire",
-        tooltip: "Traduire"
+        label: "Traduction",
+        tooltip: "Traduction"
     },
     {
         path: "/cache",

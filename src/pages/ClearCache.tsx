@@ -62,8 +62,7 @@ export default function ClearCache() {
             {/* Description d'en-tête */}
             <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                    Nettoyez les fichiers temporaires de Star Citizen pour résoudre les problèmes de performance
-                    et libérer de l'espace disque. Supprimez les shaders, logs et autres fichiers de cache.
+                    Pour résoudre certains problèmes de performances et libérer de l'espace disque, il est recommandé de nettoyer les fichiers temporaires de StarCitizen. Supprimez les shaders, logs et tous autres fichiers du cache.
                 </p>
             </div>
 

@@ -82,7 +82,7 @@ function Home() {
                     <CardContent>
                         <p className="text-sm text-muted-foreground">
                             Si vous venez de Multitool V1, les préférences de traduction V1 ne sont pas compatibles avec la V2.
-                            Pour repartir proprement, désinstallez puis réinstallez la traduction via la page Traductions.
+                            Pour repartir proprement, désinstallez puis réinstallez la traduction via l'onglet de Traductions.
                         </p>
                     </CardContent>
                 </Card>

@@ -215,7 +215,7 @@ function LocalCharactersPresets() {
             <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                     Gérez vos configurations de personnages sauvegardées localement.
-                    Importez, exportez et organisez vos presets entre différentes versions du jeu.
+                    Importez, exportez et organisez vos presets entre les différentes versions du jeu.
                 </p>
             </div>
 
