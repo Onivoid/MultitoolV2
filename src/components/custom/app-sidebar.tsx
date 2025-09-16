@@ -131,6 +131,7 @@ const externalServices = [
 ];
 import { Link, useLocation } from "react-router-dom";
 import { ColorPicker } from "@/components/custom/color-picker";
+import { BackgroundServiceSettings } from "@/components/custom/BackgroundServiceSettings";
 import { useSidebar } from "@/components/ui/sidebar";
 import openExternal from "@/utils/external";
 import { useEffect, useState } from "react";
@@ -283,19 +284,20 @@ export function AppSidebar() {
                                     <span>Paramètres</span>
                                 </SidebarMenuButton>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle>Settings</DialogTitle>
                                     <DialogDescription asChild>
-                                        <div>
-                                            <ul className="text-foreground flex flex-col gap-4 mt-4">
-                                                <li className="flex items-center gap-5 text-foreground">
+                                        <div className="space-y-6">
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-5 text-foreground">
                                                     <p className="min-w-[100px]">
                                                         Color Picker :{" "}
                                                     </p>
                                                     <ColorPicker />
-                                                </li>
-                                            </ul>
+                                                </div>
+                                            </div>
+                                            <BackgroundServiceSettings />
                                         </div>
                                     </DialogDescription>
                                 </DialogHeader>

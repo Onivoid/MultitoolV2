@@ -1,5 +1,6 @@
 mod scripts;
 
+#[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
@@ -18,9 +19,16 @@ use scripts::translation_functions::{
 };
 use scripts::translation_preferences::{load_translations_selected, save_translations_selected};
 use scripts::translations_links::{get_translation_by_setting, get_translations};
+use scripts::background_service::{
+    BackgroundServiceState, get_background_service_config, set_background_service_config,
+    start_background_service, stop_background_service, is_auto_startup_enabled,
+};
+use scripts::system_tray::SystemTray;
 use tauri::{command, Manager};
 use tauri_plugin_shell::ShellExt;
+#[cfg(target_os = "windows")]
 use window_vibrancy::apply_acrylic;
+use std::sync::{Arc, Mutex};
 
 #[command]
 async fn open_external(url: String, app_handle: tauri::AppHandle) -> Result<(), String> {
@@ -90,6 +98,24 @@ pub fn run() {
             apply_acrylic(&window, Some((18, 18, 18, 125)))
                 .expect("Impossible d'appliquer l'effet de blur sur Windows");
 
+            // Initialize background service state
+            app.manage(BackgroundServiceState::default());
+
+            // Setup system tray
+            let mut system_tray = SystemTray::new();
+            if let Err(e) = system_tray.setup(&app.handle()) {
+                eprintln!("Failed to setup system tray: {}", e);
+            }
+            app.manage(Arc::new(Mutex::new(system_tray)));
+
+            // Check if app was launched with --minimized flag (from startup)
+            let args: Vec<String> = std::env::args().collect();
+            if args.contains(&"--minimized".to_string()) {
+                if let Err(e) = window.hide() {
+                    eprintln!("Failed to hide window on startup: {}", e);
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -119,6 +145,11 @@ pub fn run() {
             restart_as_admin,
             clear_cache,
             open_cache_folder,
+            get_background_service_config,
+            set_background_service_config,
+            start_background_service,
+            stop_background_service,
+            is_auto_startup_enabled,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
