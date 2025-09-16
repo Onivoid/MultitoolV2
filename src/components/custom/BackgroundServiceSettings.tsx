@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,31 @@ export function BackgroundServiceSettings() {
         };
 
         loadConfig();
+    }, [toast]);
+
+    // Listen for translation update events
+    useEffect(() => {
+        const unlisten = listen<{ version: string; success: boolean; error?: string }>('translation_updated', (event) => {
+            const { version, success, error } = event.payload;
+            
+            if (success) {
+                toast({
+                    title: "Traduction mise à jour",
+                    description: `La traduction pour ${version} a été mise à jour automatiquement.`,
+                    variant: "success",
+                });
+            } else {
+                toast({
+                    title: "Erreur de mise à jour",
+                    description: `Échec de la mise à jour automatique pour ${version}: ${error || 'Erreur inconnue'}`,
+                    variant: "destructive",
+                });
+            }
+        });
+
+        return () => {
+            unlisten.then(fn => fn());
+        };
     }, [toast]);
 
     const saveConfig = async (newConfig: BackgroundServiceConfig) => {

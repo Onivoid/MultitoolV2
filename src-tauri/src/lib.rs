@@ -23,6 +23,7 @@ use scripts::background_service::{
     BackgroundServiceState, get_background_service_config, set_background_service_config,
     start_background_service, stop_background_service, is_auto_startup_enabled,
 };
+use scripts::background_service_preferences::{save_background_service_config, load_background_service_config};
 use scripts::system_tray::SystemTray;
 use tauri::{command, Manager};
 use tauri_plugin_shell::ShellExt;
@@ -99,7 +100,36 @@ pub fn run() {
                 .expect("Impossible d'appliquer l'effet de blur sur Windows");
 
             // Initialize background service state
-            app.manage(BackgroundServiceState::default());
+            let background_state = BackgroundServiceState::default();
+            
+            // Load saved configuration and apply it
+            match crate::scripts::background_service_preferences::load_background_service_config() {
+                Ok(config) => {
+                    // Update the state with loaded config
+                    if let Ok(mut state_config) = background_state.config.lock() {
+                        *state_config = config.clone();
+                    }
+                    
+                    // Start background service if enabled
+                    if config.enabled {
+                        let app_handle_clone = app.handle().clone();
+                        let state_clone = background_state.clone();
+                        
+                        tokio::spawn(async move {
+                            if let Err(e) = crate::scripts::background_service::start_background_service_internal(
+                                state_clone, app_handle_clone
+                            ).await {
+                                eprintln!("Failed to start background service on startup: {}", e);
+                            }
+                        });
+                    }
+                },
+                Err(e) => {
+                    eprintln!("Failed to load background service config: {}", e);
+                }
+            }
+            
+            app.manage(background_state);
 
             // Setup system tray
             let mut system_tray = SystemTray::new();
@@ -150,6 +180,8 @@ pub fn run() {
             start_background_service,
             stop_background_service,
             is_auto_startup_enabled,
+            save_background_service_config,
+            load_background_service_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

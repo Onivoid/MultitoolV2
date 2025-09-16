@@ -42,6 +42,12 @@ impl Default for TranslationSetting {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TranslationsSelected(serde_json::Value);
 
+impl TranslationsSelected {
+    pub fn as_value(&self) -> &serde_json::Value {
+        &self.0
+    }
+}
+
 // Implémentation de Default pour TranslationsSelected
 impl Default for TranslationsSelected {
     fn default() -> Self {

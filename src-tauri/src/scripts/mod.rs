@@ -8,4 +8,5 @@ pub mod translation_functions;
 pub mod translation_preferences;
 pub mod translations_links;
 pub mod background_service;
+pub mod background_service_preferences;
 pub mod system_tray;

@@ -30,6 +30,15 @@ pub struct BackgroundServiceState {
     pub is_running: Arc<Mutex<bool>>,
 }
 
+impl Clone for BackgroundServiceState {
+    fn clone(&self) -> Self {
+        Self {
+            config: self.config.clone(),
+            is_running: self.is_running.clone(),
+        }
+    }
+}
+
 impl Default for BackgroundServiceState {
     fn default() -> Self {
         Self {
@@ -43,8 +52,21 @@ impl Default for BackgroundServiceState {
 pub async fn get_background_service_config(
     state: tauri::State<'_, BackgroundServiceState>,
 ) -> Result<BackgroundServiceConfig, String> {
-    let config = state.config.lock().map_err(|e| e.to_string())?;
-    Ok(config.clone())
+    // Try to load from file first
+    match crate::scripts::background_service_preferences::load_background_service_config() {
+        Ok(config) => {
+            // Update the in-memory state
+            if let Ok(mut current_config) = state.config.lock() {
+                *current_config = config.clone();
+            }
+            Ok(config)
+        },
+        Err(_) => {
+            // Fall back to in-memory state
+            let config = state.config.lock().map_err(|e| e.to_string())?;
+            Ok(config.clone())
+        }
+    }
 }
 
 #[command]
@@ -59,6 +81,10 @@ pub async fn set_background_service_config(
         *current_config = config.clone();
     }
 
+    // Save config to file
+    crate::scripts::background_service_preferences::save_background_service_config(config.clone())
+        .map_err(|e| format!("Failed to save config: {}", e))?;
+
     // Handle Windows startup setting
     if let Err(e) = set_windows_startup(config.start_with_windows).await {
         eprintln!("Failed to set Windows startup: {}", e);
@@ -66,7 +92,7 @@ pub async fn set_background_service_config(
 
     // Restart the background service if config changed
     if config.enabled {
-        start_background_service(state, app_handle).await?;
+        start_background_service_internal(state.inner().clone(), app_handle).await?;
     } else {
         stop_background_service(state).await?;
     }
@@ -79,6 +105,13 @@ pub async fn start_background_service(
     state: tauri::State<'_, BackgroundServiceState>,
     app_handle: AppHandle,
 ) -> Result<(), String> {
+    start_background_service_internal(state.inner().clone(), app_handle).await
+}
+
+pub async fn start_background_service_internal(
+    state: BackgroundServiceState,
+    app_handle: AppHandle,
+) -> Result<(), String> {
     let mut is_running = state.is_running.lock().map_err(|e| e.to_string())?;
     
     if *is_running {
@@ -89,16 +122,15 @@ pub async fn start_background_service(
     drop(is_running); // Release the lock before starting the async task
     
     let state_clone = {
-        let inner = state.inner();
-        Arc::new(BackgroundServiceState {
-            config: inner.config.clone(),
-            is_running: inner.is_running.clone(),
-        })
+        BackgroundServiceState {
+            config: state.config.clone(),
+            is_running: state.is_running.clone(),
+        }
     };
     let app_handle_clone = app_handle.clone();
     
     tokio::spawn(async move {
-        background_translation_checker(state_clone, app_handle_clone).await;
+        background_translation_checker(Arc::new(state_clone), app_handle_clone).await;
     });
     
     Ok(())
@@ -146,16 +178,10 @@ async fn check_and_update_translations(app_handle: &AppHandle) -> Result<(), Str
     println!("Background: Starting translation check...");
     
     // Get game paths
-    let game_paths = match get_star_citizen_versions() {
-        Ok(paths) => paths,
-        Err(e) => {
-            eprintln!("Background: Failed to get game paths: {}", e);
-            return Err(e);
-        }
-    };
+    let game_paths = get_star_citizen_versions();
     
     // Get translation preferences
-    let translation_prefs = match load_translations_selected() {
+    let translation_prefs = match load_translations_selected(app_handle.clone()) {
         Ok(prefs) => prefs,
         Err(e) => {
             eprintln!("Background: Failed to load translation preferences: {}", e);
@@ -163,48 +189,56 @@ async fn check_and_update_translations(app_handle: &AppHandle) -> Result<(), Str
         }
     };
     
+    // Since TranslationsSelected is a wrapped JSON value, we need to parse it
+    let prefs_json = translation_prefs.as_value();
+    let prefs_object = prefs_json.as_object().ok_or("Invalid translation preferences format")?;
+    
     // Check each version
     for (version_key, version_data) in game_paths.versions.iter() {
-        if let Some(version_prefs) = translation_prefs.get(version_key) {
-            if let Some(link) = &version_prefs.link {
-                // Check if translation is installed
-                let is_translated = is_game_translated(version_data.path.clone(), "fr".to_string());
-                
-                if is_translated {
-                    // Check if translation is up to date
-                    let is_up_to_date = is_translation_up_to_date(
-                        version_data.path.clone(), 
-                        link.clone(), 
-                        "fr".to_string()
-                    );
-                    
-                    if !is_up_to_date {
-                        println!("Background: Translation update available for {}", version_key);
+        if let Some(version_prefs_value) = prefs_object.get(version_key) {
+            if let Some(version_prefs) = version_prefs_value.as_object() {
+                if let Some(link_value) = version_prefs.get("link") {
+                    if let Some(link) = link_value.as_str() {
+                        // Check if translation is installed
+                        let is_translated = is_game_translated(version_data.path.clone(), "fr".to_string());
                         
-                        // Update translation
-                        match update_translation(version_data.path.clone(), "fr".to_string(), link.clone()) {
-                            Ok(_) => {
-                                println!("Background: Successfully updated translation for {}", version_key);
+                        if is_translated {
+                            // Check if translation is up to date
+                            let is_up_to_date = is_translation_up_to_date(
+                                version_data.path.clone(), 
+                                link.to_string(), 
+                                "fr".to_string()
+                            );
+                            
+                            if !is_up_to_date {
+                                println!("Background: Translation update available for {}", version_key);
                                 
-                                // Emit event to notify frontend
-                                let _ = app_handle.emit("translation_updated", serde_json::json!({
-                                    "version": version_key,
-                                    "success": true
-                                }));
-                            },
-                            Err(e) => {
-                                eprintln!("Background: Failed to update translation for {}: {}", version_key, e);
-                                
-                                // Emit event to notify frontend
-                                let _ = app_handle.emit("translation_updated", serde_json::json!({
-                                    "version": version_key,
-                                    "success": false,
-                                    "error": e
-                                }));
+                                // Update translation
+                                match update_translation(version_data.path.clone(), "fr".to_string(), link.to_string()) {
+                                    Ok(_) => {
+                                        println!("Background: Successfully updated translation for {}", version_key);
+                                        
+                                        // Emit event to notify frontend
+                                        let _ = app_handle.emit("translation_updated", serde_json::json!({
+                                            "version": version_key,
+                                            "success": true
+                                        }));
+                                    },
+                                    Err(e) => {
+                                        eprintln!("Background: Failed to update translation for {}: {}", version_key, e);
+                                        
+                                        // Emit event to notify frontend
+                                        let _ = app_handle.emit("translation_updated", serde_json::json!({
+                                            "version": version_key,
+                                            "success": false,
+                                            "error": e
+                                        }));
+                                    }
+                                }
+                            } else {
+                                println!("Background: Translation for {} is up to date", version_key);
                             }
                         }
-                    } else {
-                        println!("Background: Translation for {} is up to date", version_key);
                     }
                 }
             }

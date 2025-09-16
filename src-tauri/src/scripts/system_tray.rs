@@ -2,7 +2,7 @@
 use tray_icon::{TrayIcon, TrayIconBuilder, menu::{Menu, MenuItem, PredefinedMenuItem}};
 #[cfg(target_os = "windows")]
 use std::sync::Arc;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 pub struct SystemTray {
     #[cfg(target_os = "windows")]
