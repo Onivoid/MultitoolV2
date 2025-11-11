@@ -45,6 +45,13 @@ jobs:
             - name: Install frontend dependencies
               run: pnpm install
 
+            - name: Setup .NET SDK and WiX
+              run: |
+                  Write-Host "📦 Installing .NET SDK and WiX..." -ForegroundColor Cyan
+                  # .NET SDK is pre-installed on GitHub runners
+                  dotnet tool install --global wix --version 5.0.2
+                  Write-Host "✅ WiX installed successfully" -ForegroundColor Green
+
             - name: Build Standard Release (GitHub Distribution)
               run: |
                   Write-Host "🏗️ Building Standard (GitHub)..." -ForegroundColor Green
