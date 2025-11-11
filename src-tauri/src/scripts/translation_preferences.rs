@@ -49,6 +49,13 @@ impl Default for TranslationsSelected {
     }
 }
 
+impl TranslationsSelected {
+    /// Accède à la valeur JSON interne
+    pub fn as_value(&self) -> &serde_json::Value {
+        &self.0
+    }
+}
+
 #[command]
 pub fn save_translations_selected(
     app: tauri::AppHandle,

@@ -7,3 +7,6 @@ pub mod theme_preferences;
 pub mod translation_functions;
 pub mod translation_preferences;
 pub mod translations_links;
+pub mod background_service;
+pub mod system_tray;
+pub mod startup_manager;

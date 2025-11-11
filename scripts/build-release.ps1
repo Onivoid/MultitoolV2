@@ -55,26 +55,21 @@ catch {
     pnpm add -D @tauri-apps/cli
 }
 
-# Verifier WiX Toolset pour la generation MSI (Windows)
+# Verifier WiX Toolset pour la generation MSI (Windows) - Optionnel
+$wixAvailable = $false
 if ($env:OS -match "Windows") {
     try {
         $wixVersion = wix --version
         Write-Host "WiX: $wixVersion" -ForegroundColor Green
+        $wixAvailable = $true
     }
     catch {
-        Write-Host "WiX non trouve, tentative d'installation via dotnet tool..." -ForegroundColor Yellow
-        try {
-            dotnet tool install --global wix --version 4.* | Out-Null
-            # Ajouter le dossier des outils dotnet au PATH pour la session courante si besoin
-            $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
-            if (Test-Path $dotnetTools) {
-                $env:PATH = "$dotnetTools;$env:PATH"
-            }
-            $wixVersion = wix --version
-            Write-Host "WiX installe: $wixVersion" -ForegroundColor Green
-        }
-        catch {
-            Write-Error "Echec de l'installation de WiX. Assurez-vous que .NET SDK est installe et reessayez."
+        Write-Host "WiX non trouve - Les builds MSI ne seront pas disponibles" -ForegroundColor Yellow
+        Write-Host "Pour installer WiX: dotnet tool install --global wix" -ForegroundColor Gray
+        
+        # Bloquer seulement si on demande explicitement un build MSI
+        if ($Type -eq "msix" -or $Type -eq "all") {
+            Write-Error "WiX est requis pour les builds MSI/MSIX. Installez .NET SDK puis: dotnet tool install --global wix"
             exit 1
         }
     }

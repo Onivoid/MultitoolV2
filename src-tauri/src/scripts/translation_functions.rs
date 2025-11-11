@@ -241,3 +241,113 @@ pub fn uninstall_translation(path: String) -> Result<(), String> {
 
     Ok(())
 }
+
+// ============================================================================
+// Versions ASYNC pour le background service (évite les conflits avec Tokio)
+// ============================================================================
+
+/// Version async de is_translation_up_to_date pour le background service
+pub async fn is_translation_up_to_date_async(path: String, translation_link: String, lang: String) -> bool {
+    let base_path = Path::new(&path);
+
+    // Obtenir le nom du dossier de langue
+    let lang_folder_name = match get_language_folder(&lang) {
+        Some(name) => name,
+        None => return false,
+    };
+
+    // Chemin vers le fichier local 'global.ini'
+    let global_ini_path = base_path
+        .join("data")
+        .join("Localization")
+        .join(lang_folder_name)
+        .join("global.ini");
+
+    if !global_ini_path.is_file() {
+        return false;
+    }
+
+    // Lire le fichier local 'global.ini' en tant que bytes
+    let mut local_ini_bytes = match fs::read(&global_ini_path) {
+        Ok(bytes) => bytes,
+        Err(_) => return false,
+    };
+
+    // Retirer le BOM si présent
+    if local_ini_bytes.starts_with(UTF8_BOM) {
+        local_ini_bytes = local_ini_bytes[UTF8_BOM.len()..].to_vec();
+    }
+
+    let local_ini_content = match String::from_utf8(local_ini_bytes) {
+        Ok(content) => content,
+        Err(_) => return false,
+    };
+
+    // Télécharger le fichier 'global.ini' depuis le 'TranslationLink' (ASYNC)
+    let client = reqwest::Client::new();
+    let response = match client.get(&translation_link).send().await {
+        Ok(resp) => resp,
+        Err(_) => return false,
+    };
+
+    let remote_ini_content = match response.text().await {
+        Ok(text) => text,
+        Err(_) => return false,
+    };
+
+    // Normaliser les contenus
+    let local_normalized = local_ini_content.replace("\r\n", "\n").trim().to_string();
+    let remote_normalized = remote_ini_content.replace("\r\n", "\n").trim().to_string();
+
+    // Comparer les contenus
+    local_normalized == remote_normalized
+}
+
+/// Version async de update_translation pour le background service
+pub async fn update_translation_async(
+    path: String,
+    lang: String,
+    translation_link: String,
+) -> Result<(), String> {
+    let base_path = Path::new(&path);
+
+    // Obtenir le nom du dossier de langue
+    let lang_folder_name =
+        get_language_folder(&lang).ok_or_else(|| "Langue non prise en charge".to_string())?;
+
+    // Chemin vers le dossier de langue
+    let lang_folder_path = base_path
+        .join("data")
+        .join("Localization")
+        .join(lang_folder_name);
+
+    // Vérifier et créer le dossier de langue s'il n'existe pas
+    if !lang_folder_path.exists() {
+        fs::create_dir_all(&lang_folder_path)
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+    }
+
+    // Chemin vers le fichier 'global.ini' local
+    let global_ini_path = lang_folder_path.join("global.ini");
+
+    // Télécharger le fichier 'global.ini' depuis 'translation_link' (ASYNC)
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&translation_link)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+    let content = response
+        .text()
+        .await
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+
+    // Écrire le contenu dans le fichier 'global.ini' local avec UTF-8 BOM
+    let mut file = File::create(&global_ini_path)
+        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {}", e))?;
+    file.write_all(UTF8_BOM)
+        .and_then(|_| file.write_all(content.as_bytes()))
+        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {}", e))?;
+
+    Ok(())
+}

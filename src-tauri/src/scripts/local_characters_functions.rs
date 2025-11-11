@@ -133,7 +133,7 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
             .join("user")
             .join("client")
             .join("0")
-            .join("customcharacters");
+            .join("CustomCharacters");
 
         // Vérifier si le répertoire de destination est le même que celui du fichier source
         if dest_dir == source_dir {
@@ -176,7 +176,7 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
         .join("user")
         .join("client")
         .join("0")
-        .join("customcharacters");
+        .join("CustomCharacters");
 
     if !dest_dir.exists() {
         fs::create_dir_all(&dest_dir).map_err(|e| {
@@ -192,17 +192,45 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
     let sanitized = re.replace_all(&title, "_");
     let file_path = dest_dir.join(format!("{}.chf", sanitized));
 
-    let client = Client::new();
+    println!("[DEBUG] Téléchargement depuis: {}", dna_url);
+
+    let client = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .build()
+        .map_err(|e| format!("Erreur lors de la création du client: {}", e))?;
+
     let response = client
         .get(&dna_url)
         .send()
         .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+
+    println!("[DEBUG] Status HTTP: {}", response.status());
+    println!("[DEBUG] URL finale: {}", response.url());
+    println!("[DEBUG] Headers: {:?}", response.headers());
+
+    // Vérifier le status code
+    if !response.status().is_success() {
+        return Err(format!(
+            "Erreur HTTP {}: Le serveur a retourné une erreur",
+            response.status()
+        ));
+    }
+
     let bytes = response
         .bytes()
         .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
 
+    println!("[DEBUG] Taille téléchargée: {} bytes", bytes.len());
+
     fs::write(&file_path, &bytes)
         .map_err(|e| format!("Erreur lors de l'écriture du fichier: {}", e))?;
+
+    println!(
+        "[DEBUG] Fichier écrit: {} ({} bytes)",
+        file_path.display(),
+        bytes.len()
+    );
 
     duplicate_character(file_path.to_string_lossy().to_string())?;
     Ok(true)
