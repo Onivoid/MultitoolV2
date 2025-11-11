@@ -50,6 +50,14 @@ jobs:
                   Write-Host "📦 Installing .NET SDK and WiX..." -ForegroundColor Cyan
                   # .NET SDK is pre-installed on GitHub runners
                   dotnet tool install --global wix --version 5.0.2
+
+                  # Ajouter les outils .NET au PATH
+                  $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
+                  echo "$dotnetTools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+                  # Vérifier que WiX est accessible
+                  $env:PATH = "$dotnetTools;$env:PATH"
+                  wix --version
                   Write-Host "✅ WiX installed successfully" -ForegroundColor Green
 
             - name: Build Standard Release (GitHub Distribution)
