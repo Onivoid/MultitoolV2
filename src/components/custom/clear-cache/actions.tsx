@@ -1,10 +1,5 @@
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Ellipsis } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FolderOpen, Trash2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,24 +47,23 @@ export default function ActionsMenu({ setCacheInfos }: { setCacheInfos: any }) {
         }
     };
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger className="mt-2">
-                <Ellipsis className="h-5 w-5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuItem
-                    className="hover:cursor-pointer"
-                    onClick={handleClearCache}
-                >
-                    Nettoyer le cache
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    className="hover:cursor-pointer"
-                    onClick={handleOpenCacheFolder}
-                >
-                    Ouvrir le dossier du cache
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenCacheFolder}
+            >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Ouvrir le dossier
+            </Button>
+            <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleClearCache}
+            >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Nettoyer tout
+            </Button>
+        </div>
     );
 }

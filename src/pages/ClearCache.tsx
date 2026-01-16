@@ -6,6 +6,8 @@ import { CacheInfos, columns, Folder } from "@/components/custom/clear-cache/col
 import { DataTable } from "@/components/custom/clear-cache/data-table";
 import ActionsMenu from "@/components/custom/clear-cache/actions";
 import { useToast } from "@/hooks/use-toast";
+import PageHeader from "@/components/custom/PageHeader";
+import { BrushCleaning } from "lucide-react";
 
 export default function ClearCache() {
     const [cacheInfos, setCacheInfos] = useState<Folder[] | null>(null);
@@ -54,16 +56,13 @@ export default function ClearCache() {
             }}
             className="flex flex-col w-full max-h-[calc(100vh-50px)]"
         >
-            <div className="flex items-center gap-2">
-                <h1 className="text-2xl my-5">Gestionnaire du cache</h1>
+            <div className="flex items-center justify-between">
+                <PageHeader
+                    icon={<BrushCleaning className="h-6 w-6" />}
+                    title="Gestionnaire du cache"
+                    description="Gérez et nettoyez les fichiers en cache de Star Citizen"
+                />
                 <ActionsMenu setCacheInfos={setCacheInfos} />
-            </div>
-
-            {/* Description d'en-tête */}
-            <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                    Pour résoudre certains problèmes de performances et libérer de l'espace disque, il est recommandé de nettoyer les fichiers temporaires de StarCitizen. Supprimez les shaders, logs et tous autres fichiers du cache.
-                </p>
             </div>
 
             <DataTable

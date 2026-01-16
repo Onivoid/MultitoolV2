@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import PageHeader from "@/components/custom/PageHeader";
+import { IconLanguage } from "@tabler/icons-react";
 
 export default function Traduction() {
     const [paths, setPaths] = useState<GamePaths | null>();
@@ -667,11 +669,11 @@ export default function Traduction() {
                     gap-2 mt-5 overflow-y-scroll overflow-x-hidden pr-3 pb-3"
                 >
                     {/* Description d'en-tête */}
-                    <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                            Installez et gérez la traduction française de Star Citizen. La traduction vous est fournie par la communauté de SCEFRA.
-                        </p>
-                    </div>
+                    <PageHeader
+                        icon={<IconLanguage className="h-6 w-6" />}
+                        title="Gestionnaire de traduction"
+                        description="Gérez les traductions de Star Citizen"
+                    />
 
                     <div className="grid grid-cols-12 pr-4 gap-5">
                         <p className="col-span-1 font-bold">

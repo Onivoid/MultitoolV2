@@ -8,6 +8,8 @@ import { GamePaths, isGamePaths } from "@/types/translation";
 import { LocalCharactersResult } from "@/types/charactersList";
 import logger from "@/utils/logger";
 import { isProtectedPath } from "@/utils/fs-permissions";
+import PageHeader from '@/components/custom/PageHeader';
+import { IconUsers } from '@tabler/icons-react';
 
 /**
  * Page de gestion des presets de personnages locaux.
@@ -202,16 +204,11 @@ function LocalCharactersPresets() {
             }}
             className="flex flex-col w-full max-h-[calc(100vh-50px)]"
         >
-            <div className="flex items-center gap-2 mb-4">
-                <h1 className="text-2xl mt-5">Gestionnaire de presets de Personnages</h1>
-            </div>
-
-            <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                    Gérez vos configurations de personnages sauvegardées localement.
-                    Importez, exportez et organisez vos presets entre les différentes versions du jeu.
-                </p>
-            </div>
+            <PageHeader
+                icon={<IconUsers className="h-6 w-6" />}
+                title="Gestionnaire de presets de Personnages"
+                description="Gérez vos presets de personnages locaux"
+            />
 
             <DataTable
                 columns={columns(toast, refreshLocalCharacters, availableVersions)}

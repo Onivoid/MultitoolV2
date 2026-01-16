@@ -6,6 +6,7 @@ import { RemoteCharactersPresetsList, Row } from "@/types/charactersList";
 import { CharacterCard } from '@/components/custom/character-card';
 import logger from "@/utils/logger";
 import { IconClock, IconDownload, IconHeart, IconSearch } from '@tabler/icons-react';
+import PageHeader from '@/components/custom/PageHeader';
 
 function CharactersPresetsList() {
     const { toast } = useToast();
@@ -124,15 +125,11 @@ function CharactersPresetsList() {
             className="flex w-full flex-col"
         >
             {/* Description d'en-tête */}
-            <div className="flex flex-row my-4 gap-2">
-                <div className="p-4 bg-primary/50 rounded-xl">
-                    <IconDownload className="h-6 w-6" />
-                </div>
-                <div className="flex flex-col">
-                    <p className="text-2xl font-bold">Personnages en Ligne</p>
-                    <p className="text-muted-foreground">Liste de personnages téléchargeables, par la communauté de SC Characters</p>
-                </div>
-            </div>
+            <PageHeader
+                icon={<IconDownload className="h-6 w-6" />}
+                title="Personnages en Ligne"
+                description="Liste de personnages téléchargeables, par la communauté de SC Characters"
+            />
 
             {/* Barre de recherche + Tri */}
             <div className="w-full flex flex-col md:flex-row md:items-center gap-3 my-4">

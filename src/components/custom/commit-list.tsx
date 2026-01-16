@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CommitsList = () => {
     const [commits, setCommits] = useState<Commit[]>([]);
-    
+
     async function fetchCommits() {
         try {
             const response = await invoke("get_latest_commits", {
@@ -25,13 +25,10 @@ const CommitsList = () => {
 
     return (
         <div className="w-full">
-            <div className="flex items-center my-3">
-                <h3 className="text-2xl font-bold">Patchnotes</h3>
-            </div>
             {!commits[0] ? (
-                <Skeleton className="h-[430px]" />
+                <Skeleton className="h-[calc(100vh-130px)]" />
             ) : (
-                <ul className="overflow-y-scroll h-[430px] bg-zinc-900/50 p-5 rounded-xl w-full">
+                <ul className="overflow-y-scroll h-[calc(100vh-170px)] bg-zinc-900/50 p-5 rounded-xl w-full">
                     {commits.map((commit, index) => (
                         <li key={index}>
                             <p className="text-lg font-bold text-zinc-200">
