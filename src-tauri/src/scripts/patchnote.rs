@@ -74,7 +74,7 @@ pub async fn get_latest_commits(
     match response {
         Ok(resp) if resp.status().is_success() => {
             let commits: Vec<serde_json::Value> = resp.json().await.map_err(|e| e.to_string())?;
-            let keywords = ["Feat :", "Bugfix :", "Release :", "Refactoring :"];
+            let keywords = ["Feat :", "Bugfix :", "Release :"];
             let commit_list: Vec<Commit> = commits
                 .into_iter()
                 .filter(|commit| {
