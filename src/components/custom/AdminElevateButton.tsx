@@ -4,11 +4,15 @@ import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
+/**
+ * Bouton flottant permettant de relancer l'application avec les privilèges administrateur.
+ * S'affiche uniquement si l'application n'est pas déjà lancée en tant qu'administrateur.
+ */
 export default function AdminElevateButton() {
     const visibleOverride = useAdminStore((s) => s.visible);
     const { toast } = useToast();
     const [hover, setHover] = useState(false);
-    const [isAdmin, setIsAdmin] = useState<boolean>(false); // Changé à false pour voir le bouton en dev
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
     useEffect(() => {
         const check = async () => {

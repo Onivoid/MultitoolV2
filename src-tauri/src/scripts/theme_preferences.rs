@@ -27,6 +27,7 @@ pub struct IconSize {
     icon_size: String,
 }
 
+/// Sauvegarde les préférences de thème dans un fichier JSON.
 #[command]
 pub fn save_theme_selected(app: tauri::AppHandle, data: ThemeSelected) -> Result<(), String> {
     let config_path = get_theme_config_file_path(app.path()).map_err(|e| e.to_string())?;
@@ -34,6 +35,7 @@ pub fn save_theme_selected(app: tauri::AppHandle, data: ThemeSelected) -> Result
     fs::write(config_path, json_data).map_err(|e| e.to_string())
 }
 
+/// Charge les préférences de thème depuis un fichier JSON.
 #[command]
 pub fn load_theme_selected(app: tauri::AppHandle) -> Result<ThemeSelected, String> {
     let config_path = get_theme_config_file_path(app.path()).map_err(|e| e.to_string())?;

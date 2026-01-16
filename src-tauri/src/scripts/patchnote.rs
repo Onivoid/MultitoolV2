@@ -19,12 +19,10 @@ fn get_commit_cache_file_path(path: &PathResolver<impl Runtime>) -> Result<PathB
         "Impossible d'obtenir le répertoire de configuration de l'application".to_string()
     })?;
 
-    // Créer le répertoire s'il n'existe pas
     if !config_dir.exists() {
         fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
     }
 
-    // Nom du fichier de cache
     let cache_file = config_dir.join("commit_cache.json");
     Ok(cache_file)
 }
@@ -40,14 +38,13 @@ fn load_commit_cache(app: tauri::AppHandle) -> Result<Vec<Commit>, String> {
     let cache_path = get_commit_cache_file_path(app.path()).map_err(|e| e.to_string())?;
 
     if !cache_path.exists() {
-        return Ok(Vec::new()); // Return an empty list if cache doesn't exist
+        return Ok(Vec::new());
     }
 
     let json_data = fs::read_to_string(&cache_path).map_err(|e| e.to_string())?;
     match serde_json::from_str::<Vec<Commit>>(&json_data) {
         Ok(data) => Ok(data),
         Err(e) => {
-            // Log l'erreur et recréer le fichier de cache vide
             eprintln!("Cache de commits invalide: {e}");
             if let Err(remove_err) = fs::remove_file(&cache_path) {
                 eprintln!("Impossible de supprimer le cache invalide: {remove_err}");
@@ -57,6 +54,9 @@ fn load_commit_cache(app: tauri::AppHandle) -> Result<Vec<Commit>, String> {
     }
 }
 
+/// Récupère les derniers commits d'un dépôt GitHub filtrés par mots-clés.
+///
+/// Utilise un système de cache pour limiter les appels API.
 #[command]
 pub async fn get_latest_commits(
     app: tauri::AppHandle,
@@ -109,13 +109,7 @@ pub async fn get_latest_commits(
             save_commit_cache(app.clone(), &commit_list)?;
             Ok(commit_list)
         }
-        Ok(resp) if resp.status() == 403 => {
-            // API limitation, return cache
-            load_commit_cache(app)
-        }
-        _ => {
-            // Other error, return cache
-            load_commit_cache(app)
-        }
+        Ok(resp) if resp.status() == 403 => load_commit_cache(app),
+        _ => load_commit_cache(app),
     }
 }

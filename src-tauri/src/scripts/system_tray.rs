@@ -4,9 +4,8 @@ use tauri::{
     AppHandle, Manager,
 };
 
-/// Configure le system tray de l'application
+/// Configure le system tray de l'application avec les options d'affichage et de fermeture.
 pub fn setup_system_tray(app: &AppHandle) -> Result<(), String> {
-    // Créer les items du menu
     let show_item = MenuItem::with_id(app, "show", "Afficher", true, None::<&str>)
         .map_err(|e| e.to_string())?;
     let hide_item =
@@ -14,11 +13,9 @@ pub fn setup_system_tray(app: &AppHandle) -> Result<(), String> {
     let quit_item =
         MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>).map_err(|e| e.to_string())?;
 
-    // Créer le menu
     let menu =
         Menu::with_items(app, &[&show_item, &hide_item, &quit_item]).map_err(|e| e.to_string())?;
 
-    // Créer le tray icon avec l'icône par défaut de l'application
     let _tray = TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)

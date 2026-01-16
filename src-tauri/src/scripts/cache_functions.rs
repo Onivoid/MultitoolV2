@@ -17,6 +17,9 @@ struct Output {
     folders: Vec<FolderInfo>,
 }
 
+/// Récupère les informations sur les dossiers de cache de Star Citizen.
+///
+/// Retourne un JSON contenant la liste des dossiers avec leur nom, taille et chemin.
 #[command]
 pub fn get_cache_informations() -> String {
     let appdata =
@@ -100,6 +103,9 @@ fn get_folder_size(path: &Path) -> u64 {
     total_size
 }
 
+/// Supprime un dossier ou un fichier au chemin spécifié.
+///
+/// Retourne `true` si la suppression a réussi, `false` sinon.
 #[command]
 pub fn delete_folder(path: &str) -> bool {
     let path = Path::new(path);
@@ -116,6 +122,9 @@ pub fn delete_folder(path: &str) -> bool {
     }
 }
 
+/// Supprime tous les dossiers et fichiers du cache de Star Citizen.
+///
+/// Retourne `true` si tous les éléments ont été supprimés avec succès, `false` sinon.
 #[command]
 pub fn clear_cache() -> bool {
     let appdata =
@@ -143,15 +152,14 @@ pub fn clear_cache() -> bool {
     }
 }
 
+/// Ouvre le dossier de cache de Star Citizen dans l'explorateur Windows.
 #[command]
 pub fn open_cache_folder() -> Result<bool, String> {
     let appdata =
         env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
     let star_citizen_path = format!("{}\\Star Citizen", appdata);
 
-    // Vérifie si le chemin existe
     if std::path::Path::new(&star_citizen_path).exists() {
-        // Ouvre le dossier dans l'explorateur de fichiers
         Command::new("explorer")
             .arg(&star_citizen_path)
             .spawn()

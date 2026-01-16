@@ -31,6 +31,7 @@ use tauri::{command, Manager};
 use tauri_plugin_shell::ShellExt;
 use window_vibrancy::apply_acrylic;
 
+/// Ouvre une URL externe dans le navigateur par défaut du système.
 #[command]
 async fn open_external(url: String, app_handle: tauri::AppHandle) -> Result<(), String> {
     match app_handle.shell().open(url, None) {
@@ -39,6 +40,11 @@ async fn open_external(url: String, app_handle: tauri::AppHandle) -> Result<(), 
     }
 }
 
+/// Redémarre l'application avec des privilèges administrateur.
+///
+/// # Erreurs
+///
+/// Retourne une erreur si l'application est une version Microsoft Store ou si le redémarrage échoue.
 #[command]
 async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -52,12 +58,10 @@ async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
             .to_str()
             .ok_or_else(|| "Chemin exécutable invalide".to_string())?;
 
-        // Vérifier si c'est une app Store (WindowsApps dans le chemin)
         if exe_str.contains("WindowsApps") {
             return Err("Les applications Microsoft Store ne peuvent pas être élevées en administrateur. Veuillez utiliser la version MSI ou portable.".to_string());
         }
 
-        // Échapper les quotes pour PowerShell
         let escaped = exe_str.replace("'", "''");
 
         let result = Command::new("powershell")
@@ -66,17 +70,12 @@ async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
             .arg("-WindowStyle")
             .arg("Hidden")
             .arg("-Command")
-            .arg(format!(
-                "Start-Process -FilePath '{}' -Verb RunAs",
-                escaped
-            ))
+            .arg(format!("Start-Process -FilePath '{}' -Verb RunAs", escaped))
             .spawn();
 
         match result {
             Ok(_) => {
-                // Attendre un peu pour que la nouvelle instance démarre
                 tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                // Fermer l'application actuelle
                 app.exit(0);
                 Ok(())
             }
@@ -91,6 +90,7 @@ async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
+/// Vérifie si l'application s'exécute avec des privilèges administrateur.
 #[command]
 fn is_running_as_admin() -> bool {
     #[cfg(target_os = "windows")]
@@ -103,20 +103,20 @@ fn is_running_as_admin() -> bool {
     }
 }
 
+/// Détermine si l'application peut demander une élévation de privilèges.
+///
+/// Retourne `false` pour les applications Microsoft Store qui ne peuvent pas être élevées.
 #[command]
 fn can_elevate_privileges() -> bool {
     #[cfg(target_os = "windows")]
     {
-        // Vérifier si c'est une app Microsoft Store
         if let Ok(exe) = std::env::current_exe() {
             if let Some(exe_str) = exe.to_str() {
-                // Les apps Store sont dans WindowsApps et ne peuvent pas être élevées
                 if exe_str.contains("WindowsApps") {
                     return false;
                 }
             }
         }
-        // Pour les autres types d'installation (portable, MSI), l'élévation est possible
         true
     }
     #[cfg(not(target_os = "windows"))]
@@ -125,6 +125,9 @@ fn can_elevate_privileges() -> bool {
     }
 }
 
+/// Point d'entrée principal de l'application Tauri.
+///
+/// Configure tous les plugins, gestionnaires de commandes et initialise l'état de l'application.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -141,23 +144,17 @@ pub fn run() {
             apply_acrylic(&window, Some((18, 18, 18, 125)))
                 .expect("Impossible d'appliquer l'effet de blur sur Windows");
 
-            // Initialiser l'état du service de fond
             let background_state = BackgroundServiceState::default();
-
-            // Charger la configuration sauvegardée et l'appliquer
             match load_background_service_config(app.handle().clone()) {
                 Ok(config) => {
-                    // Mettre à jour l'état avec la config chargée
                     if let Ok(mut state_config) = background_state.config.lock() {
                         *state_config = config.clone();
                     }
 
-                    // Démarrer le service de fond si activé
                     if config.enabled {
                         let app_handle_clone = app.handle().clone();
                         let state_clone = background_state.clone();
 
-                        // Utiliser le runtime async de Tauri
                         tauri::async_runtime::spawn(async move {
                             if let Err(e) =
                                 start_background_service_internal(state_clone, app_handle_clone)
@@ -175,12 +172,10 @@ pub fn run() {
 
             app.manage(background_state);
 
-            // Configurer le system tray
             if let Err(e) = setup_system_tray(&app.handle()) {
                 eprintln!("Échec de la configuration du system tray: {}", e);
             }
 
-            // Vérifier si l'app a été lancée avec le flag --minimized (depuis le démarrage)
             let args: Vec<String> = std::env::args().collect();
             if args.contains(&"--minimized".to_string()) {
                 if let Err(e) = window.hide() {
@@ -192,9 +187,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Empêcher la fermeture par défaut
                 api.prevent_close();
-                // Cacher la fenêtre dans le tray au lieu de la fermer
                 if let Err(e) = window.hide() {
                     eprintln!("Échec de la minimisation dans le tray: {}", e);
                 }

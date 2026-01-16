@@ -22,17 +22,30 @@ import {
     Heart
 } from 'lucide-react';
 
+/**
+ * Interface pour les props du composant SecurityWarning.
+ */
 interface SecurityWarningProps {
+    /**
+     * Fonction appelée lorsque l'utilisateur clique sur "Continuer".
+     */
     onContinue: () => void;
 }
 
+/**
+ * Dialogue d'avertissement de sécurité pour les builds non-signés.
+ * Informe l'utilisateur des avertissements Windows SmartScreen attendus et des garanties de sécurité.
+ */
 export function SecurityWarning({ onContinue }: SecurityWarningProps) {
     const [open, setOpen] = useState(false);
     const [understood, setUnderstood] = useState(false);
     const [neverShowAgain, setNeverShowAgain] = useState(false);
     const [shouldShow, setShouldShow] = useState(false);
 
-    // Afficher seulement pour les builds non signés (GitHub/Portable)
+    /**
+     * Initialisation du composant.
+     * Vérifie si l'avertissement de sécurité doit être affiché.
+     */
     useEffect(() => {
         const init = async () => {
             try {
@@ -44,13 +57,15 @@ export function SecurityWarning({ onContinue }: SecurityWarningProps) {
                     setOpen(true);
                 }
             } catch {
-                // En cas d'erreur, ne rien afficher
                 setShouldShow(false);
             }
         };
         void init();
     }, []);
 
+    /**
+     * Gestion de la poursuite de l'utilisation de l'application.
+     */
     const handleContinue = () => {
         if (neverShowAgain) {
             localStorage.setItem('security-warning-seen', 'true');
@@ -59,6 +74,9 @@ export function SecurityWarning({ onContinue }: SecurityWarningProps) {
         onContinue();
     };
 
+    /**
+     * Gestion de la fermeture du dialogue.
+     */
     const handleDismiss = () => {
         localStorage.setItem('security-warning-seen', 'true');
         setOpen(false);
@@ -115,7 +133,7 @@ export function SecurityWarning({ onContinue }: SecurityWarningProps) {
 
                             <div className="bg-orange-100 dark:bg-orange-900 p-4 rounded-md">
                                 <p className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">
-                                    🛡️ Si Windows SmartScreen apparaît :
+                                    Si Windows SmartScreen apparaît :
                                 </p>
                                 <p className="text-sm text-orange-600 dark:text-orange-400">
                                     1. Cliquez sur "Informations complémentaires"<br />

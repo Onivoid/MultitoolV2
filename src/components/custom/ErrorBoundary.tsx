@@ -2,6 +2,10 @@ import React from 'react';
 
 type ErrorBoundaryState = { hasError: boolean; error?: Error };
 
+/**
+ * Composant Error Boundary pour capturer et afficher les erreurs React.
+ * Affiche une interface de secours avec option de rechargement en cas d'erreur.
+ */
 export class ErrorBoundary extends React.Component<React.PropsWithChildren, ErrorBoundaryState> {
     constructor(props: React.PropsWithChildren) {
         super(props);
@@ -13,7 +17,6 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Erro
     }
 
     componentDidCatch(error: Error, info: React.ErrorInfo): void {
-        // Optionally log
         console.error('ErrorBoundary caught:', error, info);
     }
 

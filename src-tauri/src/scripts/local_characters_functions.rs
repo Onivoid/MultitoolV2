@@ -19,6 +19,7 @@ struct Output {
     characters: Vec<LocalCharacterInfo>,
 }
 
+/// Récupère les informations sur tous les personnages personnalisés pour une version de Star Citizen.
 #[command]
 pub fn get_character_informations(path: String) -> Result<String, String> {
     let base_path = Path::new(&path);
@@ -71,13 +72,14 @@ pub fn get_character_informations(path: String) -> Result<String, String> {
         .map_err(|e| format!("Erreur lors de la sérialisation JSON: {}", e))
 }
 
+/// Supprime un fichier de personnage personnalisé.
 #[command]
 pub fn delete_character(path: &str) -> bool {
     let path = Path::new(path);
     let result = if path.is_file() {
         fs::remove_file(path)
     } else {
-        return false; // On ne supprime que les fichiers de personnages
+        return false;
     };
 
     match result {
@@ -89,6 +91,7 @@ pub fn delete_character(path: &str) -> bool {
     }
 }
 
+/// Ouvre le dossier des personnages personnalisés dans l'explorateur Windows.
 #[command]
 pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     let base_path = Path::new(&path);
@@ -108,6 +111,7 @@ pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     Ok(true)
 }
 
+/// Duplique un personnage personnalisé vers toutes les autres versions de Star Citizen installées.
 #[command]
 pub fn duplicate_character(character_path: String) -> Result<bool, String> {
     let versions = get_star_citizen_versions();
@@ -122,7 +126,6 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
         None => return Err("Nom de fichier invalide".to_string()),
     };
 
-    // Obtenir le répertoire parent du fichier source pour comparaison
     let source_dir = match source.parent() {
         Some(dir) => dir,
         None => return Err("Impossible de déterminer le répertoire source".to_string()),
@@ -135,9 +138,8 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
             .join("0")
             .join("CustomCharacters");
 
-        // Vérifier si le répertoire de destination est le même que celui du fichier source
         if dest_dir == source_dir {
-            continue; // Ignorer ce répertoire et passer au suivant
+            continue;
         }
 
         if !dest_dir.exists() {
@@ -163,6 +165,7 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
     Ok(true)
 }
 
+/// Télécharge un personnage personnalisé depuis une URL et le sauvegarde dans toutes les versions installées.
 #[command]
 pub fn download_character(dna_url: String, title: String) -> Result<bool, String> {
     let versions = get_star_citizen_versions();

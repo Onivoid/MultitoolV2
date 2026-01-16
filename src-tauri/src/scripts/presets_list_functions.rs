@@ -1,9 +1,9 @@
 use serde_json::Value;
 use tauri::command;
 
-/*
-    API URL : https://www.star-citizen-characters.com/api/heads?page=2&orderBy=latest
-*/
+/// Récupère une liste de personnages depuis l'API Star Citizen Characters.
+///
+/// Supporte la pagination, le tri et la recherche.
 #[command]
 pub async fn get_characters(
     page: Option<u32>,
@@ -14,7 +14,6 @@ pub async fn get_characters(
     let order = order_type.as_deref().unwrap_or("latest");
     let search_q = search.unwrap_or_default();
 
-    // Pass-through brut: latest ou download tels quels
     let mut url = format!(
         "https://www.star-citizen-characters.com/api/heads?page={}&orderBy={}",
         page, order

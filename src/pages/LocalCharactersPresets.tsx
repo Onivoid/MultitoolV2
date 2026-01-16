@@ -9,18 +9,20 @@ import { LocalCharactersResult } from "@/types/charactersList";
 import logger from "@/utils/logger";
 import { isProtectedPath } from "@/utils/fs-permissions";
 
+/**
+ * Page de gestion des presets de personnages locaux.
+ * Permet de visualiser, dupliquer et gérer les personnages sauvegardés entre différentes versions du jeu.
+ */
 function LocalCharactersPresets() {
-    // Nouvelle structure : chaque personnage a une liste de versions et chemins associés
     type CharacterRow = {
         name: string;
         versions: { version: string; path: string }[];
-        // Ajoute d'autres propriétés si besoin (ex: description, etc.)
     };
     const [localCharacters, setLocalCharacters] = useState<CharacterRow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadingDot, setLoadingDot] = useState(0);
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
-    const [isAdmin, setIsAdmin] = useState<boolean>(true); // Supposer admin par défaut pour éviter flash de toast
+    const [isAdmin, setIsAdmin] = useState<boolean>(true);
     const { toast } = useToast();
 
     // On regroupe les personnages par identifiant unique (ex: path ou name)
@@ -32,7 +34,6 @@ function LocalCharactersPresets() {
             );
 
             setLocalCharacters(prev => {
-                // Récupère toutes les versions connues
                 const allVersions = Object.keys(gamePaths?.versions || {});
                 const map = new Map<string, CharacterRow>();
                 // Ajoute les anciens
@@ -43,11 +44,9 @@ function LocalCharactersPresets() {
                         versions: [...char.versions],
                     });
                 });
-                // Ajoute les nouveaux
                 result.characters.forEach(newChar => {
                     const key = newChar.name;
                     if (!map.has(key)) {
-                        // Crée la structure avec toutes les versions, path vide
                         map.set(key, {
                             name: newChar.name,
                             versions: allVersions.map(version => ({
@@ -56,11 +55,9 @@ function LocalCharactersPresets() {
                             }))
                         });
                     } else {
-                        // Met à jour le path pour la version correspondante
                         const existing = map.get(key)!;
                         const idx = existing.versions.findIndex(v => v.version === newChar.version);
                         if (idx !== -1) {
-                            // Si le path est vide, on le remplit
                             if (!existing.versions[idx].path) {
                                 existing.versions[idx].path = newChar.path;
                             }
@@ -70,7 +67,9 @@ function LocalCharactersPresets() {
                 return Array.from(map.values());
             });
         } catch (error) {
-            console.error("Erreur lors du scan du cache:", error);
+            /**
+             * Affiche un toast d'erreur si la récupération des informations des personnages échoue.
+             */
             toast({
                 title: "Erreur",
                 description: "Impossible de récupérer les informations des personnages",
@@ -79,12 +78,15 @@ function LocalCharactersPresets() {
         }
     }, [toast, gamePaths]);
 
-    // Fonction pour rafraîchir complètement les données
+    /**
+     * Fonction pour rafraîchir complètement les données.
+     * @async
+     */
     const refreshLocalCharacters = useCallback(async () => {
         if (!gamePaths) return;
 
         setIsLoading(true);
-        setLocalCharacters([]); // Vider les données existantes
+        setLocalCharacters([]);
 
         const entries = Object.entries(gamePaths.versions)
             .filter(([_, version]) => version?.path)
@@ -94,7 +96,6 @@ function LocalCharactersPresets() {
         setIsLoading(false);
     }, [gamePaths, scanLocalCharacters]);
 
-    // Récupération des versions de jeu et statut admin au chargement
     useEffect(() => {
         const getGameVersions = async () => {
             try {
@@ -125,12 +126,10 @@ function LocalCharactersPresets() {
 
         Promise.all([getGameVersions(), checkAdminStatus()]);
 
-        // Vérification périodique du statut admin (toutes les 5 secondes)
         const adminCheckInterval = setInterval(checkAdminStatus, 5000);
         return () => clearInterval(adminCheckInterval);
     }, [toast]);
 
-    // Scanner le cache quand les chemins sont disponibles
     useEffect(() => {
         if (!gamePaths) return;
 
@@ -155,7 +154,6 @@ function LocalCharactersPresets() {
         scanAllPaths();
     }, [gamePaths, scanLocalCharacters]);
 
-    // Animation des points de chargement
     useEffect(() => {
         if (!isLoading) return;
 
@@ -166,9 +164,6 @@ function LocalCharactersPresets() {
         return () => clearInterval(interval);
     }, [isLoading]);
 
-
-
-    // Obtenir la liste des versions disponibles
     const availableVersions = useMemo(() => {
         const versions = localCharacters.flatMap(char => char.versions.map(v => v.version));
         return Array.from(new Set(versions)).sort();
@@ -211,7 +206,6 @@ function LocalCharactersPresets() {
                 <h1 className="text-2xl mt-5">Gestionnaire de presets de Personnages</h1>
             </div>
 
-            {/* Description d'en-tête */}
             <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-muted">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                     Gérez vos configurations de personnages sauvegardées localement.

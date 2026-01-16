@@ -3,7 +3,9 @@ use tauri::command;
 #[cfg(target_os = "windows")]
 use auto_launch::AutoLaunch;
 
-/// Active le démarrage automatique de l'application au démarrage de Windows
+/// Active le démarrage automatique de l'application au démarrage de Windows.
+///
+/// L'application sera lancée minimisée dans le system tray.
 #[command]
 pub fn enable_auto_startup() -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -15,12 +17,15 @@ pub fn enable_auto_startup() -> Result<(), String> {
         let auto_launch = AutoLaunch::new(
             app_name,
             app_path.to_str().ok_or("Chemin invalide")?,
-            &["--minimized"], // Lancer l'app minimisée dans le tray
+            &["--minimized"],
         );
 
-        auto_launch
-            .enable()
-            .map_err(|e| format!("Erreur lors de l'activation du démarrage automatique: {}", e))?;
+        auto_launch.enable().map_err(|e| {
+            format!(
+                "Erreur lors de l'activation du démarrage automatique: {}",
+                e
+            )
+        })?;
 
         println!("[Startup Manager] Démarrage automatique activé");
         Ok(())
@@ -32,7 +37,7 @@ pub fn enable_auto_startup() -> Result<(), String> {
     }
 }
 
-/// Désactive le démarrage automatique de l'application
+/// Désactive le démarrage automatique de l'application.
 #[command]
 pub fn disable_auto_startup() -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -47,9 +52,12 @@ pub fn disable_auto_startup() -> Result<(), String> {
             &["--minimized"],
         );
 
-        auto_launch
-            .disable()
-            .map_err(|e| format!("Erreur lors de la désactivation du démarrage automatique: {}", e))?;
+        auto_launch.disable().map_err(|e| {
+            format!(
+                "Erreur lors de la désactivation du démarrage automatique: {}",
+                e
+            )
+        })?;
 
         println!("[Startup Manager] Démarrage automatique désactivé");
         Ok(())
@@ -61,7 +69,7 @@ pub fn disable_auto_startup() -> Result<(), String> {
     }
 }
 
-/// Vérifie si le démarrage automatique est activé
+/// Vérifie si le démarrage automatique est activé.
 #[command]
 pub fn is_auto_startup_enabled() -> Result<bool, String> {
     #[cfg(target_os = "windows")]
@@ -76,9 +84,12 @@ pub fn is_auto_startup_enabled() -> Result<bool, String> {
             &["--minimized"],
         );
 
-        auto_launch
-            .is_enabled()
-            .map_err(|e| format!("Erreur lors de la vérification du démarrage automatique: {}", e))
+        auto_launch.is_enabled().map_err(|e| {
+            format!(
+                "Erreur lors de la vérification du démarrage automatique: {}",
+                e
+            )
+        })
     }
 
     #[cfg(not(target_os = "windows"))]
