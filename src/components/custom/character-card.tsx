@@ -7,12 +7,12 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Lens } from "@/components/magicui/lens";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 import logger from "@/utils/logger";
 import { toFriendlyFsError } from "@/utils/fs-permissions";
 import openExternal from "@/utils/external";
+import { IconDownload, IconExternalLink, IconHeart } from "@tabler/icons-react";
 
 export function CharacterCard(
     { url, name, owner, downloads, likes, characterid, dnaurl }:
@@ -47,35 +47,46 @@ export function CharacterCard(
     };
 
     return (
-        <Card className="relative max-w-md shadow-none bg-background/30 border-background/20">
-            <CardHeader>
-                <Lens
-                    zoomFactor={1.3}
-                    lensSize={100}
-                    isStatic={false}
-                    ariaLabel="Zoom Area"
+        <Card className="grid grid-rows-12 group h-[400px] relative max-w-md shadow-none bg-background/30 border-background/20 overflow-hidden">
+            <div className="absolute inset-0 -z-10 h-full w-full">
+                <img
+                    src={url}
+                    alt={name}
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+
+            </div>
+            <CardHeader className="flex flex-row justify-between items-center row-span-2">
+                <Button
+                    onClick={(e) => { e.stopPropagation(); openExternalLink(characterid); }}
+                    className="flex items-center justify-center h-7 w-7 rounded-md bg-white/10 backdrop-blur-md text-white transition-all duration-300 hover:bg-white/20 shrink-0 -mb-1"
+                    title="Voir sur SC Characters"
                 >
-                    <img
-                        src={url}
-                        alt="image placeholder"
-                    />
-                </Lens>
+                    <IconExternalLink className="h-3.5 w-3.5" />
+                </Button>
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-1 bg-white/10 backdrop-blur-md rounded-md px-2 h-7 shrink-0">
+                        <IconDownload className="h-3.5 w-3.5" />
+                        <span className="text-xs leading-none">{downloads}</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1 bg-white/10 backdrop-blur-md rounded-md px-2 h-7 shrink-0">
+                        <IconHeart className="h-3.5 w-3.5" />
+                        <span className="text-xs leading-none">{likes}</span>
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent>
-                <CardTitle className="text-2xl truncate">{name}</CardTitle>
+            <CardContent className="row-span-8 flex justify-end flex-col w-full">
+                <CardTitle className="text-2xl line-clamp-1">{name}</CardTitle>
                 <CardDescription>
                     <p>Créateur : <span className="text-foreground truncate">{owner}</span></p>
-                    <p>Nombre de téléchargement : <span className="text-foreground">{downloads}</span></p>
-                    <p>Nombre de Like : <span className="text-foreground">{likes}</span></p>
-                    <p>Source :
-                        <a className="cursor-pointer text-blue-500 ml-1" onClick={() => openExternalLink(characterid)}>
-                            StarCitizenCharacters
-                        </a>
-                    </p>
                 </CardDescription>
             </CardContent>
-            <CardFooter className="space-x-4">
-                <Button onClick={handleDownload}>Télécharger</Button>
+            <CardFooter className="row-span-2">
+                <Button className="w-full" onClick={handleDownload}>
+                    <IconDownload className="h-4 w-4 mr-2" />
+                    Télécharger
+                </Button>
             </CardFooter>
         </Card>
     );

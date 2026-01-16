@@ -27,7 +27,18 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { IconBrandYoutube, IconHome, IconBrandDiscord, IconBrandSpotifyFilled, IconBrandTwitch, IconCloud, IconBrandGithub, IconBrandSoundcloud, IconLanguage, IconUsers } from "@tabler/icons-react";
+import {
+    IconBrandYoutube, IconHome, IconBrandDiscord,
+    IconBrandTwitch, IconCloud, IconBrandGithub,
+    IconLanguage, IconUsers
+} from "@tabler/icons-react";
+import { Link, useLocation } from "react-router-dom";
+import { ColorPicker } from "@/components/custom/color-picker";
+import { useSidebar } from "@/components/ui/sidebar";
+import openExternal from "@/utils/external";
+import { useEffect, useState } from "react";
+import { getBuildInfo, BuildInfo } from "@/utils/buildInfo";
+
 // Menu principal
 const menuItems = [
     {
@@ -89,34 +100,16 @@ const socialLinks = [
         tooltip: "Discord"
     },
     {
-        href: "https://open.spotify.com/intl-fr/artist/5fVXo1v7aQhY9Zy5Gys0HF?si=L4Pxex98TV2OC0L0pbVhuQ",
-        icon: <IconBrandSpotifyFilled size={20} />,
-        label: "Spotify",
-        tooltip: "Spotify"
-    },
-    {
         href: "https://www.twitch.tv/onivoid_",
         icon: <IconBrandTwitch size={20} />,
         label: "Twitch",
         tooltip: "Twitch"
     },
     {
-        href: "https://soundcloud.com/onivoid",
-        icon: <IconBrandSoundcloud size={20} />,
-        label: "Soundcloud",
-        tooltip: "Soundcloud"
-    },
-    {
         href: "https://github.com/Onivoid",
         icon: <IconBrandGithub size={20} />,
         label: "Github",
         tooltip: "Github"
-    },
-    {
-        href: "https://multitoolv2.onivoid.fr/",
-        icon: <IconCloud size={20} />,
-        label: "Site web",
-        tooltip: "Site web"
     }
 ];
 
@@ -135,12 +128,6 @@ const externalServices = [
         tooltip: "SC Characters (Presets)"
     }
 ];
-import { Link, useLocation } from "react-router-dom";
-import { ColorPicker } from "@/components/custom/color-picker";
-import { useSidebar } from "@/components/ui/sidebar";
-import openExternal from "@/utils/external";
-import { useEffect, useState } from "react";
-import { getBuildInfo, BuildInfo } from "@/utils/buildInfo";
 
 export function AppSidebar() {
     const { state } = useSidebar();

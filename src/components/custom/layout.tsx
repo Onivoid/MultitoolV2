@@ -26,7 +26,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <DragRegion className="w-full h-screen max-h-screen max-w-full overflow-hidden">
             <SidebarProvider>
                 <AppSidebar />
-                <div className='flex h-full mt-2 ml-2 flex-col w-full overflow-hidden'>
+                <div className='flex h-full mt-2 ml-2 flex-col w-full'>
                     <div className='w-max-content flex items-center'>
                         <SidebarTrigger className='mt-1' />
                         <span className='mr-2 ml-1 text-primary font-bold'>|</span>

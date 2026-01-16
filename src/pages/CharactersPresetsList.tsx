@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RemoteCharactersPresetsList, Row } from "@/types/charactersList";
 import { CharacterCard } from '@/components/custom/character-card';
 import logger from "@/utils/logger";
+import { IconClock, IconDownload, IconHeart, IconSearch } from '@tabler/icons-react';
 
 function CharactersPresetsList() {
     const { toast } = useToast();
@@ -123,26 +124,32 @@ function CharactersPresetsList() {
             className="flex w-full flex-col"
         >
             {/* Description d'en-tête */}
-            <div className="my-4 p-4 bg-muted/30 rounded-lg border border-muted">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                    Parcourez et téléchargez des presets de personnages partagés par la communauté SC Characters.
-                    Trouvez l'apparence parfaite pour votre personnage Star Citizen.
-                </p>
+            <div className="flex flex-row my-4 gap-2">
+                <div className="p-4 bg-primary/50 rounded-xl">
+                    <IconDownload className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col">
+                    <p className="text-2xl font-bold">Personnages en Ligne</p>
+                    <p className="text-muted-foreground">Liste de personnages téléchargeables, par la communauté de SC Characters</p>
+                </div>
             </div>
 
             {/* Barre de recherche + Tri */}
-            <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-3 my-4">
-                <input
-                    type="text"
-                    placeholder="Rechercher un personnage..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="border rounded px-4 py-2 w-full md:max-w-md shadow bg-background/30"
-                />
+            <div className="w-full flex flex-col md:flex-row md:items-center gap-3 my-4">
+                <div className="relative w-full md:max-w-md">
+                    <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                        type="text"
+                        placeholder="Rechercher un personnage..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="border rounded pl-10 pr-4 py-2 w-full shadow bg-background/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                </div>
                 <div className="flex items-center gap-2">
                     {[
-                        { key: 'latest' as const, label: 'Récents' },
-                        { key: 'download' as const, label: 'Populaires' },
+                        { key: 'latest' as const, label: 'Récents', icon: <IconClock size={20} /> },
+                        { key: 'download' as const, label: 'Populaires', icon: <IconHeart size={20} /> },
                     ].map(opt => (
                         <button
                             key={opt.key}
@@ -155,19 +162,21 @@ function CharactersPresetsList() {
                                 // Forcer la requête même si un chargement était en cours
                                 getCharacters(1, debouncedSearch, true);
                             }}
-                            className={`px-3 py-1 rounded border text-sm ${sort === opt.key ? 'bg-primary text-primary-foreground' : 'bg-background/30'}`}
+                            className={`px-3 py-2.5 flex items-center gap-2 rounded border text-sm ${sort === opt.key ? 'bg-primary text-primary-foreground' : 'bg-background/30'}`}
                         >
+                            {opt.icon}
                             {opt.label}
                         </button>
                     ))}
                 </div>
             </div>
+
             <div
                 ref={gridRef}
-                className="grid grid-cols-3 xl:grid-cols-5 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto"
+                className="grid grid-cols-4 xl:grid-cols-5 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto"
             >
                 {charactersPresets.length === 0 && isLoading && Array.from({ length: 12 }).map((_, i) => (
-                    <div key={`skeleton-${i}`} className="h-64 rounded bg-background/30 animate-pulse" />
+                    <div key={`skeleton-${i}`} className="h-150 rounded bg-background/30 animate-pulse" />
                 ))}
                 {charactersPresets.map((character, index) => {
                     // On réinitialise le delay à chaque batch de 12
