@@ -90,6 +90,13 @@ async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
+/// Vérifie si l'application a démarré en mode minimisé.
+#[command]
+fn is_minimized_start() -> bool {
+    let args: Vec<String> = std::env::args().collect();
+    args.contains(&"--minimized".to_string())
+}
+
 /// Vérifie si l'application s'exécute avec des privilèges administrateur.
 #[command]
 fn is_running_as_admin() -> bool {
@@ -230,6 +237,7 @@ pub fn run() {
             enable_auto_startup,
             disable_auto_startup,
             is_auto_startup_enabled,
+            is_minimized_start,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -41,10 +41,10 @@
             "endpoints": [
                 "https://api.github.com/repos/Onivoid/MultitoolV2/releases/latest"
             ],
-            "dialog": true,
+            "dialog": false,
             "pubkey": "",
             "windows": {
-                "installMode": "quiet"
+                "installMode": "passive"
             }
         }
     }

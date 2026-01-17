@@ -105,6 +105,42 @@ jobs:
                       }
                   }
 
+            - name: Prepare Updater Artifacts
+              run: |
+                  Write-Host "=== Préparation des artifacts pour tauri-plugin-updater ===" -ForegroundColor Cyan
+
+                  # Extraire la version du tag (enlever le 'v')
+                  $version = "${{ github.ref_name }}" -replace '^v', ''
+                  Write-Host "Version détectée: $version" -ForegroundColor Yellow
+
+                  # Créer le fichier .msi.zip pour l'updater (format Tauri)
+                  $msiPath = "builds/installer/MultitoolV2-Installer.msi"
+                  if (Test-Path $msiPath) {
+                      # Format attendu par Tauri: {app-name}_{version}_{arch}_{locale}.msi.zip
+                      $zipName = "Multitool_${version}_x64_en-US.msi.zip"
+                      $zipPath = "builds/$zipName"
+                      
+                      Write-Host "Création de $zipName pour tauri-plugin-updater..." -ForegroundColor Green
+                      Compress-Archive -Path $msiPath -DestinationPath $zipPath -Force
+                      
+                      # Vérifier que le zip est créé
+                      if (Test-Path $zipPath) {
+                          $zipSize = (Get-Item $zipPath).Length
+                          Write-Host "✅ Updater artifact créé: $zipName ($zipSize bytes)" -ForegroundColor Green
+                          
+                          # Ajouter le checksum du .msi.zip
+                          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
+                          Add-Content -Path "builds/checksums.txt" -Value "$hash  $zipName"
+                          Write-Host "✅ Checksum ajouté pour $zipName" -ForegroundColor Green
+                      } else {
+                          Write-Host "❌ Échec de création du .msi.zip" -ForegroundColor Red
+                          exit 1
+                      }
+                  } else {
+                      Write-Host "❌ MSI source introuvable: $msiPath" -ForegroundColor Red
+                      exit 1
+                  }
+
             - name: Verify Build Artifacts
               run: |
                   Write-Host "=== Vérification des artifacts de build ===" -ForegroundColor Cyan
@@ -120,6 +156,16 @@ jobs:
                     Write-Host "✅ Installer: $(Get-Item 'builds/installer/MultitoolV2-Installer.msi' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
                   } else {
                     Write-Host "❌ Installer manquant" -ForegroundColor Red
+                    exit 1
+                  }
+
+                  # Vérifier le .msi.zip pour l'updater
+                  $version = "${{ github.ref_name }}" -replace '^v', ''
+                  $zipName = "Multitool_${version}_x64_en-US.msi.zip"
+                  if (Test-Path "builds/$zipName") {
+                    Write-Host "✅ Updater artifact: $(Get-Item "builds/$zipName" | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
+                  } else {
+                    Write-Host "❌ Updater artifact (.msi.zip) manquant" -ForegroundColor Red
                     exit 1
                   }
 
@@ -163,6 +209,15 @@ jobs:
                   - ✅ **Build reproductible** : Workflow GitHub Actions public  
                   - ✅ **Checksums SHA256** : Vérification d'intégrité fournie ci-dessous
 
+                  ## 🔄 Mise à jour automatique
+
+                  Les versions GitHub (installateur MSI) supportent les **mises à jour automatiques** :
+                  - ✅ Vérification automatique au démarrage
+                  - ✅ Téléchargement en arrière-plan
+                  - ✅ Installation en un clic
+
+                  **Note :** La version portable ne supporte pas les mises à jour automatiques.
+
                   ## 📋 Checksums SHA256
 
                   ``````
@@ -196,6 +251,7 @@ jobs:
                   files: |
                       builds/portable/MultitoolV2-Portable.exe
                       builds/installer/MultitoolV2-Installer.msi
+                      builds/Multitool_*_x64_en-US.msi.zip
                       builds/MultitoolV2-Installer-MSStore.msi
                       builds/checksums.txt
                   prerelease: false
@@ -211,9 +267,15 @@ jobs:
                   Write-Host ""
                   Write-Host "📦 Artifacts dans GitHub Release:" -ForegroundColor Yellow
                   Write-Host "  • MultitoolV2-Portable.exe (Recommandé)" -ForegroundColor White
-                  Write-Host "  • MultitoolV2-Installer.msi (Standard)" -ForegroundColor White  
+                  Write-Host "  • MultitoolV2-Installer.msi (Standard)" -ForegroundColor White
+                  $version = "${{ github.ref_name }}" -replace '^v', ''
+                  Write-Host "  • Multitool_${version}_x64_en-US.msi.zip (Auto-updater)" -ForegroundColor Cyan
                   Write-Host "  • MultitoolV2-Installer-MSStore.msi (MS Store Distribution)" -ForegroundColor Magenta
                   Write-Host "  • checksums.txt" -ForegroundColor White
+                  Write-Host ""
+                  Write-Host "🔄 Mise à jour automatique:" -ForegroundColor Cyan
+                  Write-Host "   Le fichier .msi.zip permet les mises à jour automatiques" -ForegroundColor White
+                  Write-Host "   pour les utilisateurs de la version installateur MSI" -ForegroundColor White
                   Write-Host ""
                   Write-Host "🏪 Artifact MS Store Distribution:" -ForegroundColor Magenta
                   Write-Host "   MultitoolV2-Installer-MSStore.msi contient TAURI_ENV_MS_STORE=true" -ForegroundColor White
