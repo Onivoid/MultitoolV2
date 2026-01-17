@@ -1,7 +1,7 @@
 {
     "name": "multitoolv2",
     "private": true,
-    "version": "2.3.0",
+    "version": "2.4.0",
     "type": "module",
     "proxy": "https://multitool.onivoid.fr",
     "scripts": {
@@ -28,6 +28,8 @@
         "@tanstack/react-table": "^8.21.3",
         "@tauri-apps/api": "^2.1.1",
         "@tauri-apps/plugin-dialog": "~2.3.0",
+        "@tauri-apps/plugin-notification": "^2.3.3",
+        "@tauri-apps/plugin-process": "^2.3.1",
         "@tauri-apps/plugin-shell": "^2.0.1",
         "@tauri-apps/plugin-updater": "~2.9.0",
         "axios": "^1.8.4",

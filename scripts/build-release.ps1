@@ -321,30 +321,25 @@ if ($builds.Count -gt 0) {
     
     # 2. MSI Installer(s)
     if (Test-Path $msiPath) {
-        $msiStoreFound = $false
-        $msiStandardFound = $false
+        $msiFiles = Get-ChildItem "$msiPath/*.msi" | Sort-Object LastWriteTime -Descending
         
-        Get-ChildItem "$msiPath/*.msi" | ForEach-Object {
-            Write-Host "   Analysing MSI: $($_.Name)" -ForegroundColor Cyan
+        Write-Host "   Fichiers MSI trouvés: $($msiFiles.Count)" -ForegroundColor Cyan
+        
+        foreach ($msiFile in $msiFiles) {
+            Write-Host "   Analyse: $($msiFile.Name)" -ForegroundColor DarkGray
             
-            if ($_.Name -like "*MultitoolV2-Portable*") {
-                # MSI Portable (ignoré - on utilise l'EXE portable)
-                Write-Host "   • MSI Portable ignoré (utilisation de l'EXE portable)" -ForegroundColor Yellow
+            # Copier le premier MSI pour standard si demandé
+            if ($builds -contains "standard" -and -not (Test-Path "$installerDir/MultitoolV2-Installer.msi")) {
+                Copy-Item $msiFile.FullName "$installerDir/MultitoolV2-Installer.msi" -Force
+                Write-Host "   Installer MSI: MultitoolV2-Installer.msi" -ForegroundColor Green
             }
-            elseif (-not $msiStandardFound -and ($_.Name -match '^Multitool_.*\.msi$')) {
-                # MSI Standard  
-                Copy-Item $_.FullName "$installerDir/MultitoolV2-Installer.msi" -Force
-                Write-Host "   • Installer MSI: MultitoolV2-Installer.msi" -ForegroundColor Green
-                $msiStandardFound = $true
-            }
-            elseif (($builds -contains "msix") -and -not $msiStoreFound -and ($_.Name -match '^MultitoolV2_.*\.msi$')) {
-                # MSI Microsoft Store (seulement si build MSIX demandé)
-                Copy-Item $_.FullName "$msStoreDir/MultitoolV2-MicrosoftStore.msi" -Force
-                Write-Host "   • Microsoft Store MSI: MultitoolV2-MicrosoftStore.msi" -ForegroundColor Green
-                $msiStoreFound = $true
+            # Copier pour MS Store si demandé
+            elseif ($builds -contains "msix" -and -not (Test-Path "$msStoreDir/MultitoolV2-MicrosoftStore.msi")) {
+                Copy-Item $msiFile.FullName "$msStoreDir/MultitoolV2-MicrosoftStore.msi" -Force
+                Write-Host "   Microsoft Store MSI: MultitoolV2-MicrosoftStore.msi" -ForegroundColor Green
             }
             else {
-                Write-Host "   • MSI ignoré: $($_.Name)" -ForegroundColor Gray
+                Write-Host "   MSI ignoré (déjà copié ou non demandé): $($msiFile.Name)" -ForegroundColor Gray
             }
         }
     }

@@ -1,7 +1,7 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "Multitool",
-    "version": "2.3.0",
+    "version": "2.4.0",
     "identifier": "com.multitool.app",
     "build": {
         "beforeDevCommand": "pnpm dev",
@@ -41,10 +41,10 @@
             "endpoints": [
                 "https://api.github.com/repos/Onivoid/MultitoolV2/releases/latest"
             ],
-            "dialog": true,
+            "dialog": false,
             "pubkey": "",
             "windows": {
-                "installMode": "quiet"
+                "installMode": "passive"
             }
         }
     }
