@@ -9,6 +9,7 @@ import CharactersPresetsList from '@/pages/CharactersPresetsList';
 import UpdatesPage from '@/pages/UpdatesPage';
 import PatchNotes from '@/pages/PatchNotes';
 import News from '@/pages/News';
+import Ships3D from '@/pages/Ships3D';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -33,6 +34,7 @@ const AppRouter = () => (
         <Route path='/updates' element={<UpdatesPage />} />
         <Route path='/patchnotes' element={<PatchNotes />} />
         <Route path='/news' element={<News />} />
+        <Route path='/ships3d' element={<Ships3D />} />
       </Routes>
     </Layout>
   </Router>

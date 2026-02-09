@@ -20,7 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, BrushCleaning, Download, Power, PowerOff, Loader2, Newspaper } from "lucide-react";
+import { Settings, BrushCleaning, Download, Power, PowerOff, Loader2, Newspaper, Rocket } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -88,6 +88,12 @@ const menuItems = [
         icon: <Newspaper size={20} />,
         label: "News SC",
         tooltip: "News Star Citizen"
+    },
+    {
+        path: "/ships3d",
+        icon: <Rocket size={20} />,
+        label: "Vaisseaux 3D",
+        tooltip: "Vaisseaux 3D"
     }
 ];
 
