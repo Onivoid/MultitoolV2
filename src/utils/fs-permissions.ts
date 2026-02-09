@@ -11,7 +11,7 @@ export function toFriendlyFsError(err: unknown): string {
     if (
         /Accès refusé|Access is denied|os error 5|Permission denied/i.test(msg)
     ) {
-        return "Accès refusé. Essayez de relancer l'application en tant qu'administrateur ou d'utiliser un dossier hors 'Program Files'.";
+        return "Accès refusé. Relancez l'application en administrateur ou installez le jeu en dehors de 'Program Files'.";
     }
     return msg;
 }

@@ -8,6 +8,7 @@ import LocalCharactersPresets from '@/pages/LocalCharactersPresets';
 import CharactersPresetsList from '@/pages/CharactersPresetsList';
 import UpdatesPage from '@/pages/UpdatesPage';
 import PatchNotes from '@/pages/PatchNotes';
+import News from '@/pages/News';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -31,6 +32,7 @@ const AppRouter = () => (
         <Route path='/presets-remote' element={<CharactersPresetsList />} />
         <Route path='/updates' element={<UpdatesPage />} />
         <Route path='/patchnotes' element={<PatchNotes />} />
+        <Route path='/news' element={<News />} />
       </Routes>
     </Layout>
   </Router>

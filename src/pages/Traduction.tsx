@@ -22,7 +22,6 @@ export default function Traduction() {
     const [translationsSelected, setTranslationsSelected] = useState<TranslationsChoosen | null>(null);
     const [loadingButtonId, setLoadingButtonId] = useState<string | null>(null);
     const [dataFetched, setDataFetched] = useState<boolean>(false);
-    const [isAdmin, setIsAdmin] = useState<boolean>(true); // Supposer admin par défaut pour éviter flash de toast
 
     const defaultLanguage = "fr";
     const { toast } = useToast();
@@ -31,7 +30,7 @@ export default function Traduction() {
     const toFriendlyFsError = (err: unknown) => {
         const msg = String(err ?? "");
         if (/Accès refusé|Access is denied|os error 5|Permission denied/i.test(msg)) {
-            return "Accès refusé. Essayez de lancer l'application en tant qu'administrateur ou installez le jeu en dehors de 'Program Files'.";
+            return "Accès refusé. Relancez l'application en administrateur ou installez le jeu en dehors de 'Program Files'.";
         }
         return msg;
     };
@@ -79,19 +78,9 @@ export default function Traduction() {
             }
         };
 
-        const checkAdminStatus = async () => {
-            try {
-                const adminStatus = await invoke<boolean>("is_running_as_admin");
-                setIsAdmin(adminStatus);
-            } catch (error) {
-                console.error("Erreur lors de la vérification du statut admin:", error);
-                setIsAdmin(false);
-            }
-        };
-
         if (!dataFetched) {
             setDataFetched(true);
-            Promise.all([fetchData(), checkAdminStatus()]).then(([dataStatus]) => {
+            fetchData().then((dataStatus) => {
                 dataStatus
                     ? toast({
                         title: "Données chargées",
@@ -107,10 +96,6 @@ export default function Traduction() {
                     });
             });
         }
-
-        // Vérification périodique du statut admin (toutes les 5 secondes)
-        const adminCheckInterval = setInterval(checkAdminStatus, 5000);
-        return () => clearInterval(adminCheckInterval);
     }, []);
 
     const saveSelectedTranslations = useCallback(
@@ -184,11 +169,11 @@ export default function Traduction() {
             if (!translationsSelected) return;
 
             setLoadingButtonId(`install-${version}`);
-            if (isProtectedPath(versionPath) && !isAdmin) {
+            if (isProtectedPath(versionPath)) {
                 toast({
                     title: "Chemin protégé",
-                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
-                    success: "false",
+                    description: "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
+                    variant: "warning",
                     duration: 5000,
                 });
             }
@@ -297,7 +282,7 @@ export default function Traduction() {
                 }
             }
         },
-        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage, isAdmin],
+        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage],
     );
 
     const handleUpdateTranslation = useCallback(
@@ -307,11 +292,11 @@ export default function Traduction() {
             buttonId: string,
         ) => {
             setLoadingButtonId(`update-${buttonId}`);
-            if (isProtectedPath(versionPath) && !isAdmin) {
+            if (isProtectedPath(versionPath)) {
                 toast({
                     title: "Chemin protégé",
-                    description: "Dossier sous Program Files: relance en admin recommandée (bouclier en bas à droite).",
-                    success: "false",
+                    description: "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
+                    variant: "warning",
                     duration: 5000,
                 });
             }
@@ -339,7 +324,7 @@ export default function Traduction() {
                 setLoadingButtonId(null);
             }
         },
-        [toast, paths, CheckTranslationsState, isAdmin],
+        [toast, paths, CheckTranslationsState],
     );
 
     const handleSettingsToggle = useCallback(

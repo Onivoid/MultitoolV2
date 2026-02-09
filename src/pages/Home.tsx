@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
-import { Download, Brush, Users, Globe2, FileText, AlertTriangle } from 'lucide-react';
+import { Download, Brush, Users, Globe2, FileText, AlertTriangle, Newspaper } from 'lucide-react';
 import RecentPatchNotes from '@/components/custom/recent-patchnotes';
 
 function Home() {
@@ -55,6 +55,11 @@ function Home() {
                             <Link to="/patchnotes" className="block">
                                 <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
                                     <FileText className="h-4 w-4" /> Patchnotes
+                                </Button>
+                            </Link>
+                            <Link to="/news" className="block">
+                                <Button variant="secondary" className="w-full justify-start gap-2 hover:scale-[1.01] transition">
+                                    <Newspaper className="h-4 w-4" /> News SC
                                 </Button>
                             </Link>
                         </div>

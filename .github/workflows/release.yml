@@ -61,6 +61,9 @@ jobs:
                   Write-Host "✅ WiX installed successfully" -ForegroundColor Green
 
             - name: Build Standard Release (GitHub Distribution)
+              env:
+                  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               run: |
                   Write-Host "🏗️ Building Standard (GitHub)..." -ForegroundColor Green
                   $env:TAURI_ENV_DISTRIBUTION = "github"

@@ -1,6 +1,5 @@
 mod scripts;
 
-use is_elevated::is_elevated;
 use scripts::background_service::{
     get_background_service_config, load_background_service_config, save_background_service_config,
     set_background_service_config, start_background_service, start_background_service_internal,
@@ -16,6 +15,7 @@ use scripts::local_characters_functions::{
 };
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
+use scripts::rsi_news::fetch_rsi_news;
 use scripts::startup_manager::{
     disable_auto_startup, enable_auto_startup, is_auto_startup_enabled,
 };
@@ -40,96 +40,11 @@ async fn open_external(url: String, app_handle: tauri::AppHandle) -> Result<(), 
     }
 }
 
-/// Redémarre l'application avec des privilèges administrateur.
-///
-/// # Erreurs
-///
-/// Retourne une erreur si l'application est une version Microsoft Store ou si le redémarrage échoue.
-#[command]
-async fn restart_as_admin(app: tauri::AppHandle) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        use std::process::Command;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-        let exe_str = exe
-            .to_str()
-            .ok_or_else(|| "Chemin exécutable invalide".to_string())?;
-
-        if exe_str.contains("WindowsApps") {
-            return Err("Les applications Microsoft Store ne peuvent pas être élevées en administrateur. Veuillez utiliser la version MSI ou portable.".to_string());
-        }
-
-        let escaped = exe_str.replace("'", "''");
-
-        let result = Command::new("powershell")
-            .creation_flags(CREATE_NO_WINDOW)
-            .arg("-NoProfile")
-            .arg("-WindowStyle")
-            .arg("Hidden")
-            .arg("-Command")
-            .arg(format!("Start-Process -FilePath '{}' -Verb RunAs", escaped))
-            .spawn();
-
-        match result {
-            Ok(_) => {
-                tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                app.exit(0);
-                Ok(())
-            }
-            Err(e) => {
-                Err(format!("Erreur lors du redémarrage en administrateur: {}. Essayez de lancer l'application manuellement en tant qu'administrateur.", e))
-            }
-        }
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        Err("Élévation non supportée sur cette plateforme".to_string())
-    }
-}
-
 /// Vérifie si l'application a démarré en mode minimisé.
 #[command]
 fn is_minimized_start() -> bool {
     let args: Vec<String> = std::env::args().collect();
     args.contains(&"--minimized".to_string())
-}
-
-/// Vérifie si l'application s'exécute avec des privilèges administrateur.
-#[command]
-fn is_running_as_admin() -> bool {
-    #[cfg(target_os = "windows")]
-    {
-        is_elevated()
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        false
-    }
-}
-
-/// Détermine si l'application peut demander une élévation de privilèges.
-///
-/// Retourne `false` pour les applications Microsoft Store qui ne peuvent pas être élevées.
-#[command]
-fn can_elevate_privileges() -> bool {
-    #[cfg(target_os = "windows")]
-    {
-        if let Ok(exe) = std::env::current_exe() {
-            if let Some(exe_str) = exe.to_str() {
-                if exe_str.contains("WindowsApps") {
-                    return false;
-                }
-            }
-        }
-        true
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        false
-    }
 }
 
 /// Point d'entrée principal de l'application Tauri.
@@ -138,6 +53,12 @@ fn can_elevate_privileges() -> bool {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -223,9 +144,6 @@ pub fn run() {
             download_character,
             get_characters,
             open_external,
-            is_running_as_admin,
-            can_elevate_privileges,
-            restart_as_admin,
             clear_cache,
             open_cache_folder,
             get_background_service_config,
@@ -238,6 +156,7 @@ pub fn run() {
             disable_auto_startup,
             is_auto_startup_enabled,
             is_minimized_start,
+            fetch_rsi_news,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

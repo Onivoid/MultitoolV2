@@ -18,9 +18,9 @@ export function DragRegion({ children, className = '' }: DragRegionProps) {
 
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || 
-                          target.closest('button, a, input, select, textarea, [role="button"]');
-      
+      const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) ||
+        target.closest('button, a, input, select, textarea, [role="button"], [role="link"]');
+
       if (!isInteractive) {
         appWindow.startDragging();
       } else {
@@ -33,7 +33,7 @@ export function DragRegion({ children, className = '' }: DragRegionProps) {
       if (isMouseDownRef.current && startPosRef.current) {
         const deltaX = Math.abs(e.clientX - startPosRef.current.x);
         const deltaY = Math.abs(e.clientY - startPosRef.current.y);
-        
+
         if (deltaX > 5 || deltaY > 5) {
           appWindow.startDragging();
           isMouseDownRef.current = false;
