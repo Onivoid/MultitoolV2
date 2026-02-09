@@ -84,7 +84,7 @@ export const reducer = (state: State, action: Action): State => {
             return {
                 ...state,
                 toasts: state.toasts.map((t) =>
-                    t.id === action.toast.id ? { ...t, ...action.toast } : t
+                    t.id === action.toast.id ? { ...t, ...action.toast } : t,
                 ),
             };
 
@@ -109,7 +109,7 @@ export const reducer = (state: State, action: Action): State => {
                               ...t,
                               open: false,
                           }
-                        : t
+                        : t,
                 ),
             };
         }
@@ -141,11 +141,30 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
+    const existing = memoryState.toasts.find(
+        (t) =>
+            t.open &&
+            t.title === props.title &&
+            t.description === props.description,
+    );
+    if (existing) {
+        return {
+            id: existing.id,
+            dismiss: () =>
+                dispatch({ type: "DISMISS_TOAST", toastId: existing.id }),
+            update: (p: ToasterToast) =>
+                dispatch({
+                    type: "UPDATE_TOAST",
+                    toast: { ...p, id: existing.id },
+                }),
+        };
+    }
+
     const id = genId();
 
     const pickDefaultDuration = (
         variant?: ToastProps["variant"],
-        provided?: number
+        provided?: number,
     ) => {
         if (typeof provided === "number") return provided;
         switch (variant) {
@@ -174,7 +193,7 @@ function toast({ ...props }: Toast) {
             id,
             duration: pickDefaultDuration(
                 props.variant,
-                (props as any).duration
+                (props as any).duration,
             ),
             open: true,
             onOpenChange: (open) => {
@@ -201,7 +220,7 @@ function useToast() {
                 listeners.splice(index, 1);
             }
         };
-    }, [state]);
+    }, []);
 
     return {
         ...state,

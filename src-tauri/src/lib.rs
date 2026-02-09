@@ -15,6 +15,7 @@ use scripts::local_characters_functions::{
 };
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
+use scripts::rsi_news::fetch_rsi_news;
 use scripts::startup_manager::{
     disable_auto_startup, enable_auto_startup, is_auto_startup_enabled,
 };
@@ -155,6 +156,7 @@ pub fn run() {
             disable_auto_startup,
             is_auto_startup_enabled,
             is_minimized_start,
+            fetch_rsi_news,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
