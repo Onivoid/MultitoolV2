@@ -24,7 +24,6 @@ function LocalCharactersPresets() {
     const [isLoading, setIsLoading] = useState(true);
     const [loadingDot, setLoadingDot] = useState(0);
     const [gamePaths, setGamePaths] = useState<GamePaths | null>(null);
-    const [isAdmin, setIsAdmin] = useState<boolean>(true);
     const { toast } = useToast();
 
     // On regroupe les personnages par identifiant unique (ex: path ou name)
@@ -116,20 +115,7 @@ function LocalCharactersPresets() {
             }
         };
 
-        const checkAdminStatus = async () => {
-            try {
-                const adminStatus = await invoke<boolean>("is_running_as_admin");
-                setIsAdmin(adminStatus);
-            } catch (error) {
-                logger.error("Erreur lors de la vérification du statut admin:", error);
-                setIsAdmin(false);
-            }
-        };
-
-        Promise.all([getGameVersions(), checkAdminStatus()]);
-
-        const adminCheckInterval = setInterval(checkAdminStatus, 5000);
-        return () => clearInterval(adminCheckInterval);
+        getGameVersions();
     }, [toast]);
 
     useEffect(() => {
@@ -141,10 +127,10 @@ function LocalCharactersPresets() {
                 .map(([versionName, version]) => ({ versionName, path: version!.path }));
 
             for (const { path } of entries) {
-                if (isProtectedPath(path) && !isAdmin) {
+                if (isProtectedPath(path)) {
                     toast({
                         title: "Chemin protégé",
-                        description: "Certaines opérations peuvent nécessiter l'administrateur (bouclier en bas à droite).",
+                        description: "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
                         variant: "warning",
                         duration: 4000,
                     });

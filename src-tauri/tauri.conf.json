@@ -42,7 +42,7 @@
                 "https://api.github.com/repos/Onivoid/MultitoolV2/releases/latest"
             ],
             "dialog": false,
-            "pubkey": "",
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZBNzc3MTY3QTEzOTZCNUUKUldSZWF6bWhaM0YzK3ZXR0tJNWdnSVZKOHFGTmNHcGlMTHVTRU9CRm9qVHdqSE15K05RZEdMWEEK",
             "windows": {
                 "installMode": "passive"
             }
