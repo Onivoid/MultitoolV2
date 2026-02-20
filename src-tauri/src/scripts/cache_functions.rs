@@ -17,11 +17,9 @@ struct Output {
     folders: Vec<FolderInfo>,
 }
 
-/// Récupère les informations sur les dossiers de cache de Star Citizen.
-///
-/// Retourne un JSON contenant la liste des dossiers avec leur nom, taille et chemin.
-#[command]
-pub fn get_cache_informations() -> String {
+/// Récupère les informations sur les dossiers de cache de Star Citizen (travail bloquant).
+/// Exécuté dans un thread dédié pour ne pas bloquer le thread principal et la fenêtre.
+fn get_cache_informations_sync() -> String {
     let appdata =
         env::var("LOCALAPPDATA").expect("Impossible de lire la variable d'environnement APPDATA");
     let star_citizen_path = format!("{}\\Star Citizen", appdata);
@@ -50,6 +48,17 @@ pub fn get_cache_informations() -> String {
     let json_output =
         serde_json::to_string_pretty(&output).expect("Erreur lors de la sérialisation en JSON");
     json_output
+}
+
+/// Récupère les informations sur les dossiers de cache de Star Citizen.
+///
+/// Retourne un JSON contenant la liste des dossiers avec leur nom, taille et chemin.
+/// Exécuté hors du thread principal pour éviter les saccades au déplacement de la fenêtre.
+#[command]
+pub async fn get_cache_informations() -> Result<String, String> {
+    tokio::task::spawn_blocking(get_cache_informations_sync)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 fn get_folder_info(path: &Path) -> FolderInfo {
