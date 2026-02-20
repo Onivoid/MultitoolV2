@@ -89,11 +89,9 @@ pub struct VersionPaths {
     pub versions: HashMap<String, VersionInfo>,
 }
 
-/// Détecte et retourne toutes les versions installées de Star Citizen.
-///
-/// Analyse les logs du launcher RSI pour trouver les chemins d'installation.
-#[command]
-pub fn get_star_citizen_versions() -> VersionPaths {
+/// Détecte et retourne toutes les versions installées de Star Citizen (travail bloquant).
+/// Public pour usage depuis d'autres commandes sync (ex. local_characters).
+pub fn get_star_citizen_versions_sync() -> VersionPaths {
     let log_lines = get_launcher_log_list();
     let sc_install_paths = get_game_install_path(log_lines, true);
 
@@ -114,4 +112,15 @@ pub fn get_star_citizen_versions() -> VersionPaths {
         }
     }
     VersionPaths { versions }
+}
+
+/// Détecte et retourne toutes les versions installées de Star Citizen.
+///
+/// Analyse les logs du launcher RSI pour trouver les chemins d'installation.
+/// Exécuté hors du thread principal pour éviter les saccades au déplacement de la fenêtre.
+#[command]
+pub async fn get_star_citizen_versions() -> Result<VersionPaths, String> {
+    tokio::task::spawn_blocking(get_star_citizen_versions_sync)
+        .await
+        .map_err(|e| e.to_string())
 }

@@ -15,9 +15,9 @@ pub fn get_language_folder(lang: &str) -> Option<&str> {
 
 const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
 
-/// Vérifie si une version de Star Citizen a une traduction installée.
-#[command]
-pub fn is_game_translated(path: String, lang: String) -> bool {
+/// Vérifie si une version de Star Citizen a une traduction installée (travail bloquant).
+/// Public pour usage depuis le service de fond (déjà exécuté hors du thread principal).
+pub fn is_game_translated_sync(path: String, lang: String) -> bool {
     let base_path = Path::new(&path);
     let user_cfg_path = base_path.join("user.cfg");
     if !user_cfg_path.is_file() {
@@ -47,6 +47,15 @@ pub fn is_game_translated(path: String, lang: String) -> bool {
         && localization_path.is_dir()
         && lang_folder_path.is_dir()
         && global_ini_path.is_file()
+}
+
+/// Vérifie si une version de Star Citizen a une traduction installée.
+/// Exécuté hors du thread principal pour éviter les saccades au déplacement de la fenêtre.
+#[command]
+pub async fn is_game_translated(path: String, lang: String) -> Result<bool, String> {
+    tokio::task::spawn_blocking(move || is_game_translated_sync(path, lang))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Initialise les fichiers de traduction pour une version de Star Citizen.
@@ -107,9 +116,8 @@ pub fn init_translation_files(
     Ok(())
 }
 
-/// Vérifie si la traduction installée est à jour.
-#[command]
-pub fn is_translation_up_to_date(path: String, translation_link: String, lang: String) -> bool {
+/// Vérifie si la traduction installée est à jour (travail bloquant, disque + réseau).
+fn is_translation_up_to_date_sync(path: String, translation_link: String, lang: String) -> bool {
     let base_path = Path::new(&path);
 
     let lang_folder_name = match get_language_folder(&lang) {
@@ -161,6 +169,21 @@ pub fn is_translation_up_to_date(path: String, translation_link: String, lang: S
 
     // Comparer les contenus
     local_normalized == remote_normalized
+}
+
+/// Vérifie si la traduction installée est à jour.
+/// Exécuté hors du thread principal pour éviter les saccades au déplacement de la fenêtre.
+#[command]
+pub async fn is_translation_up_to_date(
+    path: String,
+    translation_link: String,
+    lang: String,
+) -> Result<bool, String> {
+    tokio::task::spawn_blocking(move || {
+        is_translation_up_to_date_sync(path, translation_link, lang)
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// Met à jour la traduction installée.
