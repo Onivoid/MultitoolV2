@@ -2,6 +2,7 @@
     "name": "multitoolv2",
     "private": true,
     "version": "2.7.0",
+    "packageManager": "pnpm@10.15.1",
     "type": "module",
     "proxy": "https://multitool.onivoid.fr",
     "scripts": {
