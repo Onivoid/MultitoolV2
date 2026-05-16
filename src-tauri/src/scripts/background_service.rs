@@ -7,7 +7,7 @@ use tokio::time::sleep;
 
 use crate::scripts::gamepath::get_star_citizen_versions;
 use crate::scripts::translation_functions::{
-    is_game_translated, is_translation_up_to_date_async, update_translation_async,
+    is_game_translated_sync, is_translation_up_to_date_async, update_translation_async,
 };
 use crate::scripts::translation_preferences::load_translations_selected;
 
@@ -182,7 +182,9 @@ async fn run_background_service(
 
 async fn check_and_update_translations(app: &AppHandle, lang: &str) -> Result<(), String> {
     println!("[Background Service] Vérification des mises à jour de traduction...");
-    let version_paths = get_star_citizen_versions();
+    let version_paths = get_star_citizen_versions()
+        .await
+        .map_err(|e| format!("Impossible de récupérer les versions: {}", e))?;
     if version_paths.versions.is_empty() {
         println!("[Background Service] Aucune version du jeu trouvée");
         return Ok(());
@@ -198,7 +200,7 @@ async fn check_and_update_translations(app: &AppHandle, lang: &str) -> Result<()
         let version_path = version_info.path.clone();
         if let Some(translation_setting) = translations_obj.get(&version_name) {
             if let Some(link) = translation_setting.get("link").and_then(|v| v.as_str()) {
-                if is_game_translated(version_path.clone(), lang.to_string()) {
+                if is_game_translated_sync(version_path.clone(), lang.to_string()) {
                     if !is_translation_up_to_date_async(
                         version_path.clone(),
                         link.to_string(),

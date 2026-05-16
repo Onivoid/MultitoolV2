@@ -1,4 +1,4 @@
-use crate::scripts::gamepath::get_star_citizen_versions;
+use crate::scripts::gamepath::get_star_citizen_versions_sync;
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde::Serialize;
@@ -19,9 +19,8 @@ struct Output {
     characters: Vec<LocalCharacterInfo>,
 }
 
-/// Récupère les informations sur tous les personnages personnalisés pour une version de Star Citizen.
-#[command]
-pub fn get_character_informations(path: String) -> Result<String, String> {
+/// Récupère les informations sur tous les personnages personnalisés (travail bloquant).
+fn get_character_informations_sync(path: String) -> Result<String, String> {
     let base_path = Path::new(&path);
     let custom_characters_path = base_path
         .join("user")
@@ -72,6 +71,15 @@ pub fn get_character_informations(path: String) -> Result<String, String> {
         .map_err(|e| format!("Erreur lors de la sérialisation JSON: {}", e))
 }
 
+/// Récupère les informations sur tous les personnages personnalisés pour une version de Star Citizen.
+/// Exécuté hors du thread principal pour éviter les saccades au déplacement de la fenêtre.
+#[command]
+pub async fn get_character_informations(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || get_character_informations_sync(path))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// Supprime un fichier de personnage personnalisé.
 #[command]
 pub fn delete_character(path: &str) -> bool {
@@ -114,7 +122,7 @@ pub async fn open_characters_folder(path: String) -> Result<bool, String> {
 /// Duplique un personnage personnalisé vers toutes les autres versions de Star Citizen installées.
 #[command]
 pub fn duplicate_character(character_path: String) -> Result<bool, String> {
-    let versions = get_star_citizen_versions();
+    let versions = get_star_citizen_versions_sync();
     let source = Path::new(&character_path);
 
     if !source.exists() {
@@ -168,7 +176,7 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
 /// Télécharge un personnage personnalisé depuis une URL et le sauvegarde dans toutes les versions installées.
 #[command]
 pub fn download_character(dna_url: String, title: String) -> Result<bool, String> {
-    let versions = get_star_citizen_versions();
+    let versions = get_star_citizen_versions_sync();
     let first = versions
         .versions
         .values()

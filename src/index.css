@@ -93,8 +93,12 @@
         user-select: none;
     }
     body {
+        /* Style type acrylic sans l’API Windows : fluide au déplacement, rendu verre dépoli */
+        position: relative;
+        min-height: 100vh;
         @apply bg-primary/20 text-foreground;
     }
+    /* Couche verre dépoli : flou + teinte, en CSS pour être sûr qu’elle s’applique */
     html {
         overflow: hidden;
     }

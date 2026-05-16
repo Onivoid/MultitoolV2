@@ -28,8 +28,16 @@ use scripts::translation_functions::{
 use scripts::translation_preferences::{load_translations_selected, save_translations_selected};
 use scripts::translations_links::{get_translation_by_setting, get_translations};
 use tauri::{command, Manager};
+use std::sync::Mutex;
+use std::time::Duration;
+use tauri::async_runtime::JoinHandle;
+use tokio::time::sleep;
 use tauri_plugin_shell::ShellExt;
-use window_vibrancy::apply_acrylic;
+use window_vibrancy::{apply_acrylic, clear_acrylic};
+
+/// Sous Windows : annule la tâche qui réapplique l'acrylic après un déplacement.
+#[cfg(target_os = "windows")]
+pub struct AcrylicDebouncer(pub Mutex<Option<JoinHandle<()>>>);
 
 /// Ouvre une URL externe dans le navigateur par défaut du système.
 #[command]
@@ -69,8 +77,10 @@ pub fn run() {
                 .expect("impossible de récupérer la fenêtre principale");
 
             #[cfg(target_os = "windows")]
-            apply_acrylic(&window, Some((18, 18, 18, 125)))
-                .expect("Impossible d'appliquer l'effet de blur sur Windows");
+            {
+                let _ = apply_acrylic(&window, Some((18, 18, 18, 125)));
+                app.manage(AcrylicDebouncer(Mutex::new(None)));
+            }
 
             let background_state = BackgroundServiceState::default();
             match load_background_service_config(app.handle().clone()) {
@@ -114,6 +124,25 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            #[cfg(target_os = "windows")]
+            if let tauri::WindowEvent::Moved(_) = event {
+                let _ = clear_acrylic(&window);
+                if let Some(debouncer) = window.app_handle().try_state::<AcrylicDebouncer>() {
+                    if let Ok(mut guard) = debouncer.0.lock() {
+                        if let Some(h) = guard.take() {
+                            h.abort();
+                        }
+                        let app = window.app_handle().clone();
+                        let handle = tauri::async_runtime::spawn(async move {
+                            sleep(Duration::from_millis(150)).await;
+                            if let Some(w) = app.get_webview_window("main") {
+                                let _ = apply_acrylic(&w, Some((18, 18, 18, 125)));
+                            }
+                        });
+                        *guard = Some(handle);
+                    }
+                }
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 if let Err(e) = window.hide() {
