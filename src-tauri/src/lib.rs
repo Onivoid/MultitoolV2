@@ -8,7 +8,13 @@ use scripts::background_service::{
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
 };
-use scripts::gamepath::get_star_citizen_versions;
+use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
+use scripts::gamelog_watcher::{
+    get_gamelog_watcher_status, import_blueprints_from_logbackups, load_gamelog_blueprints,
+    load_gamelog_watcher_config, save_gamelog_watcher_config, start_gamelog_watcher,
+    start_gamelog_watcher_internal, stop_gamelog_watcher, GamelogWatcherState,
+};
+use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
 use scripts::local_characters_functions::{
     delete_character, download_character, duplicate_character, get_character_informations,
     open_characters_folder,
@@ -110,6 +116,25 @@ pub fn run() {
 
             app.manage(background_state);
 
+            let gamelog_watcher_state = GamelogWatcherState::default();
+            match load_gamelog_watcher_config_sync(app.handle()) {
+                Ok(config) => {
+                    if config.auto_start {
+                        let app_handle_clone = app.handle().clone();
+                        let state_clone = gamelog_watcher_state.clone();
+                        if let Err(e) =
+                            start_gamelog_watcher_internal(&state_clone, app_handle_clone)
+                        {
+                            eprintln!("Échec du démarrage du gamelog watcher: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Échec du chargement de la config gamelog watcher: {}", e);
+                }
+            }
+            app.manage(gamelog_watcher_state);
+
             if let Err(e) = setup_system_tray(&app.handle()) {
                 eprintln!("Échec de la configuration du system tray: {}", e);
             }
@@ -186,6 +211,14 @@ pub fn run() {
             is_auto_startup_enabled,
             is_minimized_start,
             fetch_rsi_news,
+            get_live_game_log_path,
+            load_gamelog_blueprints,
+            load_gamelog_watcher_config,
+            save_gamelog_watcher_config,
+            get_gamelog_watcher_status,
+            start_gamelog_watcher,
+            stop_gamelog_watcher,
+            import_blueprints_from_logbackups,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

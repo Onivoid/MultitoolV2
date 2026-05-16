@@ -10,6 +10,7 @@ import UpdatesPage from '@/pages/UpdatesPage';
 import PatchNotes from '@/pages/PatchNotes';
 import News from '@/pages/News';
 import Ships3D from '@/pages/Ships3D';
+import Blueprints from '@/pages/Blueprints';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -36,6 +37,7 @@ const AppRouter = () => (
         <Route path='/patchnotes' element={<PatchNotes />} />
         <Route path='/news' element={<News />} />
         <Route path='/ships3d' element={<Ships3D />} />
+        <Route path='/blueprints' element={<Blueprints />} />
       </Routes>
       </div>
     </Layout>

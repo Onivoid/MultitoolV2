@@ -20,7 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, BrushCleaning, Download, Power, PowerOff, Loader2, Newspaper, Rocket } from "lucide-react";
+import { Settings, BrushCleaning, Download, Power, PowerOff, Loader2, Newspaper, Rocket, ScrollText } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -94,6 +94,12 @@ const menuItems = [
         icon: <Rocket size={20} />,
         label: "Vaisseaux 3D",
         tooltip: "Vaisseaux 3D"
+    },
+    {
+        path: "/blueprints",
+        icon: <ScrollText size={20} />,
+        label: "Blueprints",
+        tooltip: "Blueprints débloqués (Game.log)"
     }
 ];
 
@@ -311,6 +317,11 @@ interface BackgroundServiceConfig {
     language: string;
 }
 
+interface GamelogWatcherConfig {
+    autoStart: boolean;
+    enabled: boolean;
+}
+
 function SettingsContent() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -327,10 +338,16 @@ function SettingsContent() {
     const [autoStartupEnabled, setAutoStartupEnabled] = useState(false);
     const [checkingAutoStartup, setCheckingAutoStartup] = useState(true);
 
+    const [gamelogConfig, setGamelogConfig] = useState<GamelogWatcherConfig>({
+        autoStart: false,
+        enabled: false,
+    });
+
     // Charger la configuration au montage
     useEffect(() => {
         loadConfiguration();
         checkAutoStartupStatus();
+        loadGamelogConfiguration();
     }, []);
 
     const loadConfiguration = async () => {
@@ -340,6 +357,38 @@ function SettingsContent() {
             setServiceRunning(loadedConfig.enabled);
         } catch (error) {
             console.error('Erreur lors du chargement de la configuration:', error);
+        }
+    };
+
+    const loadGamelogConfiguration = async () => {
+        try {
+            const loaded = await invoke<GamelogWatcherConfig>('load_gamelog_watcher_config');
+            setGamelogConfig(loaded);
+        } catch (error) {
+            console.error('Erreur chargement config gamelog watcher:', error);
+        }
+    };
+
+    const handleGamelogAutoStartToggle = async (checked: boolean) => {
+        setLoading(true);
+        try {
+            const newConfig = { ...gamelogConfig, autoStart: checked };
+            await invoke('save_gamelog_watcher_config', { config: newConfig });
+            setGamelogConfig(newConfig);
+            toast({
+                title: checked ? 'Surveillance auto activée' : 'Surveillance auto désactivée',
+                description: checked
+                    ? 'Le Game.log sera surveillé au lancement de Multitool'
+                    : 'La surveillance ne démarrera plus automatiquement',
+            });
+        } catch (error) {
+            toast({
+                title: 'Erreur',
+                description: String(error),
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -480,6 +529,30 @@ function SettingsContent() {
                         disabled={loading || checkingAutoStartup}
                     />
                 </div>
+            </div>
+
+            <Separator />
+
+            {/* Surveillance Game.log */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Surveillance Game.log</h3>
+                <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="gamelog-auto-start">Démarrer automatiquement</Label>
+                        <p className="text-sm text-muted-foreground">
+                            Surveille le Game.log LIVE dès le lancement de Multitool
+                        </p>
+                    </div>
+                    <Switch
+                        id="gamelog-auto-start"
+                        checked={gamelogConfig.autoStart}
+                        onCheckedChange={handleGamelogAutoStartToggle}
+                        disabled={loading}
+                    />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Démarrez ou arrêtez la capture manuellement depuis la page Blueprints.
+                </p>
             </div>
 
             <Separator />

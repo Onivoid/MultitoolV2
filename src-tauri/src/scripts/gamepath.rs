@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::command;
 
 fn get_log_file_path() -> Option<String> {
@@ -123,4 +123,32 @@ pub async fn get_star_citizen_versions() -> Result<VersionPaths, String> {
     tokio::task::spawn_blocking(get_star_citizen_versions_sync)
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Retourne le chemin d'installation du canal LIVE, s'il est détecté.
+pub fn get_live_install_path_sync() -> Result<String, String> {
+    let versions = get_star_citizen_versions_sync();
+    versions
+        .versions
+        .get("LIVE")
+        .map(|info| info.path.clone())
+        .ok_or_else(|| {
+            "Installation Star Citizen LIVE introuvable. Vérifiez que le jeu est installé.".to_string()
+        })
+}
+
+/// Retourne le chemin attendu vers `Game.log` du canal LIVE (le fichier peut ne pas exister tant que le jeu n'a pas été lancé).
+pub fn get_live_game_log_path_sync() -> Result<PathBuf, String> {
+    let install_path = get_live_install_path_sync()?;
+    Ok(Path::new(&install_path).join("Game.log"))
+}
+
+/// Commande Tauri : chemin du fichier Game.log (canal LIVE).
+#[command]
+pub async fn get_live_game_log_path() -> Result<String, String> {
+    tokio::task::spawn_blocking(|| {
+        get_live_game_log_path_sync().map(|p| p.to_string_lossy().into_owned())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
