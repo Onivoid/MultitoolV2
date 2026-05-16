@@ -105,9 +105,9 @@ export default function News() {
                 delay: 0.2,
                 ease: [0, 0.71, 0.2, 1.01],
             }}
-            className="flex w-full flex-col"
+            className="flex max-h-[calc(100vh-50px)] w-full flex-1 flex-col"
         >
-            <div className="flex items-center justify-between pr-3">
+            <div className="flex shrink-0 items-center justify-between pr-3">
                 <PageHeader
                     icon={<Newspaper className="h-6 w-6" />}
                     title="News Star Citizen"
@@ -128,84 +128,84 @@ export default function News() {
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center h-64">
+                <div className="flex flex-1 items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
             ) : news.length === 0 ? (
-                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <div className="flex flex-1 items-center justify-center text-muted-foreground">
                     Aucune news disponible
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto pb-4 pr-3">
-                    {news.map((item) => {
-                        const { url: thumbUrl, isVideo } = extractThumbnail(item.content_html, item.tags);
-                        const title = extractTitle(item.url);
+                <div className="app-scroll-root min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-4 pr-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {news.map((item) => {
+                            const { url: thumbUrl, isVideo } = extractThumbnail(item.content_html, item.tags);
+                            const title = extractTitle(item.url);
 
-                        const handleOpen = () => {
-                            openExternal(item.url);
-                        };
+                            const handleOpen = () => {
+                                openExternal(item.url);
+                            };
 
-                        return (
-                            <Card
-                                key={item.id}
-                                className="bg-background/40 overflow-hidden cursor-pointer hover:bg-background/60 transition-colors group"
-                                onClickCapture={handleOpen}
-                                role="link"
-                            >
-                                <div className="relative w-full h-40 overflow-hidden pointer-events-none">
-                                    {thumbUrl ? (
-                                        <img
-                                            src={thumbUrl}
-                                            alt={title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-muted/20">
-                                            {isVideo ? (
-                                                <Play className="h-10 w-10 text-muted-foreground" />
-                                            ) : (
-                                                <Newspaper className="h-10 w-10 text-muted-foreground/50" />
-                                            )}
-                                        </div>
-                                    )}
-                                    {isVideo && thumbUrl && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                            <Play className="h-10 w-10 text-white/90 fill-white/90" />
-                                        </div>
-                                    )}
-                                </div>
-                                <CardContent className="pointer-events-none pt-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {item.tags.map((tag) => (
-                                            <Badge
-                                                key={tag}
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
-                                                {tag}
-                                            </Badge>
-                                        ))}
-                                        <span className="text-xs text-muted-foreground ml-auto">
-                                            {formatDate(item.date_published)}
-                                        </span>
+                            return (
+                                <Card
+                                    key={item.id}
+                                    className="flex h-[340px] flex-col overflow-hidden bg-background/40 cursor-pointer transition-colors hover:bg-background/60 group"
+                                    onClickCapture={handleOpen}
+                                    role="link"
+                                >
+                                    <div className="relative h-40 w-full shrink-0 overflow-hidden pointer-events-none">
+                                        {thumbUrl ? (
+                                            <img
+                                                src={thumbUrl}
+                                                alt={title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-muted/20">
+                                                {isVideo ? (
+                                                    <Play className="h-10 w-10 text-muted-foreground" />
+                                                ) : (
+                                                    <Newspaper className="h-10 w-10 text-muted-foreground/50" />
+                                                )}
+                                            </div>
+                                        )}
+                                        {isVideo && thumbUrl && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                <Play className="h-10 w-10 text-white/90 fill-white/90" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <h3 className="font-semibold text-sm leading-tight mb-2 group-hover:text-primary transition-colors">
-                                        {title}
-                                    </h3>
-                                    {item.summary && (
-                                        <p className="text-xs text-muted-foreground line-clamp-3">
-                                            {item.summary}
+                                    <CardContent className="flex min-h-0 flex-1 flex-col pointer-events-none p-4 pt-3">
+                                        <div className="mb-2 flex shrink-0 items-center gap-2">
+                                            {item.tags.map((tag) => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                >
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                            <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                                                {formatDate(item.date_published)}
+                                            </span>
+                                        </div>
+                                        <h3 className="mb-2 line-clamp-2 shrink-0 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
+                                            {title}
+                                        </h3>
+                                        <p className="line-clamp-3 flex-1 text-xs text-muted-foreground">
+                                            {item.summary || "\u00A0"}
                                         </p>
-                                    )}
-                                    <div className="flex items-center gap-1 mt-3 text-xs text-primary">
-                                        <ExternalLink className="h-3 w-3" />
-                                        Ouvrir sur RSI
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                                        <div className="mt-auto flex shrink-0 items-center gap-1 pt-2 text-xs text-primary">
+                                            <ExternalLink className="h-3 w-3" />
+                                            Ouvrir sur RSI
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </motion.div>

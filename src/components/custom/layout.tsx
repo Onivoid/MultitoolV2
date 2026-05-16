@@ -26,13 +26,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <DragRegion className="w-full h-screen max-h-screen max-w-full overflow-hidden">
             <SidebarProvider>
                 <AppSidebar />
-                <div className='flex h-full mt-2 ml-2 flex-col w-full'>
-                    <div className='w-max-content flex items-center'>
-                        <SidebarTrigger className='mt-1' />
-                        <span className='mr-2 ml-1 text-primary font-bold'>|</span>
-                        <p className='font-bold'>Multitool {version} {path ? `- ${path[0].toUpperCase() + path.slice(1)}` : null}</p>
+                <div className="mt-2 ml-2 flex h-full min-h-0 w-full flex-col">
+                    <div className="flex w-max-content shrink-0 items-center">
+                        <SidebarTrigger className="mt-1" />
+                        <span className="mr-2 ml-1 font-bold text-primary">|</span>
+                        <p className="font-bold">
+                            Multitool {version}{" "}
+                            {path ? `- ${path[0].toUpperCase() + path.slice(1)}` : null}
+                        </p>
                     </div>
-                    <div className="flex w-full h-full">
+                    <div className="flex min-h-0 w-full flex-1 overflow-hidden">
                         {children}
                     </div>
                 </div>

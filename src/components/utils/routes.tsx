@@ -25,6 +25,7 @@ const AppRouter = () => (
   <Router>
     <Layout>
       <ScrollToTop />
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/traduction" element={<Traduction />} />
@@ -36,6 +37,7 @@ const AppRouter = () => (
         <Route path='/news' element={<News />} />
         <Route path='/ships3d' element={<Ships3D />} />
       </Routes>
+      </div>
     </Layout>
   </Router>
 );
