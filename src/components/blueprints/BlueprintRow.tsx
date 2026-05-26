@@ -1,5 +1,9 @@
 import { Package } from "lucide-react";
-import { type BlueprintEntry, formatBlueprintDate } from "@/lib/blueprintList";
+import {
+    type BlueprintEntry,
+    formatBlueprintDate,
+    formatBlueprintOwner,
+} from "@/lib/blueprintList";
 
 interface BlueprintRowProps {
     blueprint: BlueprintEntry;
@@ -20,6 +24,9 @@ export default function BlueprintRow({ blueprint }: BlueprintRowProps) {
             <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{blueprint.productName}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                        {formatBlueprintOwner(blueprint.owner)}
+                    </p>
                     {hasMission && (
                         <p className="truncate text-sm text-muted-foreground">
                             {blueprint.missionDebugName}

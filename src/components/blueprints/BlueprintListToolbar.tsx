@@ -1,6 +1,13 @@
-import { ArrowUpDown, Search, X } from "lucide-react";
+import { ArrowUpDown, Search, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,15 +17,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
     BLUEPRINT_SORT_OPTIONS,
+    formatBlueprintOwner,
     type BlueprintSortKey,
     getBlueprintSortLabel,
 } from "@/lib/blueprintList";
+
+const ALL_OWNERS_VALUE = "__all__";
 
 interface BlueprintListToolbarProps {
     searchQuery: string;
     onSearchChange: (value: string) => void;
     sortKey: BlueprintSortKey;
     onSortChange: (key: BlueprintSortKey) => void;
+    ownerFilter: string;
+    onOwnerFilterChange: (owner: string) => void;
+    availableOwners: string[];
     filteredCount: number;
     totalCount: number;
 }
@@ -28,14 +41,20 @@ export default function BlueprintListToolbar({
     onSearchChange,
     sortKey,
     onSortChange,
+    ownerFilter,
+    onOwnerFilterChange,
+    availableOwners,
     filteredCount,
     totalCount,
 }: BlueprintListToolbarProps) {
-    const isFiltering = searchQuery.trim().length > 0;
+    const isFiltering =
+        searchQuery.trim().length > 0 || ownerFilter.trim().length > 0;
     const countLabel =
         isFiltering && filteredCount !== totalCount
             ? `${filteredCount} / ${totalCount} schémas`
             : `${totalCount} schéma${totalCount !== 1 ? "s" : ""}`;
+
+    const selectValue = ownerFilter.trim() || ALL_OWNERS_VALUE;
 
     return (
         <div className="mt-1 flex shrink-0 flex-col gap-3 pt-4 pr-3 sm:flex-row sm:items-center">
@@ -65,7 +84,36 @@ export default function BlueprintListToolbar({
                 )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {availableOwners.length > 0 && (
+                    <Select
+                        value={selectValue}
+                        onValueChange={(v) =>
+                            onOwnerFilterChange(
+                                v === ALL_OWNERS_VALUE ? "" : v
+                            )
+                        }
+                    >
+                        <SelectTrigger
+                            className="h-9 w-[min(100%,11rem)] gap-2 bg-background/30 sm:w-[11rem]"
+                            aria-label="Filtrer par compte"
+                        >
+                            <User className="h-4 w-4 shrink-0 opacity-70" />
+                            <SelectValue placeholder="Tous les comptes" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                            <SelectItem value={ALL_OWNERS_VALUE}>
+                                Tous les comptes
+                            </SelectItem>
+                            {availableOwners.map((owner) => (
+                                <SelectItem key={owner} value={owner}>
+                                    {formatBlueprintOwner(owner)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -82,10 +130,15 @@ export default function BlueprintListToolbar({
                     <DropdownMenuContent align="end" className="min-w-[180px]">
                         <DropdownMenuRadioGroup
                             value={sortKey}
-                            onValueChange={(v) => onSortChange(v as BlueprintSortKey)}
+                            onValueChange={(v) =>
+                                onSortChange(v as BlueprintSortKey)
+                            }
                         >
                             {BLUEPRINT_SORT_OPTIONS.map((opt) => (
-                                <DropdownMenuRadioItem key={opt.key} value={opt.key}>
+                                <DropdownMenuRadioItem
+                                    key={opt.key}
+                                    value={opt.key}
+                                >
                                     {opt.label}
                                 </DropdownMenuRadioItem>
                             ))}

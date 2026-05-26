@@ -20,6 +20,7 @@ import {
     type BlueprintEntry,
     type BlueprintSortKey,
     filterBlueprints,
+    getUniqueOwners,
     loadBlueprintSortKey,
     saveBlueprintSortKey,
     sortBlueprints,
@@ -45,6 +46,7 @@ export default function Blueprints() {
     const [isTogglingWatch, setIsTogglingWatch] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [ownerFilter, setOwnerFilter] = useState("");
     const [sortKey, setSortKey] = useState<BlueprintSortKey>(loadBlueprintSortKey);
 
     const handleSortChange = useCallback((key: BlueprintSortKey) => {
@@ -52,9 +54,15 @@ export default function Blueprints() {
         saveBlueprintSortKey(key);
     }, []);
 
+    const uniqueOwners = useMemo(() => getUniqueOwners(blueprints), [blueprints]);
+
     const filteredBlueprints = useMemo(
-        () => sortBlueprints(filterBlueprints(blueprints, searchQuery), sortKey),
-        [blueprints, searchQuery, sortKey]
+        () =>
+            sortBlueprints(
+                filterBlueprints(blueprints, searchQuery, ownerFilter),
+                sortKey
+            ),
+        [blueprints, searchQuery, ownerFilter, sortKey]
     );
 
     const loadData = useCallback(async (silent = false) => {
@@ -63,7 +71,12 @@ export default function Blueprints() {
                 invoke<BlueprintStoreFile>("load_gamelog_blueprints"),
                 invoke<GamelogWatcherStatus>("get_gamelog_watcher_status"),
             ]);
-            setBlueprints(store.blueprints ?? []);
+            setBlueprints(
+                (store.blueprints ?? []).map((bp) => ({
+                    ...bp,
+                    owner: bp.owner ?? "",
+                }))
+            );
             setStatus(watcherStatus);
             if (!silent) {
                 toast({
@@ -148,11 +161,16 @@ export default function Blueprints() {
                 logDirectory: string;
                 gameLogPath: string;
                 readErrors: string[];
+                removedWithoutOwner: number;
             }>("import_blueprints_from_logbackups", { includeCurrent: true });
             await loadData(true);
             const errHint =
                 result.filesFailed > 0
                     ? ` — ${result.filesFailed} fichier(s) illisible(s)`
+                    : "";
+            const pruneHint =
+                result.removedWithoutOwner > 0
+                    ? ` — ${result.removedWithoutOwner} sans compte retiré(s)`
                     : "";
             const pathHint = `LIVE : ${result.gameLogPath}`;
             toast({
@@ -162,7 +180,7 @@ export default function Blueprints() {
                         : "Aucune occurrence dans les logs scannés",
                 description:
                     result.matchesFound > 0
-                        ? `${result.matchesFound} ligne(s), ${result.uniqueProductsFound} schéma(s) distinct(s) dans ${result.filesWithMatches}/${result.filesScanned} fichier(s) — ${result.imported} nouveau(x), ${result.total} au total${errHint}`
+                        ? `${result.matchesFound} ligne(s), ${result.uniqueProductsFound} schéma(s) distinct(s) dans ${result.filesWithMatches}/${result.filesScanned} fichier(s) — ${result.imported} nouveau(x), ${result.total} au total${pruneHint}${errHint}`
                         : `${result.filesScanned} fichier(s) scanné(s), 0 ligne « Schémas reçu » / « Received Blueprint ». ${pathHint}${errHint}. Recompilez l'app si vous venez de mettre à jour.`,
                 variant: result.matchesFound > 0 ? "success" : "destructive",
             });
@@ -286,6 +304,9 @@ export default function Blueprints() {
                         onSearchChange={setSearchQuery}
                         sortKey={sortKey}
                         onSortChange={handleSortChange}
+                        ownerFilter={ownerFilter}
+                        onOwnerFilterChange={setOwnerFilter}
+                        availableOwners={uniqueOwners}
                         filteredCount={filteredBlueprints.length}
                         totalCount={blueprints.length}
                     />
@@ -302,9 +323,12 @@ export default function Blueprints() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setSearchQuery("")}
+                                onClick={() => {
+                                    setSearchQuery("");
+                                    setOwnerFilter("");
+                                }}
                             >
-                                Effacer la recherche
+                                Effacer les filtres
                             </Button>
                         </div>
                     ) : (
@@ -312,7 +336,7 @@ export default function Blueprints() {
                             <div className="flex flex-col gap-2">
                                 {filteredBlueprints.map((bp) => (
                                     <BlueprintRow
-                                        key={`${bp.productName}-${bp.ts}`}
+                                        key={`${bp.owner}-${bp.productName}-${bp.ts}`}
                                         blueprint={bp}
                                     />
                                 ))}

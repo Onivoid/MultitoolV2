@@ -16,7 +16,9 @@ use tauri::State;
 
 const BLUEPRINT_CORRELATION_WINDOW_SEC: f64 = 5.0;
 const TAIL_POLL_INTERVAL: Duration = Duration::from_millis(200);
-const SCHEMA_VERSION: u32 = 1;
+const SCHEMA_VERSION: u32 = 2;
+/// Nombre max de lignes parcourues pour trouver le handle au login.
+const OWNER_SCAN_MAX_LINES: usize = 500;
 
 // ---------------------------------------------------------------------------
 // Persistence types
@@ -25,6 +27,9 @@ const SCHEMA_VERSION: u32 = 1;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlueprintEntry {
+    /// Handle RSI du compte (ex. « Onivoid »).
+    #[serde(default)]
+    pub owner: String,
     pub product_name: String,
     pub ts: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,6 +97,8 @@ pub struct ImportBlueprintsResult {
     pub log_directory: String,
     pub game_log_path: String,
     pub read_errors: Vec<String>,
+    /// Entrées supprimées car sans handle (données v1 / import incomplet).
+    pub removed_without_owner: usize,
 }
 
 // ---------------------------------------------------------------------------
@@ -131,29 +138,64 @@ fn save_blueprint_store_sync(app: &AppHandle, store: &BlueprintStoreFile) -> Res
     fs::write(file_path, json).map_err(|e| e.to_string())
 }
 
-/// Fusionne des entrées en gardant la première occurrence par `product_name` (ts le plus ancien).
+fn blueprint_merge_key(entry: &BlueprintEntry) -> (String, String) {
+    (entry.owner.clone(), entry.product_name.clone())
+}
+
+pub fn blueprint_has_owner(entry: &BlueprintEntry) -> bool {
+    !entry.owner.trim().is_empty()
+}
+
+/// Retire les schémas sans handle RSI (legacy v1).
+pub fn prune_blueprints_without_owner(
+    blueprints: &[BlueprintEntry],
+) -> (Vec<BlueprintEntry>, usize) {
+    let before = blueprints.len();
+    let kept: Vec<BlueprintEntry> = blueprints
+        .iter()
+        .filter(|e| blueprint_has_owner(e))
+        .cloned()
+        .collect();
+    let removed = before - kept.len();
+    (kept, removed)
+}
+
+pub fn prune_blueprint_store_sync(app: &AppHandle) -> Result<usize, String> {
+    let mut store = load_blueprint_store_sync(app)?;
+    let (pruned, removed) = prune_blueprints_without_owner(&store.blueprints);
+    if removed == 0 {
+        return Ok(0);
+    }
+    store.schema_version = SCHEMA_VERSION;
+    store.blueprints = pruned;
+    save_blueprint_store_sync(app, &store)?;
+    Ok(removed)
+}
+
+/// Fusionne des entrées en gardant la première occurrence par `(owner, product_name)` (ts le plus ancien).
 pub fn merge_blueprint_entries(
     existing: &[BlueprintEntry],
     incoming: &[BlueprintEntry],
 ) -> (Vec<BlueprintEntry>, usize) {
-    let mut by_name: HashMap<String, BlueprintEntry> = HashMap::new();
+    let mut by_key: HashMap<(String, String), BlueprintEntry> = HashMap::new();
     for entry in existing {
-        by_name.insert(entry.product_name.clone(), entry.clone());
+        by_key.insert(blueprint_merge_key(entry), entry.clone());
     }
     let mut added = 0usize;
     for entry in incoming {
-        match by_name.get(&entry.product_name) {
+        let key = blueprint_merge_key(entry);
+        match by_key.get(&key) {
             None => {
-                by_name.insert(entry.product_name.clone(), entry.clone());
+                by_key.insert(key, entry.clone());
                 added += 1;
             }
             Some(current) if entry.ts < current.ts => {
-                by_name.insert(entry.product_name.clone(), entry.clone());
+                by_key.insert(key, entry.clone());
             }
             _ => {}
         }
     }
-    let mut merged: Vec<BlueprintEntry> = by_name.into_values().collect();
+    let mut merged: Vec<BlueprintEntry> = by_key.into_values().collect();
     merged.sort_by(|a, b| b.ts.partial_cmp(&a.ts).unwrap_or(std::cmp::Ordering::Equal));
     (merged, added)
 }
@@ -161,6 +203,7 @@ pub fn merge_blueprint_entries(
 pub fn append_blueprints(app: &AppHandle, incoming: &[BlueprintEntry]) -> Result<usize, String> {
     let mut store = load_blueprint_store_sync(app)?;
     let (merged, added) = merge_blueprint_entries(&store.blueprints, incoming);
+    store.schema_version = SCHEMA_VERSION;
     store.blueprints = merged;
     save_blueprint_store_sync(app, &store)?;
     Ok(added)
@@ -208,6 +251,7 @@ struct WatcherState {
     guid_map: HashMap<String, MissionEntry>,
     active: HashMap<String, ActiveMission>,
     recent_lifecycle: VecDeque<MissionLifecycleEvent>,
+    owner: Option<String>,
 }
 
 impl WatcherState {
@@ -216,6 +260,7 @@ impl WatcherState {
             guid_map: HashMap::new(),
             active: HashMap::new(),
             recent_lifecycle: VecDeque::with_capacity(32),
+            owner: None,
         }
     }
 
@@ -223,6 +268,23 @@ impl WatcherState {
         self.guid_map.clear();
         self.active.clear();
         self.recent_lifecycle.clear();
+        self.owner = None;
+    }
+
+    fn set_owner_from_content(&mut self, content: &str) {
+        if let Some(handle) = extract_log_owner(content) {
+            self.owner = Some(handle);
+        }
+    }
+
+    fn try_update_owner_from_line(&mut self, line: &str) {
+        if let Some(handle) = extract_log_owner_from_line(line) {
+            self.owner = Some(handle);
+        }
+    }
+
+    fn current_owner(&self) -> String {
+        self.owner.clone().unwrap_or_default()
     }
 
     fn record_marker(&mut self, guid: &str, _generator: &str, contract: &str) {
@@ -352,9 +414,51 @@ fn extract_blueprint_product_name(line: &str, patterns: &LogPatterns) -> Option<
     Some(name.as_str().trim().to_string())
 }
 
+fn handle_regex() -> &'static Regex {
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"Handle\[([^\]]+)\]").expect("handle regex"))
+}
+
+fn nickname_regex() -> &'static Regex {
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"nickname="([^"]+)""#).expect("nickname regex"))
+}
+
+/// Extrait le handle RSI depuis une ligne de log (login legacy, réseau, etc.).
+pub fn extract_log_owner_from_line(line: &str) -> Option<String> {
+    if let Some(caps) = handle_regex().captures(line) {
+        let handle = caps.get(1)?.as_str().trim();
+        if !handle.is_empty() {
+            return Some(handle.to_string());
+        }
+    }
+    if let Some(caps) = nickname_regex().captures(line) {
+        let nick = caps.get(1)?.as_str().trim();
+        if !nick.is_empty() {
+            return Some(nick.to_string());
+        }
+    }
+    None
+}
+
+/// Extrait le handle RSI depuis le contenu d'un fichier log (scan login en tête de fichier).
+pub fn extract_log_owner(content: &str) -> Option<String> {
+    for (i, line) in content.lines().enumerate() {
+        if i >= OWNER_SCAN_MAX_LINES {
+            break;
+        }
+        if let Some(handle) = extract_log_owner_from_line(line) {
+            return Some(handle);
+        }
+    }
+    None
+}
+
 fn process_line(line: &str, state: &mut WatcherState) -> Option<BlueprintEntry> {
     let ts = parse_log_timestamp(line).unwrap_or_else(|| Utc::now().timestamp() as f64);
     let patterns = log_patterns();
+
+    state.try_update_owner_from_line(line);
 
     if let Some(caps) = patterns.marker.captures(line) {
         state.record_marker(
@@ -378,6 +482,7 @@ fn process_line(line: &str, state: &mut WatcherState) -> Option<BlueprintEntry> 
     if let Some(product_name) = extract_blueprint_product_name(line, patterns) {
         let corr = state.correlate_blueprint(ts);
         return Some(BlueprintEntry {
+            owner: state.current_owner(),
             product_name,
             ts,
             mission_guid: corr.as_ref().map(|c| c.guid.clone()),
@@ -400,6 +505,7 @@ fn scan_file_for_blueprints(path: &Path) -> Result<Vec<BlueprintEntry>, String> 
     let patterns = log_patterns();
     let mut blueprints = Vec::new();
     let content = read_log_file_lossy(path)?;
+    let owner = extract_log_owner(&content).unwrap_or_default();
     for line in content.lines() {
         if line.is_empty() {
             continue;
@@ -407,6 +513,7 @@ fn scan_file_for_blueprints(path: &Path) -> Result<Vec<BlueprintEntry>, String> 
         if let Some(product_name) = extract_blueprint_product_name(line, patterns) {
             let ts = parse_log_timestamp(line).unwrap_or(0.0);
             blueprints.push(BlueprintEntry {
+                owner: owner.clone(),
                 product_name,
                 ts,
                 mission_guid: None,
@@ -447,6 +554,9 @@ fn run_log_tailer(app: AppHandle, log_path: PathBuf, stop: Arc<AtomicBool>) {
         if rotated {
             if file.is_some() {
                 state.reset();
+            }
+            if let Ok(content) = read_log_file_lossy(&log_path) {
+                state.set_owner_from_content(&content);
             }
             match File::open(&log_path) {
                 Ok(mut f) => {
@@ -740,6 +850,7 @@ pub async fn import_blueprints_from_logbackups(
         .collect::<HashSet<_>>()
         .len();
     let added = append_blueprints(&app, &all_incoming)?;
+    let removed_without_owner = prune_blueprint_store_sync(&app)?;
     let store_after = load_blueprint_store_sync(&app)?;
 
     Ok(ImportBlueprintsResult {
@@ -753,12 +864,90 @@ pub async fn import_blueprints_from_logbackups(
         log_directory: logbackups.display().to_string(),
         game_log_path,
         read_errors: read_errors.into_iter().take(5).collect(),
+        removed_without_owner,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extract_log_owner_from_legacy_login_line() {
+        let line = r#"<2026-05-16T11:28:35.195Z> [Notice] <Legacy login response> [CIG-net] User Login Success - Handle[Onivoid] - Time[290632136] [Team_GameServices][Login]"#;
+        assert_eq!(
+            extract_log_owner_from_line(line).as_deref(),
+            Some("Onivoid")
+        );
+    }
+
+    #[test]
+    fn extract_log_owner_from_nickname_line() {
+        let line = r#"[Notice] <Channel Created> nickname="TestHandle" playerGEID=123"#;
+        assert_eq!(
+            extract_log_owner_from_line(line).as_deref(),
+            Some("TestHandle")
+        );
+    }
+
+    #[test]
+    fn prune_blueprints_without_owner_removes_empty_handles() {
+        let entries = vec![
+            BlueprintEntry {
+                owner: "Onivoid".to_string(),
+                product_name: "A".to_string(),
+                ts: 1.0,
+                mission_guid: None,
+                mission_debug_name: None,
+                mission_trigger: None,
+            },
+            BlueprintEntry {
+                owner: "".to_string(),
+                product_name: "B".to_string(),
+                ts: 2.0,
+                mission_guid: None,
+                mission_debug_name: None,
+                mission_trigger: None,
+            },
+            BlueprintEntry {
+                owner: "   ".to_string(),
+                product_name: "C".to_string(),
+                ts: 3.0,
+                mission_guid: None,
+                mission_debug_name: None,
+                mission_trigger: None,
+            },
+        ];
+        let (kept, removed) = prune_blueprints_without_owner(&entries);
+        assert_eq!(kept.len(), 1);
+        assert_eq!(removed, 2);
+        assert_eq!(kept[0].product_name, "A");
+    }
+
+    #[test]
+    fn merge_blueprint_entries_keeps_same_product_for_different_owners() {
+        let existing = vec![BlueprintEntry {
+            owner: "Alpha".to_string(),
+            product_name: "Torse X".to_string(),
+            ts: 100.0,
+            mission_guid: None,
+            mission_debug_name: None,
+            mission_trigger: None,
+        }];
+        let incoming = vec![BlueprintEntry {
+            owner: "Beta".to_string(),
+            product_name: "Torse X".to_string(),
+            ts: 200.0,
+            mission_guid: None,
+            mission_debug_name: None,
+            mission_trigger: None,
+        }];
+        let (merged, added) = merge_blueprint_entries(&existing, &incoming);
+        assert_eq!(merged.len(), 2);
+        assert_eq!(added, 1);
+        assert!(merged.iter().any(|e| e.owner == "Alpha"));
+        assert!(merged.iter().any(|e| e.owner == "Beta"));
+    }
 
     #[test]
     fn blueprint_reward_matches_french_notification_line() {
@@ -871,6 +1060,17 @@ mod tests {
             found
                 .iter()
                 .map(|e| &e.product_name)
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            found
+                .iter()
+                .filter(|e| e.product_name == "Torse Antium Désert")
+                .all(|e| e.owner == "Onivoid"),
+            "expected owner Onivoid on game build entries, got: {:?}",
+            found
+                .iter()
+                .map(|e| (&e.owner, &e.product_name))
                 .collect::<Vec<_>>()
         );
     }
