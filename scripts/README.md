@@ -40,14 +40,22 @@ node scripts/check-version.js --help
 
 ### updater.mjs
 
-Génère `latest.json` pour tauri-plugin-updater (utilisé par la CI après upload des artefacts). La version est lue depuis `package.json` (semver sans `v`).
+Génère `latest.json` pour tauri-plugin-updater. La version est lue depuis `package.json`. Les URLs des binaires sont **canoniques** (`…/releases/download/vX.Y.Z/fichier`) pour éviter les liens `untagged-…` des releases brouillon.
 
 ```bash
-GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.7.3
+GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.8.1
+```
+
+### validate-latest-json.mjs
+
+Vérifie qu’aucune URL `untagged-` n’est présente et que les binaires répondent en HTTP 200.
+
+```bash
+GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/validate-latest-json.mjs v2.8.1
 ```
 
 ## Flux release GitHub
 
 1. Githooks : commit + tag `vX.Y.Z`
 2. `git push` + `git push origin vX.Y.Z`
-3. CI : draft → build → `latest.json` → publish
+3. CI : draft → build → **publish** → `latest.json` → validation

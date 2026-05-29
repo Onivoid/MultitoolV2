@@ -79,8 +79,9 @@ Le workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) :
 
 1. Crée une **release draft** sur GitHub
 2. Build Windows (standard, portable, MS Store) et upload des artefacts (dont `.msi` + `.msi.sig`)
-3. Génère et uploade **`latest.json`** (`scripts/updater.mjs`)
-4. Publie la release (`draft: false`)
+3. Publie la release (`draft: false`)
+4. Génère et uploade **`latest.json`** (`scripts/updater.mjs`, URLs canoniques)
+5. Valide le manifeste (`scripts/validate-latest-json.mjs`)
 
 ### 3. Vérifier la release
 
@@ -88,7 +89,8 @@ Sur https://github.com/Onivoid/MultitoolV2/releases :
 
 - `MultitoolV2-Installer.msi`
 - `MultitoolV2-Installer.msi.sig`
-- `latest.json` (champ `"version"` en semver nu, ex. `"2.7.6"`)
+- `latest.json` (champ `"version"` en semver nu, ex. `"2.8.1"`)
+- Dans `latest.json`, les URLs doivent être du type `…/releases/download/vX.Y.Z/MultitoolV2-Installer.msi` (jamais `untagged-…`)
 
 Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
@@ -132,3 +134,36 @@ git push origin vX.Y.Z --force
 ### Release sans latest.json
 
 Vérifier que le job `publish-release` a réussi et que `MultitoolV2-Installer.msi.sig` est présent sur la release.
+
+### Mise à jour échoue au téléchargement (prod)
+
+1. Télécharger le manifeste :
+
+   ```bash
+   curl -sL "https://github.com/Onivoid/MultitoolV2/releases/latest/download/latest.json"
+   ```
+
+2. Si une URL contient `/untagged-`, le manifeste a été généré sur une release encore en brouillon. Regénérer après publication (voir ci-dessous).
+
+3. Tester l’URL MSI du JSON :
+
+   ```bash
+   curl -sI "https://github.com/Onivoid/MultitoolV2/releases/download/vX.Y.Z/MultitoolV2-Installer.msi"
+   ```
+
+   Attendu : `HTTP/2 200` ou `302` suivi de `200`.
+
+### Regénérer latest.json sur une release déjà publiée (one-shot)
+
+Utile pour corriger une release existante (ex. `v2.8.1`) sans rebuild complet :
+
+```bash
+# Token avec scope repo (ou GITHUB_TOKEN en CI)
+export GITHUB_TOKEN=ghp_...
+export GITHUB_REPOSITORY=Onivoid/MultitoolV2
+
+node scripts/updater.mjs v2.8.1
+node scripts/validate-latest-json.mjs v2.8.1
+```
+
+La release doit déjà être **publiée** (`draft: false`) et contenir `MultitoolV2-Installer.msi` + `.msi.sig`.

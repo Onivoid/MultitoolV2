@@ -167,15 +167,20 @@ jobs:
               with:
                   node-version: "22"
 
-            - name: Generate and upload latest.json
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  GITHUB_REPOSITORY: ${{ github.repository }}
-              run: node scripts/updater.mjs ${{ github.ref_name }}
-
             - name: Publish release
               uses: softprops/action-gh-release@v2
               with:
                   tag_name: ${{ github.ref_name }}
                   draft: false
                   prerelease: false
+
+            - name: Generate and upload latest.json
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_REPOSITORY: ${{ github.repository }}
+              run: node scripts/updater.mjs ${{ github.ref_name }}
+
+            - name: Validate latest.json
+              env:
+                  GITHUB_REPOSITORY: ${{ github.repository }}
+              run: node scripts/validate-latest-json.mjs ${{ github.ref_name }}

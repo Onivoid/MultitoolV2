@@ -3,8 +3,8 @@
  *
  * Usage: node scripts/updater.mjs <tag>
  *
- * Reads release assets already uploaded to the GitHub draft release,
- * extracts signatures from .sig files, and uploads latest.json.
+ * Reads release assets from the GitHub release, extracts signatures from
+ * .sig files, builds canonical download URLs, and uploads latest.json.
  */
 
 import { readFileSync } from "fs";
@@ -111,6 +111,13 @@ function findAsset(assets, predicate) {
     return assets.find(predicate) ?? null;
 }
 
+/** Canonical GitHub release asset URL (avoids draft "untagged-…" URLs). */
+function releaseDownloadUrl(tagName, fileName) {
+    const encodedTag = encodeURIComponent(tagName);
+    const encodedFile = encodeURIComponent(fileName);
+    return `https://github.com/${owner}/${repo}/releases/download/${encodedTag}/${encodedFile}`;
+}
+
 async function main() {
     console.log(`Generating latest.json for ${tag} (v${version})`);
 
@@ -138,7 +145,13 @@ async function main() {
         }
 
         const signature = await getAssetContent(asset);
-        const downloadUrl = archiveAsset.browser_download_url;
+        const apiUrl = archiveAsset.browser_download_url;
+        if (apiUrl?.includes("/untagged-")) {
+            console.warn(
+                `  Warning: GitHub API returned draft URL for ${archiveName}; using canonical URL instead.`,
+            );
+        }
+        const downloadUrl = releaseDownloadUrl(tag, archiveName);
 
         if (name.endsWith(".msi.sig")) {
             const arch = name.toLowerCase().includes("aarch64")
@@ -147,6 +160,7 @@ async function main() {
             const key = `windows-${arch}`;
             if (!platforms[key]) {
                 console.log(`  Windows MSI ${key}: ${archiveName}`);
+                console.log(`    URL: ${downloadUrl}`);
                 platforms[key] = {
                     signature: signature.trim(),
                     url: downloadUrl,
@@ -169,13 +183,21 @@ async function main() {
         platforms,
     };
 
+    const jsonText = JSON.stringify(latestJson, null, 2);
+    if (jsonText.includes("untagged-")) {
+        console.error(
+            "latest.json still contains untagged URLs. Aborting upload.",
+        );
+        process.exit(1);
+    }
+
     console.log("\nGenerated latest.json:");
-    console.log(JSON.stringify(latestJson, null, 2));
+    console.log(jsonText);
 
     await uploadAsset(
         release.id,
         "latest.json",
-        JSON.stringify(latestJson, null, 2),
+        jsonText,
     );
     console.log("\nlatest.json uploaded successfully.");
 }
