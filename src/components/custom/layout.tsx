@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DragRegion } from '@/components/custom/drag-region';
 import { useLocation } from 'react-router-dom';
 import { getAppVersionSync, formatVersion } from '@/utils/version';
+import { Updater } from '@/components/Updater';
 
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -40,6 +41,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                     </div>
                 </div>
                 <Toaster />
+                <Updater />
             </SidebarProvider>
         </DragRegion>
     )

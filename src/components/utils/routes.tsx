@@ -6,7 +6,7 @@ import Layout from '@/components/custom/layout';
 import ClearCache from '@/pages/ClearCache';
 import LocalCharactersPresets from '@/pages/LocalCharactersPresets';
 import CharactersPresetsList from '@/pages/CharactersPresetsList';
-import UpdatesPage from '@/pages/UpdatesPage';
+import UpdatePage from '@/pages/Update';
 import PatchNotes from '@/pages/PatchNotes';
 import News from '@/pages/News';
 import Ships3D from '@/pages/Ships3D';
@@ -33,7 +33,7 @@ const AppRouter = () => (
         <Route path="/cache" element={<ClearCache />} />
         <Route path="/presets-local" element={<LocalCharactersPresets />} />
         <Route path='/presets-remote' element={<CharactersPresetsList />} />
-        <Route path='/updates' element={<UpdatesPage />} />
+        <Route path='/updates' element={<UpdatePage />} />
         <Route path='/patchnotes' element={<PatchNotes />} />
         <Route path='/news' element={<News />} />
         <Route path='/ships3d' element={<Ships3D />} />
