@@ -19,34 +19,34 @@ _L'outil tout-en-un ultime pour Star Citizen_
 
 ### 🌍 **Traduction**
 
--   Installation de la traduction française pour Star Citizen (SCEFRA Uniquement)
--   Vérification des mises à jour des traductions
--   Désinstallation propre en un clic
+- Installation de la traduction française pour Star Citizen (SCEFRA Uniquement)
+- Vérification des mises à jour des traductions
+- Désinstallation propre en un clic
 
 ### 🧹 **Gestion du Cache**
 
--   Nettoyage du cache Star Citizen
--   Analyse de l'espace disque utilisé
--   Ouverture rapide des dossiers système
+- Nettoyage du cache Star Citizen
+- Analyse de l'espace disque utilisé
+- Ouverture rapide des dossiers système
 
 ### 👥 **Gestion des Personnages**
 
--   **Presets locaux** : Gestion, Duplication et Suppression de vos personnages
--   **Presets en ligne** : Téléchargement depuis Star Citizen Characters
--   Duplication et organisation des presets
--   Prévisualisation des personnages (Image fournies par Star Citizen Characters)
+- **Presets locaux** : Gestion, Duplication et Suppression de vos personnages
+- **Presets en ligne** : Téléchargement depuis Star Citizen Characters
+- Duplication et organisation des presets
+- Prévisualisation des personnages (Image fournies par Star Citizen Characters)
 
 ### 📋 **Patchnotes & Suivi**
 
--   Suivi en temps réel des mises à jour du projet
--   Historique des commits et changements
--   Notifications automatiques des nouvelles versions
+- Suivi en temps réel des mises à jour du projet
+- Historique des commits et changements
+- Notifications automatiques des nouvelles versions
 
 ### 🎨 **Interface Moderne**
 
--   **Personnalisation** : Couleurs et thèmes personnalisables
--   **Navigation fluide** : Sidebar avec accès rapide
--   **Transparence** : Effets visuels modernes (Windows)
+- **Personnalisation** : Couleurs et thèmes personnalisables
+- **Navigation fluide** : Sidebar avec accès rapide
+- **Transparence** : Effets visuels modernes (Windows)
 
 ---
 
@@ -105,10 +105,10 @@ Get-FileHash MultitoolV2-Portable.exe -Algorithm SHA256
 
 **Garanties :**
 
--   ✅ Code source entièrement auditable
--   ✅ Builds GitHub Actions publics
--   ✅ Aucune collecte de données personnelles
--   ✅ Aucune communication réseau non documentée
+- ✅ Code source entièrement auditable
+- ✅ Builds GitHub Actions publics
+- ✅ Aucune collecte de données personnelles
+- ✅ Aucune communication réseau non documentée
 
 ---
 
@@ -205,13 +205,13 @@ pnpm tauri build
 
 ### 🤝 Partenaires
 
--   **[SCEFRA](https://discord.com/invite/DccQN8BN2V)** - Traductions françaises de Star Citizen
+- **[SCEFRA](https://discord.com/invite/DccQN8BN2V)** - Traductions françaises de Star Citizen
 
 ---
 
 ### Services Externes Utilisés
 
--   **[Star Citizen Characters](https://www.star-citizen-characters.com/)** - Base de données de presets
+- **[Star Citizen Characters](https://www.star-citizen-characters.com/)** - Base de données de presets
 
 ---
 
