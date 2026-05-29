@@ -127,8 +127,13 @@ function Build-Version {
         Write-Host "   Execution: $fullCmd" -ForegroundColor DarkGray
         $exitCode = 0
         try {
-            Invoke-Expression $fullCmd
-            if ($LASTEXITCODE -ne 0) {
+            if ($ConfigFile) {
+                & pnpm tauri build --target x86_64-pc-windows-msvc --config $ConfigFile
+            }
+            else {
+                & pnpm tauri build --target x86_64-pc-windows-msvc
+            }
+            if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) {
                 $exitCode = $LASTEXITCODE
             }
         }
