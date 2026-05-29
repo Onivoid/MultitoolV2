@@ -4,6 +4,7 @@ set -e
 PACKAGE_JSON="package.json"
 TAURI_CONF="src-tauri/tauri.conf.json"
 CARGO_TOML="src-tauri/Cargo.toml"
+CARGO_LOCK="src-tauri/Cargo.lock"
 
 current_version=$(node -p "require('./${PACKAGE_JSON}').version")
 
@@ -65,14 +66,20 @@ if (!/version\s*=\s*\"[^\"]+\"/.test(content)) {
   console.error('version field not found in Cargo.toml');
   process.exit(1);
 }
-content = content.replace(/version\s*=\s*\"[^\"]+\"/, 'version = \"${new_version}\"');
+content = content.replace(/^version\s*=\s*\"[^\"]+\"/m, 'version = \"${new_version}\"');
 fs.writeFileSync(path, content, 'utf8');
 "
 
-git add "${PACKAGE_JSON}" "${TAURI_CONF}" "${CARGO_TOML}"
+echo " Syncing Cargo.lock..."
+if ! cargo check --manifest-path "${CARGO_TOML}" --quiet; then
+    echo " ✗ cargo check failed. Is Rust installed and on PATH?"
+    exit 1
+fi
+
+git add "${PACKAGE_JSON}" "${TAURI_CONF}" "${CARGO_TOML}" "${CARGO_LOCK}"
 
 echo "$new_version" > .git/BUMP_VERSION
 
 echo ""
-echo " ✓ Bumped to v${new_version}"
+echo " ✓ Bumped to v${new_version} (Cargo.lock included)"
 echo ""

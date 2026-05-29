@@ -15,6 +15,7 @@ Les versions doivent être **identiques** dans :
 - `package.json`
 - `src-tauri/tauri.conf.json`
 - `src-tauri/Cargo.toml`
+- `src-tauri/Cargo.lock` (entrée du crate `sandbox`, synchronisée au bump)
 
 ## Githooks (recommandé)
 
@@ -30,12 +31,12 @@ Inspiré du [Tauri-React-Boilerplate](https://github.com/Onivoid/Tauri-React-Boi
 ./scripts/setup-githooks.sh
 ```
 
-Requiert **Git Bash** sur Windows pour exécuter `pre-commit` / `post-commit`.
+Requiert **Git Bash** sur Windows pour exécuter `pre-commit` / `post-commit`, et **Rust / cargo** dans le `PATH` (le hook exécute `cargo check` pour mettre à jour `Cargo.lock`).
 
 ### À chaque commit
 
 1. `git commit` → saisie interactive de la nouvelle version (`X.Y.Z` > version actuelle)
-2. Les trois fichiers de version sont mis à jour et stagés
+2. Les fichiers de version sont mis à jour, `Cargo.lock` est synchronisé via `cargo check`, puis tout est stagé (y compris le lockfile)
 3. `post-commit` crée le tag `vX.Y.Z` localement
 4. Pousser le commit **et** le tag :
 
@@ -110,7 +111,7 @@ Le MSI Store est buildé par la CI ; le packaging MSIX et `broadFileSystemAccess
 node scripts/check-version.js
 ```
 
-Refaire un commit avec githooks ou corriger manuellement les trois fichiers puis recommitter.
+Refaire un commit avec githooks ou aligner manuellement `package.json`, `tauri.conf.json`, `Cargo.toml` et `Cargo.lock`, puis recommitter.
 
 ### Tag manquant ou incorrect
 

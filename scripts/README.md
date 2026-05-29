@@ -8,7 +8,7 @@
 .\scripts\setup-githooks.ps1
 ```
 
-À chaque `git commit` : bump interactif de `package.json`, `tauri.conf.json`, `Cargo.toml` + tag `vX.Y.Z` en `post-commit`.
+À chaque `git commit` : bump interactif de `package.json`, `tauri.conf.json`, `Cargo.toml`, sync de `Cargo.lock` (`cargo check`) + tag `vX.Y.Z` en `post-commit`.
 
 Commit sans bump : `git commit --no-verify`
 
