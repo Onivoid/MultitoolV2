@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { getBuildInfo } from "@/utils/buildInfo";
-import { getAppVersion } from "@/utils/version";
+import { formatVersion, getAppVersion, stripVersionPrefix } from "@/utils/version";
 import openExternal from "@/utils/external";
 import logger from "@/utils/logger";
 import {
@@ -68,7 +68,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
     const getGitHubReleaseUrl = useCallback(
         (version?: string) => {
             if (version) {
-                return `https://github.com/${githubRepo}/releases/tag/v${version}`;
+                return `https://github.com/${githubRepo}/releases/tag/v${stripVersionPrefix(version)}`;
             }
             return `https://github.com/${githubRepo}/releases/latest`;
         },
@@ -118,7 +118,7 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
                 if (!silent) {
                     if (update) {
                         toast({
-                            title: `Mise à jour disponible: v${update.version}`,
+                            title: `Mise à jour disponible: ${formatVersion(update.version)}`,
                             description:
                                 "Téléchargez et installez la mise à jour depuis cette page.",
                             variant: "default",

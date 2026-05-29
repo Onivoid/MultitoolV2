@@ -14,14 +14,18 @@ Les versions doivent être **identiques** dans :
 
 - `package.json`
 - `src-tauri/tauri.conf.json`
-- `src-tauri/Cargo.toml`
-- `src-tauri/Cargo.lock` (entrée du crate `sandbox`, synchronisée au bump)
+
+Utiliser **uniquement** `X.Y.Z` dans ces fichiers (sans préfixe `v`). Le préfixe `v` est réservé aux **tags Git** (`v2.7.6`) et à l’affichage utilisateur.
 
 ## Githooks (recommandé)
 
 Inspiré du [Tauri-React-Boilerplate](https://github.com/Onivoid/Tauri-React-Boilerplate/tree/main/.githooks).
 
-### Activation (une fois)
+### Activation
+
+Les hooks s’activent automatiquement après `pnpm install` (`prepare` → `scripts/setup-hooks.sh`).
+
+Manuel :
 
 ```powershell
 .\scripts\setup-githooks.ps1
@@ -31,12 +35,12 @@ Inspiré du [Tauri-React-Boilerplate](https://github.com/Onivoid/Tauri-React-Boi
 ./scripts/setup-githooks.sh
 ```
 
-Requiert **Git Bash** sur Windows pour exécuter `pre-commit` / `post-commit`, et **Rust / cargo** dans le `PATH` (le hook exécute `cargo check` pour mettre à jour `Cargo.lock`).
+Requiert **Git Bash** sur Windows pour exécuter `pre-commit` / `post-commit`.
 
 ### À chaque commit
 
-1. `git commit` → saisie interactive de la nouvelle version (`X.Y.Z` > version actuelle)
-2. Les fichiers de version sont mis à jour, `Cargo.lock` est synchronisé via `cargo check`, puis tout est stagé (y compris le lockfile)
+1. `git commit` → saisie interactive de la nouvelle version (`X.Y.Z` ou `vX.Y.Z` > version actuelle)
+2. `package.json` et `tauri.conf.json` sont mis à jour et stagés
 3. `post-commit` crée le tag `vX.Y.Z` localement
 4. Pousser le commit **et** le tag :
 
@@ -84,7 +88,7 @@ Sur https://github.com/Onivoid/MultitoolV2/releases :
 
 - `MultitoolV2-Installer.msi`
 - `MultitoolV2-Installer.msi.sig`
-- `latest.json`
+- `latest.json` (champ `"version"` en semver nu, ex. `"2.7.6"`)
 
 Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
@@ -111,7 +115,11 @@ Le MSI Store est buildé par la CI ; le packaging MSIX et `broadFileSystemAccess
 node scripts/check-version.js
 ```
 
-Refaire un commit avec githooks ou aligner manuellement `package.json`, `tauri.conf.json`, `Cargo.toml` et `Cargo.lock`, puis recommitter.
+Aligner `package.json` et `tauri.conf.json`, ou refaire un commit avec les githooks.
+
+### Affichage `vv2.X.X`
+
+Les fichiers de version ne doivent pas contenir de préfixe `v`. Corriger les JSON puis recommitter.
 
 ### Tag manquant ou incorrect
 

@@ -6,7 +6,7 @@ $root = Split-Path -Parent $PSScriptRoot
 
 Push-Location $root
 try {
-    git config core.hooksPath .githooks
+    bash scripts/setup-hooks.sh
     Write-Host "Githooks actives: core.hooksPath = .githooks" -ForegroundColor Green
     Write-Host "Requiert Git Bash pour pre-commit / post-commit." -ForegroundColor Yellow
     Write-Host "Commit sans bump: git commit --no-verify" -ForegroundColor Gray

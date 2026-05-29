@@ -168,7 +168,7 @@ export default function UpdatesPage() {
                             >
                                 <Github className="h-4 w-4" />
                                 {updater.latestVersion
-                                    ? `Page release v${formatVersion(updater.latestVersion)}`
+                                    ? `Page release ${formatVersion(updater.latestVersion)}`
                                     : 'Voir sur GitHub'}
                             </Button>
                         )}
@@ -183,7 +183,7 @@ export default function UpdatesPage() {
 
                     {updater.updateAvailable && updater.latestVersion && (
                         <p className="text-sm text-muted-foreground">
-                            Version disponible : <strong>v{formatVersion(updater.latestVersion)}</strong>
+                            Version disponible : <strong>{formatVersion(updater.latestVersion)}</strong>
                         </p>
                     )}
 

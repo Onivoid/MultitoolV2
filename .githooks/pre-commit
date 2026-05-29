@@ -3,10 +3,10 @@ set -e
 
 PACKAGE_JSON="package.json"
 TAURI_CONF="src-tauri/tauri.conf.json"
-CARGO_TOML="src-tauri/Cargo.toml"
-CARGO_LOCK="src-tauri/Cargo.lock"
 
-current_version=$(node -p "require('./${PACKAGE_JSON}').version")
+strip_v() { echo "$1" | sed 's/^v//I'; }
+
+current_version=$(strip_v "$(node -p "require('./${PACKAGE_JSON}').version")")
 
 echo ""
 echo "┌─────────────────────────────────────────┐"
@@ -16,6 +16,7 @@ echo "│ Current version: v${current_version}    "
 echo "└─────────────────────────────────────────┘"
 echo ""
 
+# Read from /dev/tty so it works even when stdin is git's pipe
 exec < /dev/tty
 read -rp " Enter new version (must be > ${current_version}): " new_version
 
@@ -24,11 +25,15 @@ if [ -z "$new_version" ]; then
     exit 1
 fi
 
+new_version=$(strip_v "$new_version")
+
+# Basic semver format check (optional v prefix stripped above)
 if ! echo "$new_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo " ✗ Invalid version format '${new_version}'. Expected x.y.z"
     exit 1
 fi
 
+# Compare versions: new must be strictly greater than current
 compare_versions() {
     IFS='.' read -r -a a <<< "$1"
     IFS='.' read -r -a b <<< "$2"
@@ -44,6 +49,7 @@ if ! compare_versions "$new_version" "$current_version"; then
     exit 1
 fi
 
+# Bump package.json
 node -e "
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('${PACKAGE_JSON}', 'utf8'));
@@ -51,6 +57,7 @@ pkg.version = '${new_version}';
 fs.writeFileSync('${PACKAGE_JSON}', JSON.stringify(pkg, null, 4) + '\n');
 "
 
+# Bump tauri.conf.json
 node -e "
 const fs = require('fs');
 const conf = JSON.parse(fs.readFileSync('${TAURI_CONF}', 'utf8'));
@@ -58,28 +65,12 @@ conf.version = '${new_version}';
 fs.writeFileSync('${TAURI_CONF}', JSON.stringify(conf, null, 4) + '\n');
 "
 
-node -e "
-const fs = require('fs');
-const path = '${CARGO_TOML}';
-let content = fs.readFileSync(path, 'utf8');
-if (!/version\s*=\s*\"[^\"]+\"/.test(content)) {
-  console.error('version field not found in Cargo.toml');
-  process.exit(1);
-}
-content = content.replace(/^version\s*=\s*\"[^\"]+\"/m, 'version = \"${new_version}\"');
-fs.writeFileSync(path, content, 'utf8');
-"
+# Stage the bumped files
+git add "${PACKAGE_JSON}" "${TAURI_CONF}"
 
-echo " Syncing Cargo.lock..."
-if ! cargo check --manifest-path "${CARGO_TOML}" --quiet; then
-    echo " ✗ cargo check failed. Is Rust installed and on PATH?"
-    exit 1
-fi
-
-git add "${PACKAGE_JSON}" "${TAURI_CONF}" "${CARGO_TOML}" "${CARGO_LOCK}"
-
+# Store new version for post-commit
 echo "$new_version" > .git/BUMP_VERSION
 
 echo ""
-echo " ✓ Bumped to v${new_version} (Cargo.lock included)"
+echo " ✓ Bumped to v${new_version}"
 echo ""

@@ -28,26 +28,7 @@ if (!GITHUB_TOKEN) {
 const pkg = JSON.parse(
     readFileSync(join(__dirname, "../package.json"), "utf8"),
 );
-const tauriConf = JSON.parse(
-    readFileSync(join(__dirname, "../src-tauri/tauri.conf.json"), "utf8"),
-);
-const version = String(pkg.version || "").replace(/^v/, "");
-const tauriVersion = String(tauriConf.version || "").replace(/^v/, "");
-const tagVersion = String(tag).replace(/^v/, "");
-
-if (version !== tauriVersion) {
-    console.error(
-        `Version mismatch: package.json=${version}, tauri.conf.json=${tauriVersion}`,
-    );
-    process.exit(1);
-}
-
-if (version !== tagVersion) {
-    console.error(
-        `Version mismatch: package.json=${version}, tag=${tag} (expected v${version})`,
-    );
-    process.exit(1);
-}
+const version = String(pkg.version || "").replace(/^v/i, "");
 
 const repoMatch = process.env.GITHUB_REPOSITORY || "Onivoid/MultitoolV2";
 const [owner, repo] = repoMatch.split("/");

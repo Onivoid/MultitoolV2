@@ -20,6 +20,7 @@ import {
     sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { getBuildInfo } from "@/utils/buildInfo";
+import { formatVersion } from "@/utils/version";
 import logger from "@/utils/logger";
 
 export interface UpdateProgress {
@@ -157,7 +158,7 @@ class UpdateService {
                 if (this.isMinimizedStart) {
                     await this.sendSystemNotification(
                         "Mise à jour disponible",
-                        `MultitoolV2 v${update.version} est disponible. Le téléchargement va commencer automatiquement.`,
+                        `MultitoolV2 ${formatVersion(update.version)} est disponible. Le téléchargement va commencer automatiquement.`,
                     );
                 }
 

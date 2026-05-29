@@ -8,13 +8,19 @@
 .\scripts\setup-githooks.ps1
 ```
 
-À chaque `git commit` : bump interactif de `package.json`, `tauri.conf.json`, `Cargo.toml`, sync de `Cargo.lock` (`cargo check`) + tag `vX.Y.Z` en `post-commit`.
+```bash
+./scripts/setup-hooks.sh
+```
+
+Activés aussi via `pnpm install` (`prepare`).
+
+À chaque `git commit` : bump interactif de `package.json` et `tauri.conf.json` + tag `vX.Y.Z` en `post-commit`.
 
 Commit sans bump : `git commit --no-verify`
 
 ### check-version.js
 
-Vérifie la cohérence des versions et l’état Git.
+Vérifie la cohérence entre `package.json` et `tauri.conf.json`, plus l’état Git.
 
 ```bash
 node scripts/check-version.js
@@ -34,7 +40,7 @@ node scripts/check-version.js --help
 
 ### updater.mjs
 
-Génère `latest.json` pour tauri-plugin-updater (utilisé par la CI après upload des artefacts).
+Génère `latest.json` pour tauri-plugin-updater (utilisé par la CI après upload des artefacts). La version est lue depuis `package.json` (semver sans `v`).
 
 ```bash
 GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.7.3

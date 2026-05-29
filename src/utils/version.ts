@@ -26,7 +26,13 @@ export function getAppVersionSync(): string {
  */
 export function formatVersion(version: string): string {
     if (!version || version === "dev") return "Dev";
-    return `v${version}`;
+    const bare = version.replace(/^v/i, "");
+    return `v${bare}`;
+}
+
+/** Semver sans préfixe v (fichiers, tags Git, latest.json). */
+export function stripVersionPrefix(version: string): string {
+    return version.replace(/^v/i, "");
 }
 
 /**
