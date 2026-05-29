@@ -332,6 +332,13 @@ if ($builds.Count -gt 0) {
             if ($builds -contains "standard" -and -not (Test-Path "$installerDir/MultitoolV2-Installer.msi")) {
                 Copy-Item $msiFile.FullName "$installerDir/MultitoolV2-Installer.msi" -Force
                 Write-Host "   Installer MSI: MultitoolV2-Installer.msi" -ForegroundColor Green
+                $sigSource = Join-Path $msiFile.DirectoryName ($msiFile.Name + ".sig")
+                if (Test-Path $sigSource) {
+                    Copy-Item $sigSource "$installerDir/MultitoolV2-Installer.msi.sig" -Force
+                    Write-Host "   Installer signature: MultitoolV2-Installer.msi.sig" -ForegroundColor Green
+                } else {
+                    Write-Host "   ATTENTION: .msi.sig introuvable ($sigSource) - updater desactive" -ForegroundColor Yellow
+                }
             }
             # Copier pour MS Store si demandé
             elseif ($builds -contains "msix" -and -not (Test-Path "$msStoreDir/MultitoolV2-MicrosoftStore.msi")) {

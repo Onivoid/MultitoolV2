@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+BUMP_FILE=".git/BUMP_VERSION"
+
+if [ ! -f "$BUMP_FILE" ]; then
+    exit 0
+fi
+
+new_version=$(cat "$BUMP_FILE")
+rm -f "$BUMP_FILE"
+
+git tag "v${new_version}"
+
+echo ""
+echo " ✓ Tag v${new_version} created locally"
+echo " → Push it with: git push origin v${new_version}"
+echo ""

@@ -97,8 +97,9 @@ function checkVersions() {
         if (tauriVersion !== cargoVersion) {
             log('yellow', `⚠️  tauri.conf.json (${tauriVersion}) ≠ Cargo.toml (${cargoVersion})`);
         }
-        log('yellow', 'Pour corriger, utilisez :');
-        log('white', '  node scripts/update-version.js X.Y.Z');
+        log('yellow', 'Pour corriger : alignez les trois fichiers manuellement,');
+        log('white', '  ou refaites un commit avec les githooks (voir scripts/setup-githooks.ps1).');
+        log('white', '  Commit sans bump : git commit --no-verify');
         console.log('');
         process.exit(1);
     }
@@ -147,7 +148,7 @@ function main() {
         log('white', 'Usage: node scripts/check-version.js');
         console.log('');
         log('yellow', 'Ce script vérifie :');
-        log('white', '  - La cohérence entre package.json et tauri.conf.json');
+        log('white', '  - La cohérence entre package.json, tauri.conf.json et Cargo.toml');
         log('white', '  - L\'état du repository Git');
         log('white', '  - La correspondance des tags Git');
         console.log('');

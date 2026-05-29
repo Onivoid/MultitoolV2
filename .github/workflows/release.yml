@@ -3,7 +3,7 @@ name: Release Windows Builds
 on:
     push:
         tags:
-            - "v*.*.*"
+            - "v*"
 
 permissions:
     contents: write
@@ -12,8 +12,24 @@ env:
     CARGO_TERM_COLOR: always
 
 jobs:
-    build:
+    create-release:
+        name: Create Release
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Create draft release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  name: "Release ${{ github.ref_name }}"
+                  body: "See RELEASE_NOTES.md in build artifacts."
+                  draft: true
+                  prerelease: false
+
+    build-windows:
         name: Build Windows Release
+        needs: create-release
         runs-on: windows-latest
 
         steps:
@@ -47,48 +63,36 @@ jobs:
 
             - name: Setup .NET SDK and WiX
               run: |
-                  Write-Host "📦 Installing .NET SDK and WiX..." -ForegroundColor Cyan
-                  # .NET SDK is pre-installed on GitHub runners
+                  Write-Host "Installing .NET SDK and WiX..." -ForegroundColor Cyan
                   dotnet tool install --global wix --version 5.0.2
-
-                  # Ajouter les outils .NET au PATH
                   $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
                   echo "$dotnetTools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-                  # Vérifier que WiX est accessible
                   $env:PATH = "$dotnetTools;$env:PATH"
                   wix --version
-                  Write-Host "✅ WiX installed successfully" -ForegroundColor Green
+                  Write-Host "WiX installed successfully" -ForegroundColor Green
 
             - name: Build Standard Release (GitHub Distribution)
               env:
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               run: |
-                  Write-Host "🏗️ Building Standard (GitHub)..." -ForegroundColor Green
                   $env:TAURI_ENV_DISTRIBUTION = "github"
                   $env:TAURI_ENV_MS_STORE = $null
                   $env:TAURI_ENV_PORTABLE = $null
-                  Write-Host "Variables: DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION, MS_STORE=$env:TAURI_ENV_MS_STORE, PORTABLE=$env:TAURI_ENV_PORTABLE" -ForegroundColor Yellow
                   .\scripts\build-release.ps1 standard
 
-            - name: Build Portable Release (Portable Distribution)
+            - name: Build Portable Release
               run: |
-                  Write-Host "📦 Building Portable..." -ForegroundColor Green
                   $env:TAURI_ENV_PORTABLE = "true"
                   $env:TAURI_ENV_DISTRIBUTION = "github"
                   $env:TAURI_ENV_MS_STORE = $null
-                  Write-Host "Variables: DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION, MS_STORE=$env:TAURI_ENV_MS_STORE, PORTABLE=$env:TAURI_ENV_PORTABLE" -ForegroundColor Yellow
                   .\scripts\build-release.ps1 portable
 
-            - name: Build Microsoft Store Release (for internal use)
+            - name: Build Microsoft Store Release
               run: |
-                  # IMPORTANT: Définir explicitement les variables MS Store
                   $env:TAURI_ENV_MS_STORE = "true"
                   $env:TAURI_ENV_DISTRIBUTION = $null
                   $env:TAURI_ENV_PORTABLE = $null
-                  Write-Host "🏪 Building Microsoft Store version..." -ForegroundColor Magenta
-                  Write-Host "Variables: MS_STORE=$env:TAURI_ENV_MS_STORE, DISTRIBUTION=$env:TAURI_ENV_DISTRIBUTION" -ForegroundColor Yellow
                   .\scripts\build-release.ps1 msix
 
             - name: Rename Microsoft Store MSI for Release
@@ -99,191 +103,79 @@ jobs:
                           $newName = "MultitoolV2-Installer-MSStore.msi"
                           $newPath = "builds/$newName"
                           Copy-Item $storeMsi.FullName -Destination $newPath
-                          Write-Host "✅ Microsoft Store MSI copié vers: $newName" -ForegroundColor Green
-                          
-                          # Ajouter au fichier checksums
                           $hash = (Get-FileHash $newPath -Algorithm SHA256).Hash.ToLower()
                           Add-Content -Path "builds/checksums.txt" -Value "$hash  $newName"
-                          Write-Host "✅ Checksum ajouté pour $newName" -ForegroundColor Green
                       }
-                  }
-
-            - name: Prepare Updater Artifacts
-              run: |
-                  Write-Host "=== Préparation des artifacts pour tauri-plugin-updater ===" -ForegroundColor Cyan
-
-                  # Extraire la version du tag (enlever le 'v')
-                  $version = "${{ github.ref_name }}" -replace '^v', ''
-                  Write-Host "Version détectée: $version" -ForegroundColor Yellow
-
-                  # Créer le fichier .msi.zip pour l'updater (format Tauri)
-                  $msiPath = "builds/installer/MultitoolV2-Installer.msi"
-                  if (Test-Path $msiPath) {
-                      # Format attendu par Tauri: {app-name}_{version}_{arch}_{locale}.msi.zip
-                      $zipName = "Multitool_${version}_x64_en-US.msi.zip"
-                      $zipPath = "builds/$zipName"
-                      
-                      Write-Host "Création de $zipName pour tauri-plugin-updater..." -ForegroundColor Green
-                      Compress-Archive -Path $msiPath -DestinationPath $zipPath -Force
-                      
-                      # Vérifier que le zip est créé
-                      if (Test-Path $zipPath) {
-                          $zipSize = (Get-Item $zipPath).Length
-                          Write-Host "✅ Updater artifact créé: $zipName ($zipSize bytes)" -ForegroundColor Green
-                          
-                          # Ajouter le checksum du .msi.zip
-                          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
-                          Add-Content -Path "builds/checksums.txt" -Value "$hash  $zipName"
-                          Write-Host "✅ Checksum ajouté pour $zipName" -ForegroundColor Green
-                      } else {
-                          Write-Host "❌ Échec de création du .msi.zip" -ForegroundColor Red
-                          exit 1
-                      }
-                  } else {
-                      Write-Host "❌ MSI source introuvable: $msiPath" -ForegroundColor Red
-                      exit 1
                   }
 
             - name: Verify Build Artifacts
               run: |
-                  Write-Host "=== Vérification des artifacts de build ===" -ForegroundColor Cyan
-
-                  if (Test-Path "builds/portable/MultitoolV2-Portable.exe") {
-                    Write-Host "✅ Portable: $(Get-Item 'builds/portable/MultitoolV2-Portable.exe' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
-                  } else {
-                    Write-Host "❌ Portable manquant" -ForegroundColor Red
+                  if (-not (Test-Path "builds/portable/MultitoolV2-Portable.exe")) { exit 1 }
+                  if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi")) { exit 1 }
+                  if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi.sig")) {
+                    Write-Host "MultitoolV2-Installer.msi.sig manquant (createUpdaterArtifacts + TAURI_SIGNING_PRIVATE_KEY)" -ForegroundColor Red
                     exit 1
                   }
-
-                  if (Test-Path "builds/installer/MultitoolV2-Installer.msi") {
-                    Write-Host "✅ Installer: $(Get-Item 'builds/installer/MultitoolV2-Installer.msi' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
-                  } else {
-                    Write-Host "❌ Installer manquant" -ForegroundColor Red
-                    exit 1
-                  }
-
-                  # Vérifier le .msi.zip pour l'updater
-                  $version = "${{ github.ref_name }}" -replace '^v', ''
-                  $zipName = "Multitool_${version}_x64_en-US.msi.zip"
-                  if (Test-Path "builds/$zipName") {
-                    Write-Host "✅ Updater artifact: $(Get-Item "builds/$zipName" | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
-                  } else {
-                    Write-Host "❌ Updater artifact (.msi.zip) manquant" -ForegroundColor Red
-                    exit 1
-                  }
-
-                  if (Test-Path "builds/checksums.txt") {
-                    Write-Host "✅ Checksums disponibles" -ForegroundColor Green
-                    Write-Host "Contenu:" -ForegroundColor Yellow
-                    Get-Content "builds/checksums.txt"
-                  } else {
-                    Write-Host "❌ Checksums manquants" -ForegroundColor Red
-                    exit 1
-                  }
-
-                  # Vérification que Microsoft Store MSI est créé
-                  if (Test-Path "builds/MultitoolV2-Installer-MSStore.msi") {
-                    Write-Host "✅ MS Store MSI: $(Get-Item 'builds/MultitoolV2-Installer-MSStore.msi' | Select-Object -ExpandProperty Length) bytes" -ForegroundColor Green
-                  } else {
-                    Write-Host "❌ MS Store MSI manquant" -ForegroundColor Red
-                    exit 1
-                  }
+                  if (-not (Test-Path "builds/checksums.txt")) { exit 1 }
+                  if (-not (Test-Path "builds/MultitoolV2-Installer-MSStore.msi")) { exit 1 }
 
             - name: Create Release Notes
               run: |
                   $version = "${{ github.ref_name }}"
                   $notes = @"
-                  # MultitoolV2 $version - Release Windows (Non-signé)
+                  # MultitoolV2 $version - Release Windows
 
-                  ## ⚠️ Avertissement Sécurité - Builds Non-signés
+                  ## Options d'Installation
 
-                  Cette application n'est **pas signée numériquement** (certificat coûteux pour un projet open-source).
-                  Windows SmartScreen affichera un avertissement - c'est **normal et attendu**.
+                  1. **Version Portable** : MultitoolV2-Portable.exe
+                  2. **Installer Standard (MSI)** : mises a jour automatiques via tauri-plugin-updater
+                  3. **MS Store** : MultitoolV2-Installer-MSStore.msi (packaging MSIX externe)
 
-                  ## 📥 Options d'Installation
+                  ## Checksums SHA256
 
-                  1. **🏆 RECOMMANDÉ - Version Portable** : Aucune installation, pas d'avertissement SmartScreen
-                  2. **💻 Installer Standard** : Avertissement SmartScreen attendu (cliquez "Informations complémentaires" → "Exécuter quand même")
-                  3. **🏪 MS Store Distribution** : Version préparée pour Microsoft Store (avec variables d'environnement MS Store)
-
-                  ## 🔐 Vérification de Sécurité
-
-                  - ✅ **Code source ouvert** : Entièrement auditable sur GitHub
-                  - ✅ **Build reproductible** : Workflow GitHub Actions public  
-                  - ✅ **Checksums SHA256** : Vérification d'intégrité fournie ci-dessous
-
-                  ## 🔄 Mise à jour automatique
-
-                  Les versions GitHub (installateur MSI) supportent les **mises à jour automatiques** :
-                  - ✅ Vérification automatique au démarrage
-                  - ✅ Téléchargement en arrière-plan
-                  - ✅ Installation en un clic
-
-                  **Note :** La version portable ne supporte pas les mises à jour automatiques.
-
-                  ## 📋 Checksums SHA256
-
-                  ``````
+                  ````
                   $(Get-Content builds/checksums.txt -Raw)
-                  ``````
-
-                  ### Comment installer une app non-signée sur Windows :
-                  1. Téléchargez le fichier souhaité
-                  2. Si SmartScreen apparaît : **"Informations complémentaires"** → **"Exécuter quand même"**
-                  3. Ou utilisez la **version portable** (recommandé - pas d'installation)
-
-                  ### Vérifier l'intégrité (optionnel) :
-                  ``````powershell
-                  Get-FileHash MultitoolV2-Installer.msi -Algorithm SHA256
-                  Get-FileHash MultitoolV2-Portable.exe -Algorithm SHA256
-                  ``````
-
-                  ---
-                  **Pourquoi pas de signature ?** Les certificats de signature coûtent ~300€/an. 
-                  Pour un projet gratuit et open-source, nous privilégions la transparence totale du code.
-
-                  **Microsoft Store :** Une version signée par Microsoft sera disponible séparément sur le Microsoft Store.
+                  ````
                   "@
-
                   $notes | Out-File -FilePath "RELEASE_NOTES.md" -Encoding utf8
 
-            - name: Upload Release Assets (Public uniquement)
-              uses: softprops/action-gh-release@v1
+            - name: Upload release assets
+              uses: softprops/action-gh-release@v2
               with:
+                  tag_name: ${{ github.ref_name }}
                   body_path: RELEASE_NOTES.md
                   files: |
                       builds/portable/MultitoolV2-Portable.exe
                       builds/installer/MultitoolV2-Installer.msi
-                      builds/Multitool_*_x64_en-US.msi.zip
+                      builds/installer/MultitoolV2-Installer.msi.sig
                       builds/MultitoolV2-Installer-MSStore.msi
                       builds/checksums.txt
+                  draft: true
                   prerelease: false
-                  generate_release_notes: false
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build Summary
-              run: |
-                  Write-Host ""
-                  Write-Host "🎉 RELEASE CRÉÉE AVEC SUCCÈS!" -ForegroundColor Green
-                  Write-Host "Version: ${{ github.ref_name }}" -ForegroundColor Cyan
-                  Write-Host ""
-                  Write-Host "📦 Artifacts dans GitHub Release:" -ForegroundColor Yellow
-                  Write-Host "  • MultitoolV2-Portable.exe (Recommandé)" -ForegroundColor White
-                  Write-Host "  • MultitoolV2-Installer.msi (Standard)" -ForegroundColor White
-                  $version = "${{ github.ref_name }}" -replace '^v', ''
-                  Write-Host "  • Multitool_${version}_x64_en-US.msi.zip (Auto-updater)" -ForegroundColor Cyan
-                  Write-Host "  • MultitoolV2-Installer-MSStore.msi (MS Store Distribution)" -ForegroundColor Magenta
-                  Write-Host "  • checksums.txt" -ForegroundColor White
-                  Write-Host ""
-                  Write-Host "🔄 Mise à jour automatique:" -ForegroundColor Cyan
-                  Write-Host "   Le fichier .msi.zip permet les mises à jour automatiques" -ForegroundColor White
-                  Write-Host "   pour les utilisateurs de la version installateur MSI" -ForegroundColor White
-                  Write-Host ""
-                  Write-Host "🏪 Artifact MS Store Distribution:" -ForegroundColor Magenta
-                  Write-Host "   MultitoolV2-Installer-MSStore.msi contient TAURI_ENV_MS_STORE=true" -ForegroundColor White
-                  Write-Host "   → Page 'Mises à jour' masquée dans la sidebar" -ForegroundColor White
-                  Write-Host "   → Warnings GitHub non-signé masqués" -ForegroundColor White
-                  Write-Host ""
-                  Write-Host "🌐 Release disponible sur:" -ForegroundColor Cyan
-                  Write-Host "   https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" -ForegroundColor Blue
+    publish-release:
+        name: Publish Release
+        needs: build-windows
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            - name: Generate and upload latest.json
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_REPOSITORY: ${{ github.repository }}
+              run: node scripts/updater.mjs ${{ github.ref_name }}
+
+            - name: Publish release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  draft: false
+                  prerelease: false

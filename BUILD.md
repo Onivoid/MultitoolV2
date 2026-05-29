@@ -162,6 +162,14 @@ pnpm tauri build
 -   Certificat Microsoft Store (pour publication)
 -   WebView2 en mode offline installer
 
+**Packaging MSIX (après la CI ou build local) :**
+
+1. Prendre `builds/MicrosoftStoreMSI/MultitoolV2-MicrosoftStore.msi` (ou l’artefact CI `MultitoolV2-Installer-MSStore.msi`).
+2. Ouvrir **MSIX Packaging Tool** → créer le package à partir du MSI.
+3. Dans `Package.appxmanifest`, ajouter la capability **`broadFileSystemAccess`** (voir [`src-tauri/gen/windows/README.md`](src-tauri/gen/windows/README.md) et le snippet XML).
+4. Déclarer cette capability restreinte dans **Partner Center** avant publication.
+5. Rappeler aux utilisateurs d’activer l’accès **Système de fichiers** pour MultitoolV2 dans les paramètres Windows si l’installation de traduction échoue.
+
 ### 🚀 **Build Complet** _(Tous les types)_
 
 ```bash

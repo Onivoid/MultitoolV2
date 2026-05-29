@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUpdater } from '@/hooks/useUpdater';
-import { Download, Github, Store, AlertTriangle } from 'lucide-react';
+import { Download, Github, Store, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import openExternal from '@/utils/external';
 import { formatVersion, getAppVersionSync } from '@/utils/version';
 
@@ -25,6 +26,17 @@ export default function UpdatesPage() {
     };
 
     const getDistributionInfo = () => {
+        if (updater.isPortable) {
+            return {
+                name: 'Version Portable',
+                icon: <Download className="h-5 w-5 text-green-600" />,
+                badge: 'Portable',
+                badgeVariant: 'outline' as const,
+                description: 'Version sans installation',
+                updateInfo: 'Téléchargez une nouvelle version pour mettre à jour.',
+            };
+        }
+
         switch (updater.distribution) {
             case 'microsoft-store':
                 return {
@@ -42,16 +54,7 @@ export default function UpdatesPage() {
                     badge: 'Non-signé',
                     badgeVariant: 'secondary' as const,
                     description: 'Version open-source depuis GitHub',
-                    updateInfo: 'Mises à jour manuelles ou automatiques disponibles.'
-                };
-            case 'portable':
-                return {
-                    name: 'Version Portable',
-                    icon: <Download className="h-5 w-5 text-green-600" />,
-                    badge: 'Portable',
-                    badgeVariant: 'outline' as const,
-                    description: 'Version sans installation',
-                    updateInfo: 'Téléchargez une nouvelle version pour mettre à jour.'
+                    updateInfo: 'Mises à jour automatiques via tauri-plugin-updater (installateur MSI).'
                 };
             default:
                 return {
@@ -101,15 +104,52 @@ export default function UpdatesPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button
                             onClick={() => updater.checkForUpdates(false)}
-                            disabled={updater.isChecking}
+                            disabled={updater.isChecking || updater.isDownloading || updater.isInstalling}
                             className="flex items-center gap-2"
                         >
                             <Download className="h-4 w-4" />
                             {updater.isChecking ? 'Vérification...' : 'Vérifier les mises à jour'}
                         </Button>
+
+                        {updater.distribution === 'github' && updater.canUpdate && updater.updateAvailable && (
+                            <>
+                                {!updater.updateDownloaded && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => updater.downloadUpdate()}
+                                        disabled={updater.isDownloading || updater.isInstalling}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        {updater.isDownloading ? 'Téléchargement...' : 'Télécharger'}
+                                    </Button>
+                                )}
+                                {updater.updateDownloaded && (
+                                    <Button
+                                        onClick={() => updater.installUpdate()}
+                                        disabled={updater.isInstalling}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${updater.isInstalling ? 'animate-spin' : ''}`} />
+                                        {updater.isInstalling ? 'Installation...' : 'Installer et redémarrer'}
+                                    </Button>
+                                )}
+                                {!updater.updateDownloaded && !updater.isDownloading && (
+                                    <Button
+                                        variant="default"
+                                        onClick={() => updater.downloadAndInstall()}
+                                        disabled={updater.isInstalling}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <RefreshCw className="h-4 w-4" />
+                                        Tout en un clic
+                                    </Button>
+                                )}
+                            </>
+                        )}
 
                         {updater.distribution === 'microsoft-store' ? (
                             <Button
@@ -128,11 +168,24 @@ export default function UpdatesPage() {
                             >
                                 <Github className="h-4 w-4" />
                                 {updater.latestVersion
-                                    ? `Télécharger ${formatVersion(updater.latestVersion)}`
+                                    ? `Page release v${formatVersion(updater.latestVersion)}`
                                     : 'Voir sur GitHub'}
                             </Button>
                         )}
                     </div>
+
+                    {updater.isDownloading && (
+                        <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Téléchargement en cours...</p>
+                            <Progress value={0} className="animate-pulse" />
+                        </div>
+                    )}
+
+                    {updater.updateAvailable && updater.latestVersion && (
+                        <p className="text-sm text-muted-foreground">
+                            Version disponible : <strong>v{formatVersion(updater.latestVersion)}</strong>
+                        </p>
+                    )}
 
                     {updater.error && (
                         <div className="p-3 bg-red-100 dark:bg-red-900 rounded-md">
@@ -173,7 +226,7 @@ export default function UpdatesPage() {
             )}
 
             {/* GitHub/Portable - Info spécifique */}
-            {(updater.distribution === 'github' || updater.distribution === 'portable') && (
+            {(updater.distribution === 'github' || updater.isPortable) && (
                 <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
@@ -192,7 +245,7 @@ export default function UpdatesPage() {
                             <p className="text-sm">
                                 🛡️ <strong>Checksums SHA256</strong> - Vérification d'intégrité
                             </p>
-                            {updater.distribution === 'portable' && (
+                            {updater.isPortable && (
                                 <p className="text-sm">
                                     📦 <strong>Version portable</strong> - Pas d'installation requise
                                 </p>

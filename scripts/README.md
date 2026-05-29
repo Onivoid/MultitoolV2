@@ -1,77 +1,47 @@
-# Scripts de Gestion des Versions
+# Scripts MultitoolV2
 
-Ce dossier contient les scripts pour gérer les versions de MultitoolV2.
+## Versioning
 
-## 🚀 Scripts Node.js (Recommandés)
+### Githooks (recommandé)
 
-### update-version.js
-
-Met à jour automatiquement les versions dans `package.json` et `tauri.conf.json`.
-
-```bash
-# Usage
-node scripts/update-version.js <version>
-
-# Exemple
-node scripts/update-version.js 2.1.4
+```powershell
+.\scripts\setup-githooks.ps1
 ```
+
+À chaque `git commit` : bump interactif de `package.json`, `tauri.conf.json`, `Cargo.toml` + tag `vX.Y.Z` en `post-commit`.
+
+Commit sans bump : `git commit --no-verify`
 
 ### check-version.js
 
-Vérifie la cohérence des versions et l'état Git du repository.
+Vérifie la cohérence des versions et l’état Git.
 
 ```bash
-# Usage
 node scripts/check-version.js
-
-# Aide
 node scripts/check-version.js --help
 ```
 
-## 📜 Scripts PowerShell (Legacy)
+## Release / CI
 
-### update-version.ps1
-
-Version PowerShell du script de mise à jour (peut causer des problèmes d'encodage JSON).
+### build-release.ps1
 
 ```powershell
-.\scripts\update-version.ps1 -Version "2.1.4"
+.\scripts\build-release.ps1 standard
+.\scripts\build-release.ps1 portable
+.\scripts\build-release.ps1 msix
+.\scripts\build-release.ps1 public
 ```
 
-### check-version-safe.ps1
+### updater.mjs
 
-Version PowerShell du script de vérification.
-
-```powershell
-.\scripts\check-version-safe.ps1
-```
-
-## ✅ Avantages des Scripts Node.js
-
--   **Formatage JSON natif** : Évite les problèmes d'encodage PowerShell
--   **Cross-platform** : Fonctionne sur Windows, Linux, macOS
--   **Manipulation JSON fiable** : Préserve le formatage et l'encodage
--   **Gestion d'erreurs robuste** : Meilleure validation des données
--   **Couleurs dans la console** : Affichage plus clair
-
-## 🔧 Workflow de Release Recommandé
+Génère `latest.json` pour tauri-plugin-updater (utilisé par la CI après upload des artefacts).
 
 ```bash
-# 1. Vérifier l'état actuel
-node scripts/check-version.js
-
-# 2. Mettre à jour la version
-node scripts/update-version.js 2.1.4
-
-# 3. Tester l'application
-pnpm tauri dev
-
-# 4. Committer et tagger
-git add -A
-git commit -m "chore: bump version to 2.1.4"
-git tag v2.1.4
-git push && git push --tags
-
-# 5. Build de release
-.\scripts\build-release.ps1 -Type public
+GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.7.3
 ```
+
+## Flux release GitHub
+
+1. Githooks : commit + tag `vX.Y.Z`
+2. `git push` + `git push origin vX.Y.Z`
+3. CI : draft → build → `latest.json` → publish

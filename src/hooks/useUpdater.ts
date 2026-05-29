@@ -1,25 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { getBuildInfo } from "@/utils/buildInfo";
-import { compareVersions, getAppVersion } from "@/utils/version";
+import { getAppVersion } from "@/utils/version";
 import openExternal from "@/utils/external";
 import logger from "@/utils/logger";
+import {
+    updateService,
+    type UpdateState,
+} from "@/services/updateService";
 
 interface UpdateInfo {
     version: string;
     notes: string;
     pub_date: string;
-    signature?: string;
-}
-
-interface UseUpdaterState {
-    isChecking: boolean;
-    updateAvailable: boolean;
-    updateInfo: UpdateInfo | null;
-    isDownloading: boolean;
-    downloadProgress: number;
-    error: string | null;
-    isInstalling: boolean;
 }
 
 interface UseUpdaterConfig {
@@ -39,23 +32,19 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
 
     const { toast } = useToast();
 
-    const [state, setState] = useState<UseUpdaterState>({
-        isChecking: false,
-        updateAvailable: false,
-        updateInfo: null,
-        isDownloading: false,
-        downloadProgress: 0,
-        error: null,
-        isInstalling: false,
-    });
-
-    const [buildInfo, setBuildInfo] = useState<any>(null);
-    const [latestVersion, setLatestVersion] = useState<string | null>(null);
+    const [serviceState, setServiceState] = useState<UpdateState>(
+        updateService.getState(),
+    );
+    const [buildInfo, setBuildInfo] = useState<Awaited<
+        ReturnType<typeof getBuildInfo>
+    > | null>(null);
     const [currentVersion, setCurrentVersion] = useState<string>("");
 
-    // Charger les infos de build au démarrage
     useEffect(() => {
-        // Charger les informations de build
+        return updateService.subscribe(setServiceState);
+    }, []);
+
+    useEffect(() => {
         getBuildInfo()
             .then((info) => {
                 setBuildInfo(info);
@@ -63,29 +52,19 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
             })
             .catch(logger.error);
 
-        // Récupérer aussi la version directement via l'API Tauri
         getAppVersion()
-            .then((version) => {
-                setCurrentVersion(version || "");
-            })
-            .catch((error) => {
-                logger.error(
-                    "Erreur lors de la récupération de la version:",
-                    error
-                );
-            });
+            .then((version) => setCurrentVersion(version || ""))
+            .catch(logger.error);
     }, []);
 
-    // Récupérer les préférences utilisateur depuis localStorage
     const getAutoUpdateSetting = useCallback(() => {
-        return localStorage.getItem("autoUpdate") !== "false"; // Opt-out par défaut
+        return localStorage.getItem("autoUpdate") !== "false";
     }, []);
 
     const setAutoUpdateSetting = useCallback((enabled: boolean) => {
         localStorage.setItem("autoUpdate", enabled.toString());
     }, []);
 
-    // Obtenir l'URL de la page de release GitHub
     const getGitHubReleaseUrl = useCallback(
         (version?: string) => {
             if (version) {
@@ -93,26 +72,30 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
             }
             return `https://github.com/${githubRepo}/releases/latest`;
         },
-        [githubRepo]
+        [githubRepo],
     );
 
-    // Déterminer si c'est un build non-signé
     const isUnsignedBuild = useCallback(() => {
-        if (!buildInfo) return true; // Par défaut, considérer non-signé
+        if (!buildInfo) return true;
         return !buildInfo.isSigned;
     }, [buildInfo]);
 
-    // Vérifier si les mises à jour sont supportées
     const canUpdate = useCallback(() => {
         if (!buildInfo) return false;
-        // Microsoft Store gère ses propres mises à jour
         return (
             buildInfo.distribution !== "microsoft-store" &&
             buildInfo.canAutoUpdate
         );
     }, [buildInfo]);
 
-    // Vérifier les mises à jour
+    const updateInfo: UpdateInfo | null = serviceState.updateInfo
+        ? {
+              version: serviceState.updateInfo.version,
+              notes: serviceState.updateInfo.body ?? "",
+              pub_date: serviceState.updateInfo.date ?? new Date().toISOString(),
+          }
+        : null;
+
     const checkForUpdates = useCallback(
         async (silent = false) => {
             if (!canUpdate()) {
@@ -130,55 +113,17 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
                 return;
             }
 
-            setState((prev) => ({ ...prev, isChecking: true, error: null }));
-
             try {
-                const res = await fetch(
-                    `https://api.github.com/repos/${githubRepo}/releases/latest`,
-                    {
-                        headers: { Accept: "application/vnd.github+json" },
-                    }
-                );
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                const tag: string = json.tag_name || ""; // ex: v2.1.0
-                const remoteVersion = tag.startsWith("v") ? tag.slice(1) : tag;
-                setLatestVersion(remoteVersion || null);
-
-                const localVersion: string = buildInfo?.version;
-                if (
-                    remoteVersion &&
-                    localVersion &&
-                    compareVersions(remoteVersion, localVersion) === 1
-                ) {
-                    const notes: string = json.body || "";
-                    const pubDate: string =
-                        json.published_at || new Date().toISOString();
-                    setState((prev) => ({
-                        ...prev,
-                        updateAvailable: true,
-                        updateInfo: {
-                            version: remoteVersion,
-                            notes,
-                            pub_date: pubDate,
-                        },
-                    }));
-
-                    if (!silent) {
+                const update = await updateService.checkForUpdate(silent);
+                if (!silent) {
+                    if (update) {
                         toast({
-                            title: `Mise à jour disponible: v${remoteVersion}`,
+                            title: `Mise à jour disponible: v${update.version}`,
                             description:
-                                "Ouvrez la page GitHub pour télécharger la nouvelle version.",
+                                "Téléchargez et installez la mise à jour depuis cette page.",
                             variant: "default",
                         });
-                    }
-                } else {
-                    setState((prev) => ({
-                        ...prev,
-                        updateAvailable: false,
-                        updateInfo: null,
-                    }));
-                    if (!silent) {
+                    } else if (!serviceState.error) {
                         toast({
                             title: "Aucune mise à jour",
                             description:
@@ -188,24 +133,22 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
                     }
                 }
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : "Erreur inconnue";
-                setState((prev) => ({ ...prev, error: errorMessage }));
                 if (!silent) {
+                    const errorMessage =
+                        error instanceof Error
+                            ? error.message
+                            : "Erreur inconnue";
                     toast({
                         title: "Erreur de vérification",
                         description: `Impossible de vérifier les mises à jour: ${errorMessage}`,
                         variant: "destructive",
                     });
                 }
-            } finally {
-                setState((prev) => ({ ...prev, isChecking: false }));
             }
         },
-        [enableAutoUpdater, canUpdate, buildInfo, toast, githubRepo]
+        [canUpdate, buildInfo, toast, serviceState.error],
     );
 
-    // Télécharger la mise à jour
     const downloadUpdate = useCallback(async () => {
         if (!canUpdate()) {
             toast({
@@ -217,67 +160,66 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
             return;
         }
 
-        setState((prev) => ({
-            ...prev,
-            isDownloading: true,
-            downloadProgress: 0,
-        }));
-
-        try {
-            // Simulation de téléchargement
-            for (let i = 0; i <= 100; i += 10) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
-                setState((prev) => ({ ...prev, downloadProgress: i }));
-            }
-
-            setState((prev) => ({
-                ...prev,
-                isDownloading: false,
-                isInstalling: true,
-            }));
-
+        const ok = await updateService.downloadUpdate();
+        if (ok) {
             toast({
-                title: "Simulation de mise à jour",
-                description: "En production, l'application redémarrerait ici.",
+                title: "Mise à jour téléchargée",
+                description: "Vous pouvez maintenant installer la mise à jour.",
                 variant: "default",
             });
+        } else if (serviceState.error) {
+            toast({
+                title: "Erreur de téléchargement",
+                description: serviceState.error,
+                variant: "destructive",
+            });
+        }
+    }, [canUpdate, toast, serviceState.error]);
 
-            // Reset après simulation
-            setTimeout(() => {
-                setState((prev) => ({ ...prev, isInstalling: false }));
-            }, 2000);
+    const installUpdate = useCallback(async () => {
+        if (!canUpdate()) return;
+        try {
+            await updateService.installAndRelaunch();
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : "Erreur inconnue";
-            setState((prev) => ({
-                ...prev,
-                isDownloading: false,
-                isInstalling: false,
-                error: errorMessage,
-            }));
-
             toast({
-                title: "Erreur de téléchargement",
-                description: `Échec du téléchargement: ${errorMessage}`,
+                title: "Erreur d'installation",
+                description: errorMessage,
                 variant: "destructive",
             });
         }
     }, [canUpdate, toast]);
 
-    // Ouvrir GitHub pour téléchargement manuel
+    const downloadAndInstall = useCallback(async () => {
+        if (!canUpdate()) return;
+        try {
+            await updateService.downloadAndInstall();
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : "Erreur inconnue";
+            toast({
+                title: "Erreur de mise à jour",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        }
+    }, [canUpdate, toast]);
+
     const openGitHubReleases = useCallback(async () => {
         try {
-            await openExternal(getGitHubReleaseUrl(state.updateInfo?.version));
-        } catch (error) {
+            await openExternal(
+                getGitHubReleaseUrl(updateInfo?.version),
+            );
+        } catch {
             toast({
                 title: "Erreur",
                 description: "Impossible d'ouvrir le navigateur",
                 variant: "destructive",
             });
         }
-    }, [getGitHubReleaseUrl, state.updateInfo?.version, toast]);
+    }, [getGitHubReleaseUrl, updateInfo?.version, toast]);
 
-    // Vérification au démarrage
     useEffect(() => {
         if (
             checkOnStartup &&
@@ -285,11 +227,9 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
             enableAutoUpdater &&
             canUpdate()
         ) {
-            // Attendre un peu après le démarrage
             const timer = setTimeout(() => {
                 checkForUpdates(true);
             }, 3000);
-
             return () => clearTimeout(timer);
         }
     }, [
@@ -300,10 +240,25 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
         canUpdate,
     ]);
 
+    const downloadProgress =
+        serviceState.progress > 0 && serviceState.downloading
+            ? Math.min(100, serviceState.progress)
+            : serviceState.downloaded
+              ? 100
+              : 0;
+
     return {
-        ...state,
+        isChecking: serviceState.checking,
+        updateAvailable: serviceState.available,
+        updateInfo,
+        isDownloading: serviceState.downloading,
+        downloadProgress,
+        error: serviceState.error,
+        isInstalling: serviceState.installing,
         checkForUpdates,
         downloadUpdate,
+        installUpdate,
+        downloadAndInstall,
         openGitHubReleases,
         isUnsignedBuild: isUnsignedBuild(),
         autoUpdateEnabled: getAutoUpdateSetting(),
@@ -311,7 +266,9 @@ export function useUpdater(config: UseUpdaterConfig = {}) {
         getGitHubReleaseUrl,
         canUpdate: canUpdate(),
         distribution: buildInfo?.distribution || "unknown",
+        isPortable: buildInfo?.isPortable ?? false,
         currentVersion: currentVersion || "inconnue",
-        latestVersion,
+        latestVersion: updateInfo?.version ?? null,
+        updateDownloaded: serviceState.downloaded,
     };
 }

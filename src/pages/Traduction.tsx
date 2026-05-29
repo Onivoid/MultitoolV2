@@ -15,6 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PageHeader from "@/components/custom/PageHeader";
 import { IconLanguage } from "@tabler/icons-react";
+import {
+    getProtectedPathWarning,
+    isProtectedPath,
+    toFriendlyFsError,
+} from "@/utils/fs-permissions";
+import { detectDistribution } from "@/utils/buildInfo";
 
 export default function Traduction() {
     const [paths, setPaths] = useState<GamePaths | null>();
@@ -26,14 +32,7 @@ export default function Traduction() {
     const defaultLanguage = "fr";
     const { toast } = useToast();
 
-    const isProtectedPath = (p: string) => /:\\Program Files( \(x86\))?\\/i.test(p);
-    const toFriendlyFsError = (err: unknown) => {
-        const msg = String(err ?? "");
-        if (/Accès refusé|Access is denied|os error 5|Permission denied/i.test(msg)) {
-            return "Accès refusé. Relancez l'application en administrateur ou installez le jeu en dehors de 'Program Files'.";
-        }
-        return msg;
-    };
+    const distribution = detectDistribution();
 
     const getDefaultTranslationsState = (): TranslationsChoosen => {
         if (!paths) return {};
@@ -172,7 +171,7 @@ export default function Traduction() {
             if (isProtectedPath(versionPath)) {
                 toast({
                     title: "Chemin protégé",
-                    description: "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
+                    description: getProtectedPathWarning(distribution),
                     variant: "warning",
                     duration: 5000,
                 });
@@ -246,7 +245,7 @@ export default function Traduction() {
                     logger.error("Erreur lors de la récupération du lien:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        description: `Erreur: ${toFriendlyFsError(error, { distribution })}`,
                         variant: "destructive",
                         duration: 4000,
                     });
@@ -274,7 +273,7 @@ export default function Traduction() {
                     logger.error("Erreur d'installation:", error);
                     toast({
                         title: "Erreur d'installation",
-                        description: `Erreur: ${toFriendlyFsError(error)}`,
+                        description: `Erreur: ${toFriendlyFsError(error, { distribution })}`,
                         variant: "destructive",
                         duration: 4000,
                     });
@@ -282,7 +281,7 @@ export default function Traduction() {
                 }
             }
         },
-        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage],
+        [toast, paths, CheckTranslationsState, translationsSelected, saveSelectedTranslations, defaultLanguage, distribution],
     );
 
     const handleUpdateTranslation = useCallback(
@@ -295,7 +294,7 @@ export default function Traduction() {
             if (isProtectedPath(versionPath)) {
                 toast({
                     title: "Chemin protégé",
-                    description: "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
+                    description: getProtectedPathWarning(distribution),
                     variant: "warning",
                     duration: 5000,
                 });
@@ -316,7 +315,7 @@ export default function Traduction() {
             } catch (error) {
                 toast({
                     title: "Erreur de mise à jour",
-                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    description: `Erreur: ${toFriendlyFsError(error, { distribution })}`,
                     variant: "destructive",
                     duration: 4000,
                 });
@@ -324,7 +323,7 @@ export default function Traduction() {
                 setLoadingButtonId(null);
             }
         },
-        [toast, paths, CheckTranslationsState],
+        [toast, paths, CheckTranslationsState, distribution],
     );
 
     const handleSettingsToggle = useCallback(
@@ -473,13 +472,13 @@ export default function Traduction() {
             } catch (error) {
                 toast({
                     title: "Erreur de désinstallation",
-                    description: `Erreur: ${toFriendlyFsError(error)}`,
+                    description: `Erreur: ${toFriendlyFsError(error, { distribution })}`,
                     success: "false",
                     duration: 4000,
                 });
             }
         },
-        [toast, paths, CheckTranslationsState],
+        [toast, paths, CheckTranslationsState, distribution],
     );
 
     const renderCard = useMemo(() => {

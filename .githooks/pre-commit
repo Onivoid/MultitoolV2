@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -e
+
+PACKAGE_JSON="package.json"
+TAURI_CONF="src-tauri/tauri.conf.json"
+CARGO_TOML="src-tauri/Cargo.toml"
+
+current_version=$(node -p "require('./${PACKAGE_JSON}').version")
+
+echo ""
+echo "┌─────────────────────────────────────────┐"
+echo "│ Version Bump Required                   │"
+echo "├─────────────────────────────────────────┤"
+echo "│ Current version: v${current_version}    "
+echo "└─────────────────────────────────────────┘"
+echo ""
+
+exec < /dev/tty
+read -rp " Enter new version (must be > ${current_version}): " new_version
+
+if [ -z "$new_version" ]; then
+    echo " ✗ No version entered. Commit aborted."
+    exit 1
+fi
+
+if ! echo "$new_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo " ✗ Invalid version format '${new_version}'. Expected x.y.z"
+    exit 1
+fi
+
+compare_versions() {
+    IFS='.' read -r -a a <<< "$1"
+    IFS='.' read -r -a b <<< "$2"
+    for i in 0 1 2; do
+        if (( ${a[$i]:-0} > ${b[$i]:-0} )); then return 0; fi
+        if (( ${a[$i]:-0} < ${b[$i]:-0} )); then return 1; fi
+    done
+    return 1
+}
+
+if ! compare_versions "$new_version" "$current_version"; then
+    echo " ✗ Version '${new_version}' must be greater than current '${current_version}'"
+    exit 1
+fi
+
+node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('${PACKAGE_JSON}', 'utf8'));
+pkg.version = '${new_version}';
+fs.writeFileSync('${PACKAGE_JSON}', JSON.stringify(pkg, null, 4) + '\n');
+"
+
+node -e "
+const fs = require('fs');
+const conf = JSON.parse(fs.readFileSync('${TAURI_CONF}', 'utf8'));
+conf.version = '${new_version}';
+fs.writeFileSync('${TAURI_CONF}', JSON.stringify(conf, null, 4) + '\n');
+"
+
+node -e "
+const fs = require('fs');
+const path = '${CARGO_TOML}';
+let content = fs.readFileSync(path, 'utf8');
+if (!/version\s*=\s*\"[^\"]+\"/.test(content)) {
+  console.error('version field not found in Cargo.toml');
+  process.exit(1);
+}
+content = content.replace(/version\s*=\s*\"[^\"]+\"/, 'version = \"${new_version}\"');
+fs.writeFileSync(path, content, 'utf8');
+"
+
+git add "${PACKAGE_JSON}" "${TAURI_CONF}" "${CARGO_TOML}"
+
+echo "$new_version" > .git/BUMP_VERSION
+
+echo ""
+echo " ✓ Bumped to v${new_version}"
+echo ""
