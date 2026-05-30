@@ -1,10 +1,6 @@
 type ToastFn = (props: Record<string, unknown>) => void;
 
-export function toastSuccess(
-  toast: ToastFn,
-  title: string,
-  description?: string,
-) {
+export function toastSuccess(toast: ToastFn, title: string, description?: string) {
   toast({
     title,
     ...(description ? { description } : {}),
@@ -12,11 +8,7 @@ export function toastSuccess(
   });
 }
 
-export function toastError(
-  toast: ToastFn,
-  title: string,
-  description?: string,
-) {
+export function toastError(toast: ToastFn, title: string, description?: string) {
   toast({
     title,
     ...(description ? { description } : {}),
@@ -24,32 +16,10 @@ export function toastError(
   });
 }
 
-export function toastWarning(
-  toast: ToastFn,
-  title: string,
-  description?: string,
-) {
+export function toastWarning(toast: ToastFn, title: string, description?: string) {
   toast({
     title,
     ...(description ? { description } : {}),
     variant: "warning",
   });
-}
-
-/** @deprecated Utiliser toastSuccess */
-export function toastLegacySuccess(
-  toast: ToastFn,
-  title: string,
-  description?: string,
-) {
-  toastSuccess(toast, title, description);
-}
-
-/** @deprecated Utiliser toastError */
-export function toastLegacyError(
-  toast: ToastFn,
-  title: string,
-  description?: string,
-) {
-  toastError(toast, title, description);
 }

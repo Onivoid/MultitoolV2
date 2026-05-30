@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PresetActionModal } from "@/features/characters-local/components/PresetActionModal";
 import type { CharacterRow } from "@/features/characters-local/characters.lib";
-import type { LocalCharacterActions } from "@/features/characters-local/components/localCharactersColumns";
-import {
-  FEATURE_CARD_WIDTH_CLASS,
-} from "@/shared/components/pageLayout";
+import type { LocalCharacterActions } from "@/features/characters-local/components/localCharacterActions";
+import { FEATURE_CARD_WIDTH_CLASS } from "@/shared/components/pageLayout";
 import { cn } from "@/lib/utils";
 
 interface LocalCharacterCardProps {
