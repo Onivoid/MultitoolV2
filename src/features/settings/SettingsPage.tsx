@@ -217,7 +217,7 @@ export default function SettingsPage() {
             >
               <SettingRow
                 title="Service de fond"
-                description="Vérifie les mises à jour sur GitHub"
+                description="Vérifie les mises à jour de la traduction en arrière-plan"
                 htmlFor="background-service"
               >
                 <ServiceStatus

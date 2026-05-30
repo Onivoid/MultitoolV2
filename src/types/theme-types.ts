@@ -24,13 +24,13 @@ export interface ThemeStore extends ThemePreferences {
 
 export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   primaryColor: "#6463b6",
-  synthesisColor2: "#3b0764",
-  synthesisSpeed: 0.5,
-  synthesisGlowIntensity: 0.42,
-  synthesisDistortion: 0.65,
-  synthesisComplexity: 6,
-  synthesisFlowFrequency: 3.2,
-  synthesisScale: 1,
-  synthesisContrast: 1.1,
-  overlayOpacity: 0.2,
+  synthesisColor2: "#633189",
+  synthesisSpeed: 0.35,
+  synthesisGlowIntensity: 0.4,
+  synthesisDistortion: 0.7,
+  synthesisComplexity: 7,
+  synthesisFlowFrequency: 5.9,
+  synthesisScale: 1.2,
+  synthesisContrast: 1.25,
+  overlayOpacity: 0.48,
 };

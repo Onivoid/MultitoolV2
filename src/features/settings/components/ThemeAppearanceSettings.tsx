@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import { ColorPicker } from "@/components/custom/color-picker";
 import { SettingRow } from "@/shared/components/v3/SettingRow";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import {
   useThemeStore,
 } from "@/stores/theme-store";
 import { applyThemePreferences } from "@/utils/custom-theme-provider";
-import type { ThemePreferences } from "@/types/theme-types";
+import { DEFAULT_THEME_PREFERENCES, type ThemePreferences } from "@/types/theme-types";
 import { cn } from "@/lib/utils";
 
 function ThemeSlider({
@@ -69,6 +69,10 @@ function updatePreferences(patch: Partial<ThemePreferences>) {
   applyThemePreferences(next);
 }
 
+function restoreDefaultTheme() {
+  updatePreferences(DEFAULT_THEME_PREFERENCES);
+}
+
 export function ThemeAppearanceSettings() {
   const prefs = useThemeStore();
   const [backgroundOpen, setBackgroundOpen] = useState(false);
@@ -77,6 +81,7 @@ export function ThemeAppearanceSettings() {
     <div className="divide-y divide-primary/8" data-no-window-drag>
       <SettingRow title="Couleur d'accent" htmlFor="theme-primary">
         <ColorPicker
+          className="w-[220px]"
           value={prefs.primaryColor}
           onChange={(color) => updatePreferences({ primaryColor: color })}
         />
@@ -88,7 +93,7 @@ export function ThemeAppearanceSettings() {
         htmlFor="theme-synthesis-color2"
       >
         <ColorPicker
-          compact
+          className="w-[220px]"
           value={prefs.synthesisColor2}
           label="Couleur secondaire"
           onChange={(color) => updatePreferences({ synthesisColor2: color })}
@@ -218,6 +223,19 @@ export function ThemeAppearanceSettings() {
             />
           </div>
         )}
+      </div>
+
+      <div className="py-3">
+        <Button
+          type="button"
+          variant="outline"
+          data-no-window-drag
+          className="w-full gap-2"
+          onClick={restoreDefaultTheme}
+        >
+          <RotateCcw className="h-4 w-4 shrink-0" />
+          Restaurer le thème par défaut
+        </Button>
       </div>
     </div>
   );
