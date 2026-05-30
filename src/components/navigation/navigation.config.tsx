@@ -82,13 +82,3 @@ export const externalLinks: ExternalLink[] = [
     group: "service",
   },
 ];
-
-export function filterInfoRoutesForBuild(
-  routes: NavRoute[],
-  distribution: string | undefined,
-): NavRoute[] {
-  if (distribution === "microsoft-store") {
-    return routes.filter((route) => route.path !== "/updates");
-  }
-  return routes;
-}

@@ -1,4 +1,4 @@
-# Guide de Gestion des Versions - MultitoolV2
+﻿# Guide de Gestion des Versions - MultitoolV2
 
 ## Présentation
 
@@ -78,7 +78,7 @@ git push origin vX.Y.Z
 Le workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) :
 
 1. Crée une **release draft** sur GitHub
-2. Build Windows (standard, portable, MS Store) et upload des artefacts (dont `.msi` + `.msi.sig`)
+2. Build Windows (standard, portable) et upload des artefacts (dont `.msi` + `.msi.sig`)
 3. Publie la release (`draft: false`)
 4. Génère et uploade **`latest.json`** (`scripts/updater.mjs`, URLs canoniques)
 5. Valide le manifeste (`scripts/validate-latest-json.mjs`)
@@ -103,11 +103,7 @@ Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWOR
 ## Auto-update Tauri (utilisateurs MSI GitHub)
 
 - Endpoint : `releases/latest/download/latest.json`
-- Versions **portable** et **Microsoft Store** : pas d’updater Tauri intégré
-
-## Microsoft Store
-
-Le MSI Store est buildé par la CI ; le packaging MSIX et `broadFileSystemAccess` restent manuels — voir [`src-tauri/gen/windows/README.md`](src-tauri/gen/windows/README.md).
+- Version **portable** : pas d'updater Tauri intégré (téléchargement manuel sur GitHub)
 
 ## Dépannage
 

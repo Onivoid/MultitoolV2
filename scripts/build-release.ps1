@@ -1,10 +1,9 @@
 # Script de build release pour MultitoolV2
-# Usage: .\scripts\build-release.ps1 [-Type standard|portable|msix|all|public] [-Clean]
-# public = standard + portable (pour GitHub releases publiques, sans Microsoft Store)
+# Usage: .\scripts\build-release.ps1 [-Type standard|portable|all|public] [-Clean]
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("standard", "portable", "msix", "all", "public")]
+    [ValidateSet("standard", "portable", "all", "public")]
     [string]$Type = "standard",
     
     [switch]$Clean,
@@ -67,9 +66,9 @@ if ($env:OS -match "Windows") {
         Write-Host "WiX non trouve - Les builds MSI ne seront pas disponibles" -ForegroundColor Yellow
         Write-Host "Pour installer WiX: dotnet tool install --global wix" -ForegroundColor Gray
         
-        # Bloquer seulement si on demande explicitement un build MSI
-        if ($Type -eq "msix" -or $Type -eq "all") {
-            Write-Error "WiX est requis pour les builds MSI/MSIX. Installez .NET SDK puis: dotnet tool install --global wix"
+        # Bloquer seulement si on demande explicitement un build MSI sans WiX
+        if ($Type -eq "all" -and -not $wixAvailable) {
+            Write-Error "WiX est requis pour les builds MSI. Installez .NET SDK puis: dotnet tool install --global wix"
             exit 1
         }
     }
@@ -173,8 +172,6 @@ switch ($Type) {
         $envVars = @{
             "TAURI_ENV_DISTRIBUTION" = $distribution
         }
-        # S'assurer que MS_STORE et PORTABLE sont désactivés
-        if ($env:TAURI_ENV_MS_STORE) { $envVars["TAURI_ENV_MS_STORE"] = $null }
         if ($env:TAURI_ENV_PORTABLE) { $envVars["TAURI_ENV_PORTABLE"] = $null }
         
         $success = Build-Version -BuildType "Standard (Non-signe)" -EnvVars $envVars
@@ -189,25 +186,9 @@ switch ($Type) {
             "TAURI_ENV_PORTABLE"     = $portable
             "TAURI_ENV_DISTRIBUTION" = $distribution
         }
-        # S'assurer que MS_STORE est désactivé
-        if ($env:TAURI_ENV_MS_STORE) { $envVars["TAURI_ENV_MS_STORE"] = $null }
         
         $success = Build-Version -BuildType "Portable" -ConfigFile "src-tauri/tauri.portable.conf.json" -EnvVars $envVars
         if ($success) { $builds += "portable" }
-    }
-    
-    "msix" {
-        # Utiliser les variables d'environnement existantes ou fallback
-        $msStore = if ($env:TAURI_ENV_MS_STORE) { $env:TAURI_ENV_MS_STORE } else { "true" }
-        $envVars = @{
-            "TAURI_ENV_MS_STORE" = $msStore
-        }
-        # S'assurer que PORTABLE et DISTRIBUTION sont désactivés pour MS Store
-        if ($env:TAURI_ENV_PORTABLE) { $envVars["TAURI_ENV_PORTABLE"] = $null }
-        if ($env:TAURI_ENV_DISTRIBUTION) { $envVars["TAURI_ENV_DISTRIBUTION"] = $null }
-        
-        $success = Build-Version -BuildType "MSIX (Microsoft Store)" -ConfigFile "src-tauri/tauri.microsoftstore.conf.json" -EnvVars $envVars
-        if ($success) { $builds += "msix" }
     }
     
     "all" {
@@ -225,16 +206,10 @@ switch ($Type) {
             "TAURI_ENV_DISTRIBUTION" = "github"
         }
         if ($success2) { $builds += "portable" }
-        
-        # MSIX
-        $success3 = Build-Version -BuildType "MSIX" -ConfigFile "src-tauri/tauri.microsoftstore.conf.json" -EnvVars @{
-            "TAURI_ENV_MS_STORE" = "true"
-        }
-        if ($success3) { $builds += "msix" }
     }
     
     "public" {
-        Write-Host "Build des versions publiques (Standard + Portable - sans Microsoft Store)..." -ForegroundColor Magenta
+        Write-Host "Build des versions publiques (Standard + Portable)..." -ForegroundColor Magenta
         
         # Standard
         $success1 = Build-Version -BuildType "Standard" -EnvVars @{ 
@@ -248,8 +223,6 @@ switch ($Type) {
             "TAURI_ENV_DISTRIBUTION" = "github"
         }
         if ($success2) { $builds += "portable" }
-        
-        Write-Host "Builds publiques termines (Microsoft Store exclu)" -ForegroundColor Green
     }
 }
 
@@ -269,7 +242,6 @@ if ($GenerateChecksums -and $builds.Count -gt 0) {
         $files += Get-ChildItem -Path "msi\*.msi" -ErrorAction SilentlyContinue
         $files += Get-ChildItem -Path "nsis\*.exe" -ErrorAction SilentlyContinue  
         $files += Get-ChildItem -Path "*.zip" -ErrorAction SilentlyContinue
-        $files += Get-ChildItem -Path "*.msix" -ErrorAction SilentlyContinue
         
         if ($files.Count -gt 0) {
             foreach ($file in $files) {
@@ -304,10 +276,9 @@ if ($builds.Count -gt 0) {
     $buildsDir = "builds"
     $portableDir = "$buildsDir/portable"
     $installerDir = "$buildsDir/installer" 
-    $msStoreDir = "$buildsDir/MicrosoftStoreMSI"
     
     # Créer les dossiers s'ils n'existent pas
-    @($buildsDir, $portableDir, $installerDir, $msStoreDir) | ForEach-Object {
+    @($buildsDir, $portableDir, $installerDir) | ForEach-Object {
         if (-not (Test-Path $_)) {
             New-Item -ItemType Directory -Path $_ -Force | Out-Null
         }
@@ -345,11 +316,6 @@ if ($builds.Count -gt 0) {
                     Write-Host "   ATTENTION: .msi.sig introuvable ($sigSource) - updater desactive" -ForegroundColor Yellow
                 }
             }
-            # Copier pour MS Store si demandé
-            elseif ($builds -contains "msix" -and -not (Test-Path "$msStoreDir/MultitoolV2-MicrosoftStore.msi")) {
-                Copy-Item $msiFile.FullName "$msStoreDir/MultitoolV2-MicrosoftStore.msi" -Force
-                Write-Host "   Microsoft Store MSI: MultitoolV2-MicrosoftStore.msi" -ForegroundColor Green
-            }
             else {
                 Write-Host "   MSI ignoré (déjà copié ou non demandé): $($msiFile.Name)" -ForegroundColor Gray
             }
@@ -369,8 +335,6 @@ if ($builds.Count -gt 0) {
     Write-Host "      +-- MultitoolV2-Portable.exe" -ForegroundColor White
     Write-Host "  +-- installer/" -ForegroundColor White
     Write-Host "      +-- MultitoolV2-Installer.msi" -ForegroundColor White
-    Write-Host "  +-- MicrosoftStoreMSI/" -ForegroundColor White
-    Write-Host "      +-- MultitoolV2-MicrosoftStore.msi" -ForegroundColor White
     Write-Host "  +-- checksums.txt" -ForegroundColor White
     
     Write-Host ""

@@ -296,9 +296,6 @@ pnpm run lint
 # Build complet (frontend + backend)
 pnpm tauri build
 
-# Build pour Windows Store
-pnpm tauri build -- --config src-tauri/tauri.microsoftstore.conf.json
-
 # Build version portable
 pnpm tauri build -- --config src-tauri/tauri.portable.conf.json
 ```

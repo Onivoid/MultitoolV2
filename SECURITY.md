@@ -461,11 +461,6 @@ Ce budget et ce temps, je préfère l'investir dans :
 
 **Plusieurs scénarios possibles :**
 
-#### 🏪 **Microsoft Store (Déjà mis en place)**
-- ✅ **Signature automatique** par Microsoft
-- ✅ **Gratuit** pour le développeur
-- ✅ **Aucun avertissement** pour les utilisateurs
-
 #### 💰 **Certificat payant (si financement)**
 - 🤝 **Sponsors/Donations :** Financement communautaire
 - 🏢 **Partenariat :** Collaboration avec une entreprise

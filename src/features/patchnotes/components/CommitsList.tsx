@@ -1,37 +1,38 @@
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useLatestCommits } from "@/shared/hooks/useLatestCommits";
+import { PatchnoteCard } from "@/features/patchnotes/components/PatchnoteCard";
+import {
+  filterPatchnotesReleaseCommits,
+  PATCHNOTES_REPO,
+} from "@/features/patchnotes/patchnotes.lib";
 import { PAGE_SCROLL } from "@/shared/components/pageStyles";
+import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
+import { useLatestCommits } from "@/shared/hooks/useLatestCommits";
+import { useMemo } from "react";
 
-const REPO_OWNER = "Onivoid";
-const REPO_NAME = "MultitoolV2";
-
+/** @deprecated Utiliser PatchNotesPage ou PatchnoteCard directement */
 export default function CommitsList() {
   const { commits, isLoading } = useLatestCommits({
-    owner: REPO_OWNER,
-    repo: REPO_NAME,
+    owner: PATCHNOTES_REPO.owner,
+    repo: PATCHNOTES_REPO.name,
   });
 
-  if (isLoading || !commits[0]) {
-    return <Skeleton className="min-h-0 flex-1 w-full" />;
+  const releaseCommits = useMemo(
+    () => filterPatchnotesReleaseCommits(commits),
+    [commits],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[12rem] items-center justify-center">
+        <PageWaveLoader message="Chargement des patchnotes…" />
+      </div>
+    );
   }
 
   return (
-    <ul
-      className={`${PAGE_SCROLL} w-full rounded-xl bg-zinc-900/50 p-5`}
-    >
-      {commits.map((commit, index) => (
-        <li key={index}>
-          <p className="text-lg font-bold text-zinc-200">{commit.message}</p>
-          <p className="mb-2 text-xs text-zinc-600">{commit.date}</p>
-          <ul className="text-sm text-zinc-500">
-            {commit.description?.split("\n").map((line, lineIndex) => (
-              <li key={lineIndex}>{line}</li>
-            ))}
-          </ul>
-          <Separator className="my-5 bg-foreground" />
-        </li>
+    <div className={`${PAGE_SCROLL} flex flex-col gap-3 pb-4`}>
+      {releaseCommits.map((commit, index) => (
+        <PatchnoteCard key={`${commit.date}-${index}`} commit={commit} index={index} />
       ))}
-    </ul>
+    </div>
   );
 }

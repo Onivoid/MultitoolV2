@@ -54,6 +54,46 @@ fn load_commit_cache(app: tauri::AppHandle) -> Result<Vec<Commit>, String> {
     }
 }
 
+fn matches_patchnote_keyword(full_message: &str) -> bool {
+    let lower = full_message.to_lowercase();
+    [
+        "feat :",
+        "feat(",
+        "bugfix :",
+        "fix :",
+        "fix(",
+        "release ",
+        "release:",
+    ]
+    .iter()
+    .any(|keyword| lower.contains(keyword))
+}
+
+fn split_commit_message(full_message: &str) -> (String, Option<String>) {
+    if let Some((subject, body)) = full_message.split_once("\n\n") {
+        let subject = subject.trim().to_string();
+        let body = body.trim();
+        return (
+            subject,
+            if body.is_empty() {
+                None
+            } else {
+                Some(body.to_string())
+            },
+        );
+    }
+
+    let mut lines = full_message.lines();
+    let subject = lines.next().unwrap_or("").trim().to_string();
+    let body: Vec<&str> = lines.map(str::trim).filter(|line| !line.is_empty()).collect();
+
+    if body.is_empty() {
+        (subject, None)
+    } else {
+        (subject, Some(body.join("\n")))
+    }
+}
+
 /// Récupère les derniers commits d'un dépôt GitHub filtrés par mots-clés.
 ///
 /// Utilise un système de cache pour limiter les appels API.
@@ -63,7 +103,10 @@ pub async fn get_latest_commits(
     owner: String,
     repo: String,
 ) -> Result<Vec<Commit>, String> {
-    let url = format!("https://api.github.com/repos/{}/{}/commits", owner, repo);
+    let url = format!(
+        "https://api.github.com/repos/{}/{}/commits?per_page=100",
+        owner, repo
+    );
     let client = reqwest::Client::new();
     let response = client
         .get(&url)
@@ -74,14 +117,11 @@ pub async fn get_latest_commits(
     match response {
         Ok(resp) if resp.status().is_success() => {
             let commits: Vec<serde_json::Value> = resp.json().await.map_err(|e| e.to_string())?;
-            let keywords = ["Feat :", "Bugfix :", "Release :"];
             let commit_list: Vec<Commit> = commits
                 .into_iter()
                 .filter(|commit| {
                     let full_message = commit["commit"]["message"].as_str().unwrap_or("");
-                    keywords
-                        .iter()
-                        .any(|&keyword| full_message.contains(keyword))
+                    matches_patchnote_keyword(full_message)
                 })
                 .map(|commit| {
                     let date_str = commit["commit"]["committer"]["date"].as_str().unwrap_or("");
@@ -96,9 +136,7 @@ pub async fn get_latest_commits(
                         .as_str()
                         .unwrap_or("")
                         .to_string();
-                    let mut parts = full_message.splitn(2, "\n\n");
-                    let message = parts.next().unwrap_or("").to_string();
-                    let description = parts.next().map(|s| s.to_string());
+                    let (message, description) = split_commit_message(&full_message);
                     Commit {
                         message,
                         description,

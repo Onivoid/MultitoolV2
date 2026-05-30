@@ -43,4 +43,7 @@ export const blueprintsService = {
       TAURI_COMMANDS.importBlueprintsFromLogbackups,
       { includeCurrent },
     ),
+
+  exportStore: () =>
+    invokeCommand<string | null>(TAURI_COMMANDS.exportGamelogBlueprints),
 };

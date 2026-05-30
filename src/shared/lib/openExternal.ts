@@ -5,8 +5,7 @@ function isAllowedUrl(url: string): boolean {
     const u = new URL(url);
     return (
       u.protocol === "https:" ||
-      u.protocol === "http:" ||
-      url.startsWith("ms-windows-store://")
+      u.protocol === "http:"
     );
   } catch {
     return false;

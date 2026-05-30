@@ -1,19 +1,11 @@
+import { motion } from "framer-motion";
+import { Download, ExternalLink, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { charactersRemoteService } from "@/features/characters-remote/charactersRemote.service";
 import { toFriendlyFsError } from "@/utils/fs-permissions";
 import { openExternalUrl } from "@/shared/lib/openExternal";
 import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
-import logger from "@/utils/logger";
-import { IconDownload, IconExternalLink, IconHeart } from "@tabler/icons-react";
 
 interface CharacterCardProps {
   url: string;
@@ -23,6 +15,7 @@ interface CharacterCardProps {
   likes: number;
   characterid: string;
   dnaurl: string;
+  index: number;
 }
 
 export function CharacterCard({
@@ -33,13 +26,14 @@ export function CharacterCard({
   likes,
   characterid,
   dnaurl,
+  index,
 }: CharacterCardProps) {
   const { toast } = useToast();
+  const batchIndex = index % 12;
 
-  const openExternalLink = async (id: string) => {
-    logger.log("Opening external link for character ID:", id);
+  const openExternalLink = async () => {
     await openExternalUrl(
-      `https://www.star-citizen-characters.com/character/${id}`,
+      `https://www.star-citizen-characters.com/character/${characterid}`,
     );
   };
 
@@ -47,64 +41,81 @@ export function CharacterCard({
     try {
       const res = await charactersRemoteService.download(dnaurl, name);
       if (res) {
-        toastSuccess(
-          toast,
-          "Preset téléchargé",
-          "Le preset a été ajouté dans vos versions.",
-        );
+        toastSuccess(toast, "Preset téléchargé");
       }
     } catch (error) {
-      toastError(toast, "Erreur", toFriendlyFsError(error));
+      toastError(toast, "Téléchargement impossible", toFriendlyFsError(error));
     }
   };
 
   return (
-    <Card className="grid grid-rows-12 group h-[400px] relative max-w-md shadow-none bg-background/30 border-background/20 overflow-hidden">
+    <motion.article
+      initial={{ opacity: 0, x: 48 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{
+        duration: 0.45,
+        delay: 0.06 * batchIndex,
+        ease: [0, 0.71, 0.2, 1.01],
+      }}
+      className="settings-section group relative flex h-[400px] w-full max-w-md flex-col overflow-hidden"
+      data-no-window-drag
+    >
       <div className="absolute inset-0 -z-10 h-full w-full">
         <img
           src={url}
           alt={name}
-          className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+          loading="lazy"
+          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/45 to-background/15" />
       </div>
-      <CardHeader className="flex flex-row justify-between items-center row-span-2">
+
+      <header className="flex items-center justify-between gap-2 px-3 py-2.5">
         <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 border border-primary/15 bg-background/30 backdrop-blur-md hover:bg-background/45"
+          title="Voir sur SC Characters"
+          data-no-window-drag
           onClick={(e) => {
             e.stopPropagation();
-            openExternalLink(characterid);
+            openExternalLink();
           }}
-          className="flex items-center justify-center h-7 w-7 rounded-md bg-white/10 backdrop-blur-md text-white transition-all duration-300 hover:bg-white/20 shrink-0 -mb-1"
-          title="Voir sur SC Characters"
         >
-          <IconExternalLink className="h-3.5 w-3.5" />
+          <ExternalLink className="h-3.5 w-3.5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center gap-1 bg-white/10 backdrop-blur-md rounded-md px-2 h-7 shrink-0">
-            <IconDownload className="h-3.5 w-3.5" />
-            <span className="text-xs leading-none">{downloads}</span>
-          </div>
-          <div className="flex items-center justify-center gap-1 bg-white/10 backdrop-blur-md rounded-md px-2 h-7 shrink-0">
-            <IconHeart className="h-3.5 w-3.5" />
-            <span className="text-xs leading-none">{likes}</span>
-          </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/15 bg-background/30 px-2 text-xs backdrop-blur-md">
+            <Download className="h-3.5 w-3.5" />
+            {downloads}
+          </span>
+          <span className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/15 bg-background/30 px-2 text-xs backdrop-blur-md">
+            <Heart className="h-3.5 w-3.5" />
+            {likes}
+          </span>
         </div>
-      </CardHeader>
-      <CardContent className="row-span-8 flex justify-end flex-col w-full">
-        <CardTitle className="text-2xl line-clamp-1">{name}</CardTitle>
-        <CardDescription>
-          <p>
-            Créateur :{" "}
-            <span className="text-foreground truncate">{owner}</span>
-          </p>
-        </CardDescription>
-      </CardContent>
-      <CardFooter className="row-span-2">
-        <Button className="w-full" onClick={handleDownload}>
-          <IconDownload className="h-4 w-4 mr-2" />
+      </header>
+
+      <div className="flex flex-1 flex-col justify-end px-3 pb-3">
+        <h3 className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">
+          {name}
+        </h3>
+        <p className="mt-1 truncate text-sm text-muted-foreground">
+          Créateur : <span className="text-foreground">{owner}</span>
+        </p>
+
+        <Button
+          type="button"
+          className="mt-3 w-full"
+          data-no-window-drag
+          onClick={handleDownload}
+        >
+          <Download className="mr-2 h-4 w-4" />
           Télécharger
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </motion.article>
   );
 }
