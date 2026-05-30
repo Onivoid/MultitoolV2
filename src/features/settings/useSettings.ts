@@ -5,7 +5,7 @@ import {
   type BackgroundServiceConfig,
   type GamelogWatcherConfig,
 } from "@/features/settings/settings.service";
-import { toastError } from "@/shared/lib/toastHelpers";
+import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
 
 export function useSettings() {
   const { toast } = useToast();
@@ -56,12 +56,10 @@ export function useSettings() {
       const newConfig = { ...gamelogConfig, autoStart: checked };
       await settingsService.saveGamelogConfig(newConfig);
       setGamelogConfig(newConfig);
-      toast({
-        title: checked ? "Surveillance auto activée" : "Surveillance auto désactivée",
-        description: checked
-          ? "Le Game.log sera surveillé au lancement de Multitool"
-          : "La surveillance ne démarrera plus automatiquement",
-      });
+      toastSuccess(
+        toast,
+        checked ? "Surveillance auto activée" : "Surveillance auto désactivée",
+      );
     } catch (error) {
       toastError(toast, "Erreur", String(error));
     } finally {
@@ -74,16 +72,10 @@ export function useSettings() {
     try {
       if (checked) {
         await settingsService.enableAutoStartup();
-        toast({
-          title: "Démarrage automatique activé",
-          description: "L'application se lancera au démarrage de Windows",
-        });
+        toastSuccess(toast, "Lancement au démarrage activé");
       } else {
         await settingsService.disableAutoStartup();
-        toast({
-          title: "Démarrage automatique désactivé",
-          description: "L'application ne se lancera plus automatiquement",
-        });
+        toastSuccess(toast, "Lancement au démarrage désactivé");
       }
       setAutoStartupEnabled(checked);
     } catch (error) {
@@ -105,16 +97,10 @@ export function useSettings() {
       await settingsService.setBackgroundConfig(newConfig);
       if (checked) {
         await settingsService.startBackgroundService();
-        toast({
-          title: "Service démarré",
-          description: "Le service de mise à jour automatique est maintenant actif",
-        });
+        toastSuccess(toast, "Service de traduction activé");
       } else {
         await settingsService.stopBackgroundService();
-        toast({
-          title: "Service arrêté",
-          description: "Le service de mise à jour automatique a été arrêté",
-        });
+        toastSuccess(toast, "Service de traduction arrêté");
       }
       setConfig(newConfig);
       setServiceRunning(checked);
@@ -140,10 +126,6 @@ export function useSettings() {
     try {
       await settingsService.saveBackgroundConfig(newConfig);
       await settingsService.setBackgroundConfig(newConfig);
-      toast({
-        title: "Configuration mise à jour",
-        description: `Intervalle de vérification: ${value} minute(s)`,
-      });
     } catch (error) {
       toastError(
         toast,

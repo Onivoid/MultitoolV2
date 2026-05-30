@@ -5,31 +5,33 @@ import { isGamePaths } from "@/types/translation";
 import { translationService } from "@/features/translation/translation.service";
 import {
   buildDefaultTranslationsState,
+  createTranslationTimestamp,
   DEFAULT_TRANSLATION_LANG,
+  establishVersionOrder,
   extractTranslationLink,
+  hydrateGamePaths,
+  resolveTranslationVersionStates,
 } from "@/features/translation/translation.lib";
 import { gamePathService } from "@/features/game-path/gamePath.service";
 import {
-  getProtectedPathWarning,
-  isProtectedPath,
   toFriendlyFsError,
 } from "@/utils/fs-permissions";
 import { detectDistribution } from "@/utils/buildInfo";
 import logger from "@/utils/logger";
 import {
-  toastLegacyError,
-  toastLegacySuccess,
   toastError,
   toastSuccess,
+  toastWarning,
 } from "@/shared/lib/toastHelpers";
 
 export function useTranslation() {
   const [paths, setPaths] = useState<GamePaths | null>();
-  const [earlyChecked, setEarlyChecked] = useState(false);
+  const [versionOrder, setVersionOrder] = useState<string[]>([]);
   const [translationsSelected, setTranslationsSelected] =
     useState<TranslationsChoosen | null>(null);
   const [loadingButtonId, setLoadingButtonId] = useState<string | null>(null);
   const [dataFetched, setDataFetched] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const { toast } = useToast();
   const distribution = detectDistribution();
 
@@ -38,18 +40,31 @@ export function useTranslation() {
       if (dataFetched) return;
       try {
         const versions = await gamePathService.getVersions();
-        if (isGamePaths(versions)) {
-          logger.log("Versions du jeu reçues:", versions);
-          setPaths(versions);
-        }
-
         await translationService.getTranslations();
         const savedPrefs = await translationService.loadSelected();
-        if (savedPrefs && typeof savedPrefs === "object") {
-          setTranslationsSelected(savedPrefs);
-        } else if (isGamePaths(versions)) {
-          setTranslationsSelected(buildDefaultTranslationsState(versions));
+
+        if (!isGamePaths(versions)) {
+          return true;
         }
+
+        logger.log("Versions du jeu reçues:", versions);
+
+        const order = establishVersionOrder(Object.keys(versions.versions));
+
+        const selected: TranslationsChoosen =
+          savedPrefs && typeof savedPrefs === "object"
+            ? savedPrefs
+            : buildDefaultTranslationsState(versions);
+
+        const resolvedPaths = await resolveTranslationVersionStates(
+          versions,
+          selected,
+          order,
+        );
+
+        setVersionOrder(order);
+        setPaths(resolvedPaths);
+        setTranslationsSelected(selected);
         return true;
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
@@ -60,81 +75,45 @@ export function useTranslation() {
 
     if (!dataFetched) {
       setDataFetched(true);
-      fetchData().then((ok) => {
-        if (ok) {
-          toastLegacySuccess(
-            toast,
-            "Données chargées",
-            "Les données de traduction ont été chargées avec succès.",
-          );
-        } else {
-          toastLegacyError(
-            toast,
-            "Erreur lors du chargement des données",
-            "Une erreur est survenue lors du chargement des données.",
-          );
-        }
-      });
+      fetchData()
+        .then((ok) => {
+          if (!ok) {
+            toastError(
+              toast,
+              "Chargement impossible",
+              "Les versions Star Citizen n'ont pas pu être détectées.",
+            );
+          }
+        })
+        .finally(() => setInitialLoadComplete(true));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveSelectedTranslations = useCallback(
     async (newTranslationsSelected: TranslationsChoosen) => {
-      try {
-        await translationService.saveSelected(newTranslationsSelected);
-        toastLegacySuccess(
-          toast,
-          "Préférences de traduction sauvegardées",
-          "Les préférences de traduction ont été sauvegardées avec succès.",
-        );
-      } catch (error) {
-        toastLegacyError(
-          toast,
-          "Erreur lors de la sauvegarde des données",
-          `Une erreur est survenue lors de la sauvegarde des données : ${error}`,
-        );
-      }
+      await translationService.saveSelected(newTranslationsSelected);
     },
-    [toast],
+    [],
   );
 
   const checkTranslationsState = useCallback(
     async (gamePaths: GamePaths) => {
-      if (!translationsSelected) return;
+      if (!translationsSelected || versionOrder.length === 0) return;
 
-      const updatedPaths = { ...gamePaths };
-      await Promise.all(
-        Object.entries(gamePaths.versions).map(async ([key, value]) => {
-          const versionSettings =
-            translationsSelected[key as keyof TranslationsChoosen];
-
-          const translated = await translationService.isGameTranslated(
-            value.path,
-            DEFAULT_TRANSLATION_LANG,
-          );
-
-          const upToDate =
-            versionSettings && versionSettings.link
-              ? await translationService.isUpToDate(
-                  value.path,
-                  versionSettings.link,
-                  DEFAULT_TRANSLATION_LANG,
-                )
-              : value.up_to_date;
-
-          updatedPaths.versions[key as keyof GamePaths["versions"]] = {
-            path: value.path,
-            translated,
-            up_to_date: upToDate,
-          };
-        }),
+      const resolvedPaths = await resolveTranslationVersionStates(
+        gamePaths,
+        translationsSelected,
+        versionOrder,
       );
 
-      setPaths(updatedPaths);
+      setPaths((current) => {
+        if (!current) return resolvedPaths;
+        return hydrateGamePaths(current, resolvedPaths, versionOrder);
+      });
       setLoadingButtonId(null);
     },
-    [translationsSelected],
+    [translationsSelected, versionOrder],
   );
 
   const handleInstallTranslation = useCallback(
@@ -142,14 +121,6 @@ export function useTranslation() {
       if (!translationsSelected) return;
 
       setLoadingButtonId(`install-${version}`);
-      if (isProtectedPath(versionPath)) {
-        toast({
-          title: "Chemin protégé",
-          description: getProtectedPathWarning(distribution),
-          variant: "warning",
-          duration: 5000,
-        });
-      }
 
       const versionSettings =
         translationsSelected[version as keyof TranslationsChoosen];
@@ -157,7 +128,11 @@ export function useTranslation() {
       const installWithLink = async (link: string) => {
         const updatedTranslations = {
           ...translationsSelected,
-          [version]: { link, settingsEN: false },
+          [version]: {
+            link,
+            settingsEN: false,
+            lastUpdatedAt: createTranslationTimestamp(),
+          },
         };
         setTranslationsSelected(updatedTranslations);
         await saveSelectedTranslations(updatedTranslations);
@@ -166,7 +141,7 @@ export function useTranslation() {
           link,
           DEFAULT_TRANSLATION_LANG,
         );
-        toastSuccess(toast, "Traduction installée", "La traduction a été installée avec succès.");
+        toastSuccess(toast, `Traduction installée · ${version}`);
         if (paths) await checkTranslationsState(paths);
       };
 
@@ -178,18 +153,18 @@ export function useTranslation() {
           if (link) {
             await installWithLink(link);
           } else {
-            toastLegacyError(
+            toastError(
               toast,
-              "Erreur d'installation",
-              "Impossible de récupérer le lien de traduction.",
+              "Installation impossible",
+              "Lien de traduction introuvable.",
             );
             setLoadingButtonId(null);
           }
         } catch (error) {
           toastError(
             toast,
-            "Erreur d'installation",
-            `Erreur: ${toFriendlyFsError(error, { distribution })}`,
+            "Installation impossible",
+            toFriendlyFsError(error, { distribution }),
           );
           setLoadingButtonId(null);
         }
@@ -200,13 +175,22 @@ export function useTranslation() {
             versionSettings.link,
             DEFAULT_TRANSLATION_LANG,
           );
-          toastSuccess(toast, "Traduction installée", "La traduction a été installée avec succès.");
+          const updatedTranslations = {
+            ...translationsSelected,
+            [version]: {
+              ...versionSettings,
+              lastUpdatedAt: createTranslationTimestamp(),
+            },
+          };
+          setTranslationsSelected(updatedTranslations);
+          await saveSelectedTranslations(updatedTranslations);
+          toastSuccess(toast, `Traduction installée · ${version}`);
           if (paths) await checkTranslationsState(paths);
         } catch (error) {
           toastError(
             toast,
-            "Erreur d'installation",
-            `Erreur: ${toFriendlyFsError(error, { distribution })}`,
+            "Installation impossible",
+            toFriendlyFsError(error, { distribution }),
           );
           setLoadingButtonId(null);
         }
@@ -225,37 +209,47 @@ export function useTranslation() {
   const handleUpdateTranslation = useCallback(
     async (versionPath: string, translationLink: string, buttonId: string) => {
       setLoadingButtonId(`update-${buttonId}`);
-      if (isProtectedPath(versionPath)) {
-        toast({
-          title: "Chemin protégé",
-          description: getProtectedPathWarning(distribution),
-          variant: "warning",
-          duration: 5000,
-        });
-      }
       try {
         await translationService.update(
           versionPath,
           translationLink,
           DEFAULT_TRANSLATION_LANG,
         );
-        toastSuccess(
-          toast,
-          "Traduction mise à jour",
-          "La traduction a été mise à jour avec succès.",
-        );
+        if (translationsSelected) {
+          const current =
+            translationsSelected[buttonId as keyof TranslationsChoosen];
+          const updatedTranslations = {
+            ...translationsSelected,
+            [buttonId]: {
+              ...current,
+              link: translationLink,
+              settingsEN: current?.settingsEN ?? false,
+              lastUpdatedAt: createTranslationTimestamp(),
+            },
+          };
+          setTranslationsSelected(updatedTranslations);
+          await saveSelectedTranslations(updatedTranslations);
+        }
+        toastSuccess(toast, `Mise à jour terminée · ${buttonId}`);
         if (paths) await checkTranslationsState(paths);
       } catch (error) {
         toastError(
           toast,
-          "Erreur de mise à jour",
-          `Erreur: ${toFriendlyFsError(error, { distribution })}`,
+          "Mise à jour impossible",
+          toFriendlyFsError(error, { distribution }),
         );
       } finally {
         setLoadingButtonId(null);
       }
     },
-    [toast, paths, checkTranslationsState, distribution],
+    [
+      toast,
+      paths,
+      checkTranslationsState,
+      distribution,
+      translationsSelected,
+      saveSelectedTranslations,
+    ],
   );
 
   const handleSettingsToggle = useCallback(
@@ -292,67 +286,61 @@ export function useTranslation() {
               link,
               DEFAULT_TRANSLATION_LANG,
             );
-            if (paths) {
-              const updatedPaths = { ...paths };
-              const current =
-                updatedPaths.versions[version as keyof GamePaths["versions"]];
-              if (current) {
-                updatedPaths.versions[version as keyof GamePaths["versions"]] = {
-                  ...current,
-                  up_to_date: isUpToDate,
-                };
-                setPaths(updatedPaths);
-              }
+            if (paths && versionOrder.length > 0) {
+              const updatedPaths = hydrateGamePaths(
+                paths,
+                {
+                  versions: {
+                    ...paths.versions,
+                    [version]: {
+                      ...paths.versions[version as keyof GamePaths["versions"]]!,
+                      up_to_date: isUpToDate,
+                    },
+                  },
+                },
+                versionOrder,
+              );
+              setPaths(updatedPaths);
             }
             if (!isUpToDate) {
-              toastLegacyError(
+              toastWarning(
                 toast,
-                "Traduction obsolète",
-                "La traduction doit être mise à jour pour correspondre à cette configuration.",
-              );
-            } else {
-              toastLegacySuccess(
-                toast,
-                "Paramètres modifiés",
-                "Vous pouvez mettre à jour la traduction pour appliquer les nouveaux paramètres.",
+                "Mise à jour requise",
+                "Appliquez la mise à jour pour utiliser ce pack de paramètres.",
               );
             }
           }
         } else {
-          toastLegacyError(
+          toastError(
             toast,
-            "Erreur de configuration",
-            "Impossible de récupérer les informations de traduction.",
+            "Langue non disponible",
+            "Impossible de charger ce pack de paramètres.",
           );
         }
       } catch (error) {
-        toastLegacyError(
+        toastError(
           toast,
-          "Erreur de configuration",
-          `Une erreur est survenue: ${error}`,
+          "Changement de langue impossible",
+          String(error),
         );
       } finally {
         setLoadingButtonId(null);
       }
     },
-    [translationsSelected, paths, saveSelectedTranslations, toast],
+    [translationsSelected, paths, saveSelectedTranslations, toast, versionOrder],
   );
 
   const handleUninstallTranslation = useCallback(
     async (versionPath: string) => {
       try {
         await translationService.uninstall(versionPath);
-        toastSuccess(
-          toast,
-          "Traduction désinstallée",
-          "La traduction a été désinstallée avec succès.",
-        );
+        toastSuccess(toast, "Traduction retirée");
         if (paths) await checkTranslationsState(paths);
       } catch (error) {
-        toastLegacyError(
+        toastError(
           toast,
-          "Erreur de désinstallation",
-          `Erreur: ${toFriendlyFsError(error, { distribution })}`,
+          "Désinstallation impossible",
+          toFriendlyFsError(error, { distribution }),
         );
       }
     },
@@ -360,34 +348,25 @@ export function useTranslation() {
   );
 
   useEffect(() => {
-    const checkState = async () => {
-      if (!paths) return;
-      await checkTranslationsState(paths);
-      setEarlyChecked(true);
-    };
-    if (!earlyChecked) checkState();
+    if (!initialLoadComplete || !paths) return;
 
     const interval = setInterval(() => {
-      if (paths) checkTranslationsState(paths);
-    }, 60000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paths]);
-
-  useEffect(() => {
-    if (translationsSelected && paths) {
       checkTranslationsState(paths);
-    }
-  }, [translationsSelected, paths, checkTranslationsState]);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [initialLoadComplete, paths, checkTranslationsState]);
 
   const hasVersions = paths && Object.entries(paths.versions)[0];
 
   return {
     paths,
+    versionOrder,
     translationsSelected,
     loadingButtonId,
     setLoadingButtonId,
     hasVersions,
+    initialLoadComplete,
     handleInstallTranslation,
     handleUpdateTranslation,
     handleSettingsToggle,

@@ -1,77 +1,84 @@
-import { HelpCircle } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import PageHeader from "@/shared/components/PageHeader";
+import { useEffect, useState } from "react";
 import PageMotion from "@/shared/components/PageMotion";
-import { PAGE_CENTER, PAGE_SCROLL } from "@/shared/components/pageStyles";
-import { IconLanguage } from "@tabler/icons-react";
+import { PAGE_CENTER } from "@/shared/components/pageStyles";
 import { useTranslation } from "@/features/translation/useTranslation";
-import { TranslationVersionRow } from "@/features/translation/components/TranslationVersionRow";
+import { TranslationVersionCard } from "@/features/translation/components/TranslationVersionCard";
+import { TranslationWaveLoader } from "@/features/translation/components/TranslationWaveLoader";
+import {
+  getTranslationCardsLayoutClass,
+  TRANSLATION_LOAD_DELAY_MS,
+} from "@/features/translation/translation.lib";
+
+function TranslationEmptyState() {
+  return (
+    <div className={`${PAGE_CENTER} px-4 pb-20 text-center`}>
+      <p className="text-lg font-semibold text-foreground">
+        Aucune version du jeu détectée
+      </p>
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        Lancez Star Citizen au moins une fois, puis rechargez cette page avec{" "}
+        <kbd className="rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-foreground">
+          Ctrl + R
+        </kbd>
+        .
+      </p>
+    </div>
+  );
+}
 
 export default function TranslationPage() {
   const vm = useTranslation();
+  const [loadDelayElapsed, setLoadDelayElapsed] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setLoadDelayElapsed(true),
+      TRANSLATION_LOAD_DELAY_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const pipelineComplete = vm.initialLoadComplete;
+  const isReady =
+    pipelineComplete &&
+    vm.hasVersions &&
+    vm.paths &&
+    vm.translationsSelected !== null &&
+    vm.versionOrder.length > 0;
+  const showEmpty = pipelineComplete && loadDelayElapsed && !vm.hasVersions;
 
   return (
     <PageMotion className="px-4">
-      {vm.hasVersions && vm.paths && vm.translationsSelected !== null ? (
-        <>
-          <div className="flex shrink-0 flex-col gap-2 pt-2">
-            <PageHeader
-              icon={<IconLanguage className="h-6 w-6" />}
-              title="Gestionnaire de traduction"
-              description="Gérez les traductions de Star Citizen"
-            />
+      {isReady ? (
+        <div className={`${PAGE_CENTER} pb-20`}>
+          <div className={getTranslationCardsLayoutClass()}>
+            {vm.versionOrder.map((key, index) => {
+              const value = vm.paths!.versions[key];
+              if (!value) return null;
 
-            <div className="grid grid-cols-12 gap-5 pr-1">
-              <p className="col-span-1 font-bold">Version</p>
-              <p className="col-span-2 text-center font-bold">Chemin</p>
-              <p className="col-span-3 flex items-center justify-center gap-1 text-center font-bold">
-                Paramètres
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 cursor-help text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Langue des paramètres du jeu</p>
-                  </TooltipContent>
-                </Tooltip>
-              </p>
-              <p className="col-span-2 text-center font-bold">État</p>
-              <p className="col-span-4 text-end font-bold">Action</p>
-            </div>
+              return (
+                <TranslationVersionCard
+                  key={key}
+                  versionKey={key}
+                  version={value}
+                  index={index}
+                  translationsSelected={vm.translationsSelected!}
+                  loadingButtonId={vm.loadingButtonId}
+                  onSettingsToggle={vm.handleSettingsToggle}
+                  onInstall={vm.handleInstallTranslation}
+                  onUpdate={vm.handleUpdateTranslation}
+                  onUninstall={vm.handleUninstallTranslation}
+                  setLoadingButtonId={vm.setLoadingButtonId}
+                />
+              );
+            })}
           </div>
-
-          <div className={`${PAGE_SCROLL} flex flex-col gap-2 pb-4 pr-1 pt-2`}>
-            {Object.entries(vm.paths.versions).map(([key, value], index) => (
-              <TranslationVersionRow
-                key={key}
-                versionKey={key}
-                version={value}
-                index={index}
-                translationsSelected={vm.translationsSelected!}
-                loadingButtonId={vm.loadingButtonId}
-                onSettingsToggle={vm.handleSettingsToggle}
-                onInstall={vm.handleInstallTranslation}
-                onUpdate={vm.handleUpdateTranslation}
-                onUninstall={vm.handleUninstallTranslation}
-                setLoadingButtonId={vm.setLoadingButtonId}
-              />
-            ))}
-          </div>
-        </>
+        </div>
+      ) : showEmpty ? (
+        <TranslationEmptyState />
       ) : (
-        <div className={PAGE_CENTER}>
-          <h2 className="mb-2 text-3xl font-bold">
-            Aucune version du jeu n{"'"}a été trouvée
-          </h2>
-          <p className="max-w-[500px] text-center leading-7">
-            Pour régler ce problème, lancez Star Citizen, puis rechargez cette
-            page en faisant la manipulation suivante :
-            <span className="ml-2 bg-gray-500 px-2 py-1">CRTL + R</span>
-          </p>
+        <div className={`${PAGE_CENTER} pb-20`}>
+          <TranslationWaveLoader />
         </div>
       )}
     </PageMotion>

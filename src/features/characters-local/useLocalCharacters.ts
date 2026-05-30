@@ -6,7 +6,6 @@ import {
   mergeCharacterScanResult,
   type CharacterRow,
 } from "@/features/characters-local/characters.lib";
-import { isProtectedPath } from "@/utils/fs-permissions";
 import { toastError } from "@/shared/lib/toastHelpers";
 
 export function useLocalCharacters() {
@@ -54,15 +53,6 @@ export function useLocalCharacters() {
         .map(([, version]) => version!.path);
 
       for (const path of entries) {
-        if (isProtectedPath(path)) {
-          toast({
-            title: "Chemin protégé",
-            description:
-              "Le jeu est dans Program Files. En cas d'erreur, relancez en administrateur ou installez-le ailleurs.",
-            variant: "warning",
-            duration: 4000,
-          });
-        }
         await scanLocalCharacters(path);
       }
       setIsLoading(false);

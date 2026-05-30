@@ -1,17 +1,55 @@
 type ToastFn = (props: Record<string, unknown>) => void;
 
-export function toastSuccess(toast: ToastFn, title: string, description: string) {
-  toast({ title, description, variant: "success", duration: 3000 });
+export function toastSuccess(
+  toast: ToastFn,
+  title: string,
+  description?: string,
+) {
+  toast({
+    title,
+    ...(description ? { description } : {}),
+    variant: "success",
+  });
 }
 
-export function toastError(toast: ToastFn, title: string, description: string) {
-  toast({ title, description, variant: "destructive", duration: 4000 });
+export function toastError(
+  toast: ToastFn,
+  title: string,
+  description?: string,
+) {
+  toast({
+    title,
+    ...(description ? { description } : {}),
+    variant: "destructive",
+  });
 }
 
-export function toastLegacySuccess(toast: ToastFn, title: string, description: string) {
-  toast({ title, description, success: "true", duration: 3000 });
+export function toastWarning(
+  toast: ToastFn,
+  title: string,
+  description?: string,
+) {
+  toast({
+    title,
+    ...(description ? { description } : {}),
+    variant: "warning",
+  });
 }
 
-export function toastLegacyError(toast: ToastFn, title: string, description: string) {
-  toast({ title, description, success: "false", duration: 3000 });
+/** @deprecated Utiliser toastSuccess */
+export function toastLegacySuccess(
+  toast: ToastFn,
+  title: string,
+  description?: string,
+) {
+  toastSuccess(toast, title, description);
+}
+
+/** @deprecated Utiliser toastError */
+export function toastLegacyError(
+  toast: ToastFn,
+  title: string,
+  description?: string,
+) {
+  toastError(toast, title, description);
 }
