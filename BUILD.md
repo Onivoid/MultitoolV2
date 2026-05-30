@@ -1,4 +1,4 @@
-﻿# Build MultitoolV2
+﻿# Build Multitool
 
 Guide Windows uniquement (cible du projet).
 

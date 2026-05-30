@@ -1,6 +1,6 @@
 # Politique de sécurité
 
-MultitoolV2 est open-source (AGPL). Le code est public ; les binaires distribués sur GitHub ne sont pas signés numériquement (coût des certificats). Vous pouvez auditer le dépôt, rebuilder vous-même, ou vérifier les checksums publiés à chaque release.
+Multitool est open-source (AGPL). Le code est public ; les binaires distribués sur GitHub ne sont pas signés numériquement (coût des certificats). Vous pouvez auditer le dépôt, rebuilder vous-même, ou vérifier les checksums publiés à chaque release.
 
 ## Signaler une vulnérabilité
 

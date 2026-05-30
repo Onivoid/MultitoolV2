@@ -7,7 +7,7 @@ pub async fn fetch_rsi_news() -> Result<String, String> {
     let client = reqwest::Client::new();
     let response = client
         .get(RSI_FEED_URL)
-        .header("User-Agent", "MultitoolV2")
+        .header("User-Agent", "Multitool")
         .send()
         .await
         .map_err(|e| format!("Erreur lors de la requête: {e}"))?;

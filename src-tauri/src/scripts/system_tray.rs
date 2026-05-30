@@ -19,7 +19,7 @@ pub fn setup_system_tray(app: &AppHandle) -> Result<(), String> {
     let _tray = TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)
-        .tooltip("Multitool V2")
+        .tooltip("Multitool")
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => {
                 println!("[System Tray] Show button clicked");

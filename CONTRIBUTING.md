@@ -1,4 +1,4 @@
-# Contribuer à MultitoolV2
+# Contribuer à Multitool
 
 Merci de votre intérêt pour le projet. Ce guide décrit le minimum pour proposer une modification.
 

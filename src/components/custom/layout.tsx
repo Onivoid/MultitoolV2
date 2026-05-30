@@ -1,34 +1,16 @@
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { DragRegion } from "@/components/custom/drag-region";
 import { useLocation } from "react-router-dom";
 import { getAppVersionSync, formatVersion } from "@/utils/version";
 import { Updater } from "@/components/Updater";
 import { AppDock } from "@/components/navigation/AppDock";
-
-const routeTitles: Record<string, string> = {
-  settings: "Paramètres",
-  traduction: "Traduction",
-  patchnotes: "Patchnotes",
-  ships3d: "Vaisseaux 3D",
-  news: "News SC",
-  updates: "Mises à jour",
-};
+import { getRouteTitle } from "@/components/navigation/navigation.config";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
-  const [path, setPath] = useState<string>("");
   const version = formatVersion(getAppVersionSync());
-
-  useEffect(() => {
-    if (location.pathname === "/") {
-      setPath("");
-      return;
-    }
-    const segment = location.pathname.split("/").filter(Boolean)[0] ?? "";
-    setPath(routeTitles[segment] ?? segment);
-  }, [location]);
+  const path = getRouteTitle(location.pathname);
 
   return (
     <DragRegion className="relative h-screen max-h-screen w-full max-w-full overflow-hidden">

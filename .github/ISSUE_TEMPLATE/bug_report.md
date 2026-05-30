@@ -20,7 +20,7 @@ labels: ["bug", "needs-investigation"]
 ## Environnement
 
 - OS :
-- Version MultitoolV2 :
+- Version Multitool :
 - Installation : Portable / MSI
 
 ## Logs (F12 → Console)

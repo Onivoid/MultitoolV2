@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "MultiTool V2 - Portable",
+        "title": "Multitool — Portable",
         "minWidth": 1230,
         "minHeight": 690,
         "center": true,
