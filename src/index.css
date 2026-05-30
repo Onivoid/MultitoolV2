@@ -92,15 +92,24 @@
         -ms-user-select: none;
         user-select: none;
     }
-    body {
-        /* Style type acrylic sans l’API Windows : fluide au déplacement, rendu verre dépoli */
-        position: relative;
-        min-height: 100vh;
-        @apply bg-primary/20 text-foreground;
+    html,
+    body,
+    #root {
+        height: 100%;
     }
-    /* Couche verre dépoli : flou + teinte, en CSS pour être sûr qu’elle s’applique */
     html {
         overflow: hidden;
+    }
+    body {
+        position: relative;
+        min-height: 100vh;
+        background: transparent;
+        @apply text-foreground;
+    }
+    #root {
+        overflow: hidden;
+        position: relative;
+        isolation: isolate;
     }
     *::-webkit-scrollbar-track {
         background-color: transparent;
@@ -113,5 +122,94 @@
     *::-webkit-scrollbar-thumb {
         background-color: rgb(185, 185, 185);
         border-radius: 0.75rem;
+    }
+
+    .react-colorful {
+        width: 100%;
+        touch-action: none;
+    }
+}
+
+@layer components {
+    .glass-surface {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid hsl(0 0% 100% / 0.24);
+        background: hsl(0 0% 100% / 0.14);
+        backdrop-filter: blur(28px) saturate(180%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        box-shadow:
+            0 10px 40px hsl(0 0% 0% / 0.18),
+            inset 0 1px 0 hsl(0 0% 100% / 0.42),
+            inset 0 -1px 0 hsl(0 0% 100% / 0.08);
+    }
+
+    .dark .glass-surface {
+        border-color: hsl(0 0% 100% / 0.14);
+        background: hsl(0 0% 100% / 0.07);
+        box-shadow:
+            0 14px 44px hsl(0 0% 0% / 0.42),
+            inset 0 1px 0 hsl(0 0% 100% / 0.16),
+            inset 0 -1px 0 hsl(0 0% 100% / 0.05);
+    }
+
+    .glass-surface::before {
+        content: "";
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(
+            180deg,
+            hsl(0 0% 100% / 0.22) 0%,
+            hsl(0 0% 100% / 0.04) 38%,
+            transparent 100%
+        );
+    }
+
+    .dock-glass {
+        border-radius: 25px;
+        @apply glass-surface;
+    }
+
+    .dock-item-pill {
+        @apply transition-colors duration-200;
+    }
+
+    .dock-item-pill-active {
+        background-color: hsl(var(--primary) / 0.28);
+        box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.12);
+    }
+
+    .dock-item-pill-idle {
+        @apply hover:bg-primary/15;
+    }
+
+    .settings-section {
+        border: 1px solid hsl(var(--primary) / 0.12);
+        background: hsl(var(--background) / 0.18);
+        border-radius: var(--radius);
+    }
+
+    .settings-section-header {
+        border-bottom: 1px solid hsl(var(--primary) / 0.08);
+        background: hsl(var(--primary) / 0.04);
+        border-left: 3px solid hsl(var(--primary) / 0.35);
+    }
+
+    .settings-section-footer {
+        border-top: 1px solid hsl(var(--primary) / 0.06);
+        background: hsl(var(--primary) / 0.02);
+    }
+
+    .settings-link-block {
+        border: 1px solid hsl(var(--primary) / 0.1);
+        background: hsl(var(--primary) / 0.03);
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .settings-link-block:hover {
+        border-color: hsl(var(--primary) / 0.22);
+        background: hsl(var(--primary) / 0.08);
     }
 }

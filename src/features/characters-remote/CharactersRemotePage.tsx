@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { IconClock, IconDownload, IconHeart, IconSearch } from "@tabler/icons-react";
 import PageHeader from "@/shared/components/PageHeader";
 import PageMotion from "@/shared/components/PageMotion";
+import { PAGE_SCROLL } from "@/shared/components/pageStyles";
 import { CharacterCard } from "@/features/characters-remote/components/CharacterCard";
 import { useCharactersRemote } from "@/features/characters-remote/useCharactersRemote";
 
@@ -36,22 +37,22 @@ export default function CharactersRemotePage() {
   }, [fetchPage, hasMore, isLoading]);
 
   return (
-    <PageMotion className="flex w-full flex-col">
+    <PageMotion className="px-4 pt-2">
       <PageHeader
         icon={<IconDownload className="h-6 w-6" />}
         title="Personnages en Ligne"
         description="Liste de personnages téléchargeables, par la communauté de SC Characters"
       />
 
-      <div className="w-full flex flex-col md:flex-row md:items-center gap-3 my-4">
+      <div className="my-4 flex w-full shrink-0 flex-col gap-3 md:flex-row md:items-center">
         <div className="relative w-full md:max-w-md">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Rechercher un personnage..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border rounded pl-10 pr-4 py-2 w-full shadow bg-background/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-full rounded border bg-background/30 py-2 pl-10 pr-4 shadow focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -63,7 +64,7 @@ export default function CharactersRemotePage() {
               key={opt.key}
               type="button"
               onClick={() => changeSort(opt.key)}
-              className={`px-3 py-2.5 flex items-center gap-2 rounded border text-sm ${sort === opt.key ? "bg-primary text-primary-foreground" : "bg-background/30"}`}
+              className={`flex items-center gap-2 rounded border px-3 py-2.5 text-sm ${sort === opt.key ? "bg-primary text-primary-foreground" : "bg-background/30"}`}
             >
               {opt.icon}
               {opt.label}
@@ -74,14 +75,14 @@ export default function CharactersRemotePage() {
 
       <div
         ref={gridRef}
-        className="grid grid-cols-4 xl:grid-cols-5 gap-4 max-h-[calc(100vh-115px)] overflow-x-hidden overflow-y-auto"
+        className={`${PAGE_SCROLL} grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`}
       >
         {charactersPresets.length === 0 &&
           isLoading &&
           Array.from({ length: 12 }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="h-150 rounded bg-background/30 animate-pulse"
+              className="h-150 animate-pulse rounded bg-background/30"
             />
           ))}
         {charactersPresets.map((character, index) => {
@@ -111,13 +112,17 @@ export default function CharactersRemotePage() {
             </motion.div>
           );
         })}
+        {isLoading && (
+          <div className="col-span-full py-4 text-center text-gray-500">
+            Chargement...
+          </div>
+        )}
+        {!hasMore && charactersPresets.length > 0 && (
+          <div className="col-span-full py-4 text-center text-gray-400">
+            Fin de la liste
+          </div>
+        )}
       </div>
-      {isLoading && (
-        <div className="w-full text-center py-4 text-gray-500">Chargement...</div>
-      )}
-      {!hasMore && (
-        <div className="w-full text-center py-4 text-gray-400">Fin de la liste</div>
-      )}
     </PageMotion>
   );
 }

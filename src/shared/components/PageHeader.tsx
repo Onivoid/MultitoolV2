@@ -6,7 +6,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ icon, title, description }: PageHeaderProps) {
   return (
-    <div className="flex flex-row my-4 gap-2">
+    <div className="mb-4 flex shrink-0 flex-row gap-2">
       <div className="p-4 bg-primary/50 rounded-xl">{icon}</div>
       <div className="flex flex-col">
         <p className="text-2xl font-bold">{title}</p>

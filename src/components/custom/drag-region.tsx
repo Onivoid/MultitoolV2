@@ -1,16 +1,33 @@
-import React, { useEffect, useRef } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import React, { useEffect, useRef } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 interface DragRegionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-export function DragRegion({ children, className = '' }: DragRegionProps) {
+const DRAG_EXCLUDED_SELECTOR = [
+  "button",
+  "a",
+  "input",
+  "select",
+  "textarea",
+  '[role="button"]',
+  '[role="link"]',
+  '[role="slider"]',
+  '[role="tab"]',
+  '[data-no-window-drag]',
+  ".react-colorful",
+  "[data-radix-popper-content-wrapper]",
+].join(", ");
+
+function isDragExcluded(target: HTMLElement): boolean {
+  return Boolean(target.closest(DRAG_EXCLUDED_SELECTOR));
+}
+
+export function DragRegion({ children, className = "" }: DragRegionProps) {
   const appWindow = getCurrentWindow();
   const containerRef = useRef<HTMLDivElement>(null);
-  const startPosRef = useRef<{ x: number; y: number } | null>(null);
-  const isMouseDownRef = useRef(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -18,45 +35,17 @@ export function DragRegion({ children, className = '' }: DragRegionProps) {
 
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) ||
-        target.closest('button, a, input, select, textarea, [role="button"], [role="link"]');
-
-      if (!isInteractive) {
+      if (!isDragExcluded(target)) {
         appWindow.startDragging();
-      } else {
-        startPosRef.current = { x: e.clientX, y: e.clientY };
-        isMouseDownRef.current = true;
       }
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isMouseDownRef.current && startPosRef.current) {
-        const deltaX = Math.abs(e.clientX - startPosRef.current.x);
-        const deltaY = Math.abs(e.clientY - startPosRef.current.y);
-
-        if (deltaX > 5 || deltaY > 5) {
-          appWindow.startDragging();
-          isMouseDownRef.current = false;
-          startPosRef.current = null;
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      isMouseDownRef.current = false;
-      startPosRef.current = null;
-    };
-
-    container.addEventListener('mousedown', handleMouseDown);
-    container.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener("mousedown", handleMouseDown);
 
     return () => {
-      container.removeEventListener('mousedown', handleMouseDown);
-      container.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener("mousedown", handleMouseDown);
     };
-  }, []);
+  }, [appWindow]);
 
   return (
     <main ref={containerRef} className={className}>

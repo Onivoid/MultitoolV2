@@ -12,14 +12,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 import { Settings, BrushCleaning, Download, Newspaper, Rocket, ScrollText } from "lucide-react";
 import {
     IconBrandYoutube, IconHome, IconBrandDiscord,
@@ -29,7 +21,6 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 import { openExternalUrl } from "@/shared/lib/openExternal";
-import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { useEffect, useState } from "react";
 import { getBuildInfo, BuildInfo } from "@/utils/buildInfo";
 
@@ -281,23 +272,12 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <Dialog>
-                            <DialogTrigger className="flex items-center gap-3 rounded-lg py-2 text-muted-foreground transition-all" asChild>
-                                <SidebarMenuButton tooltip={"Paramètres"} className="hover:text-primary">
-                                    <Settings />
-                                    <span>Paramètres</span>
-                                </SidebarMenuButton>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>Paramètres</DialogTitle>
-                                    <DialogDescription>
-                                        Configurez les paramètres de l'application
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <SettingsDialog />
-                            </DialogContent>
-                        </Dialog>
+                        <SidebarMenuButton tooltip="Paramètres" className="hover:text-primary" asChild>
+                            <Link to="/settings">
+                                <Settings />
+                                <span>Paramètres</span>
+                            </Link>
+                        </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
