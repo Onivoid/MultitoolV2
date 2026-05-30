@@ -1,7 +1,4 @@
-import {
-  getThemePreferencesFromStore,
-  useThemeStore,
-} from "@/stores/theme-store";
+import { useThemeStore } from "@/stores/theme-store";
 import {
   payloadToThemePreferences,
   themePreferencesToPayload,
@@ -159,14 +156,9 @@ function generateShadcnTheme(prefs: ThemePreferences): string {
   }`;
 }
 
-export function applyThemePreferences(
-  prefs: ThemePreferences,
-  persist = true,
-): void {
+export function applyThemePreferences(prefs: ThemePreferences, persist = true): void {
   const themeCSS = generateShadcnTheme(prefs);
-  let styleElement = document.getElementById(
-    "shadcn-theme",
-  ) as HTMLStyleElement | null;
+  let styleElement = document.getElementById("shadcn-theme") as HTMLStyleElement | null;
 
   if (!styleElement) {
     styleElement = document.createElement("style");
@@ -181,15 +173,7 @@ export function applyThemePreferences(
   themeService
     .save(themePreferencesToPayload(prefs))
     .then(() => logger.log("Thème enregistré avec succès"))
-    .catch((error) =>
-      logger.error("Erreur lors de l'enregistrement du thème", error),
-    );
-}
-
-/** @deprecated Utiliser applyThemePreferences */
-export function applyTheme(primaryColor: string): void {
-  const prefs = { ...getThemePreferencesFromStore(), primaryColor };
-  applyThemePreferences(prefs);
+    .catch((error) => logger.error("Erreur lors de l'enregistrement du thème", error));
 }
 
 export function loadAndApplyTheme(): void {
@@ -201,7 +185,5 @@ export function loadAndApplyTheme(): void {
       setThemePreferences(prefs);
       applyThemePreferences(prefs, false);
     })
-    .catch((error) =>
-      logger.error("Erreur lors du chargement du thème", error),
-    );
+    .catch((error) => logger.error("Erreur lors du chargement du thème", error));
 }

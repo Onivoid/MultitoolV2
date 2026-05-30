@@ -3,7 +3,7 @@ import PageMotion from "@/shared/components/PageMotion";
 import { PAGE_CENTER } from "@/shared/components/pageStyles";
 import { useTranslation } from "@/features/translation/useTranslation";
 import { TranslationVersionCard } from "@/features/translation/components/TranslationVersionCard";
-import { TranslationWaveLoader } from "@/features/translation/components/TranslationWaveLoader";
+import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
 import {
   getTranslationCardsLayoutClass,
   TRANSLATION_LOAD_DELAY_MS,
@@ -78,7 +78,7 @@ export default function TranslationPage() {
         <TranslationEmptyState />
       ) : (
         <div className={`${PAGE_CENTER} pb-20`}>
-          <TranslationWaveLoader />
+          <PageWaveLoader message="Chargement des traductions…" />
         </div>
       )}
     </PageMotion>
