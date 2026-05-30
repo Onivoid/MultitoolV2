@@ -13,6 +13,7 @@ use std::time::Duration;
 use tauri::path::PathResolver;
 use tauri::{command, AppHandle, Manager, Runtime};
 use tauri::State;
+use tauri_plugin_dialog::DialogExt;
 
 const BLUEPRINT_CORRELATION_WINDOW_SEC: f64 = 5.0;
 const TAIL_POLL_INTERVAL: Duration = Duration::from_millis(200);
@@ -774,6 +775,37 @@ pub async fn stop_gamelog_watcher(
     state: State<'_, GamelogWatcherState>,
 ) -> Result<(), String> {
     stop_gamelog_watcher_internal(state.inner(), &app)
+}
+
+fn export_gamelog_blueprints_sync(app: &AppHandle) -> Result<Option<String>, String> {
+    let store = load_blueprint_store_sync(app)?;
+    let destination = app
+        .dialog()
+        .file()
+        .set_title("Exporter les blueprints")
+        .set_file_name("gamelog_blueprints.json")
+        .add_filter("JSON", &["json"])
+        .blocking_save_file();
+
+    let Some(destination) = destination else {
+        return Ok(None);
+    };
+
+    let path = destination
+        .into_path()
+        .map_err(|e| e.to_string())?;
+
+    let json = serde_json::to_string_pretty(&store).map_err(|e| e.to_string())?;
+    fs::write(&path, json).map_err(|e| e.to_string())?;
+
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[command]
+pub async fn export_gamelog_blueprints(app: AppHandle) -> Result<Option<String>, String> {
+    tokio::task::spawn_blocking(move || export_gamelog_blueprints_sync(&app))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[command]

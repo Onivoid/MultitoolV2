@@ -11,6 +11,9 @@ const routeTitles: Record<string, string> = {
   settings: "Paramètres",
   traduction: "Traduction",
   patchnotes: "Patchnotes",
+  ships3d: "Vaisseaux 3D",
+  news: "News SC",
+  updates: "Mises à jour",
 };
 
 const Layout = ({ children }: { children: React.ReactNode }) => {

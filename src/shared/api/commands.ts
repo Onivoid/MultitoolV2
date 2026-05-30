@@ -24,6 +24,7 @@ export const TAURI_COMMANDS = {
   startGamelogWatcher: "start_gamelog_watcher",
   stopGamelogWatcher: "stop_gamelog_watcher",
   importBlueprintsFromLogbackups: "import_blueprints_from_logbackups",
+  exportGamelogBlueprints: "export_gamelog_blueprints",
   loadGamelogWatcherConfig: "load_gamelog_watcher_config",
   saveGamelogWatcherConfig: "save_gamelog_watcher_config",
   loadBackgroundServiceConfig: "load_background_service_config",

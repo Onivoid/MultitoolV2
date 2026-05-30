@@ -10,7 +10,8 @@ use scripts::cache_functions::{
 };
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
 use scripts::gamelog_watcher::{
-    get_gamelog_watcher_status, import_blueprints_from_logbackups, load_gamelog_blueprints,
+    export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
+    load_gamelog_blueprints,
     load_gamelog_watcher_config, save_gamelog_watcher_config, start_gamelog_watcher,
     start_gamelog_watcher_internal, stop_gamelog_watcher, GamelogWatcherState,
 };
@@ -185,6 +186,7 @@ pub fn run() {
             get_gamelog_watcher_status,
             start_gamelog_watcher,
             stop_gamelog_watcher,
+            export_gamelog_blueprints,
             import_blueprints_from_logbackups,
         ])
         .run(tauri::generate_context!())

@@ -72,10 +72,6 @@ _Installation système classique_
 3. Suivez l'assistant d'installation
 ```
 
-### 🏪 **Microsoft Store**
-
-_Version signée officiellement par Microsoft - Disponible sur le Store : https://apps.microsoft.com/detail/9MWD1VN65WCN?hl=fr&gl=FR&ocid=pdpshare_
-
 ---
 
 ## ⚠️ Sécurité & Transparence
@@ -199,7 +195,6 @@ pnpm tauri build
 [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/aUEEdMdS6j)
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@onivoid)
 [![Twitch](https://img.shields.io/badge/Twitch-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/onivoid_)
-[![Microsoft Store](https://img.shields.io/badge/Microsoft_Store-0078D4?style=for-the-badge&logo=microsoft&logoColor=white)](https://apps.microsoft.com/detail/9MWD1VN65WCN?hl=fr&gl=FR&ocid=pdpshare)
 
 </div>
 

@@ -5,7 +5,6 @@ import "./index.css";
 import { ThemeProvider } from "@/components/utils/theme-provider";
 import ControlMenu from "@/components/custom/control-menu";
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { SecurityWarning } from "@/components/custom/SecurityWarning";
 import { ErrorBoundary } from "@/components/custom/ErrorBoundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppBackground } from "@/components/custom/AppBackground";
@@ -18,7 +17,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <TooltipProvider delayDuration={0}>
           <div className="relative z-10 flex h-screen min-h-0 w-screen flex-col overflow-hidden">
             <ErrorBoundary>
-              <SecurityWarning onContinue={() => {}} />
               <ControlMenu />
               <AppRouter />
               <BorderBeam

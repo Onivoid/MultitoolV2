@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStarCitizenVersions } from "@/shared/hooks/useStarCitizenVersions";
 import { charactersService } from "@/features/characters-local/characters.service";
@@ -8,11 +8,19 @@ import {
 } from "@/features/characters-local/characters.lib";
 import { toastError } from "@/shared/lib/toastHelpers";
 
+import { establishVersionOrder } from "@/features/translation/translation.lib";
+
 export function useLocalCharacters() {
   const { paths: gamePaths, isLoading: pathsLoading } = useStarCitizenVersions();
   const [localCharacters, setLocalCharacters] = useState<CharacterRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [versionOrder, setVersionOrder] = useState<string[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!gamePaths) return;
+    setVersionOrder(establishVersionOrder(Object.keys(gamePaths.versions)));
+  }, [gamePaths]);
 
   const scanLocalCharacters = useCallback(
     async (gamePath: string) => {
@@ -61,19 +69,12 @@ export function useLocalCharacters() {
     scanAllPaths();
   }, [gamePaths, scanLocalCharacters, toast]);
 
-  const availableVersions = useMemo(() => {
-    const versions = localCharacters.flatMap((char) =>
-      char.versions.map((v) => v.version),
-    );
-    return Array.from(new Set(versions)).sort();
-  }, [localCharacters]);
-
   return {
     gamePaths,
     pathsLoading,
     localCharacters,
     isLoading,
-    availableVersions,
+    versionOrder,
     refreshLocalCharacters,
   };
 }

@@ -21,8 +21,6 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 import { openExternalUrl } from "@/shared/lib/openExternal";
-import { useEffect, useState } from "react";
-import { getBuildInfo, BuildInfo } from "@/utils/buildInfo";
 
 // Menu principal
 const menuItems = [
@@ -135,24 +133,7 @@ const externalServices = [
 export function AppSidebar() {
     const { state } = useSidebar();
     const location = useLocation();
-    const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
 
-    useEffect(() => {
-        getBuildInfo()
-            .then(setBuildInfo)
-            .catch(() => { });
-    }, []);
-
-    const getFilteredMenuItems = () => {
-        if (!buildInfo) return menuItems;
-
-        return menuItems.filter(item => {
-            if (item.path === "/updates" && buildInfo.distribution === "microsoft-store") {
-                return false;
-            }
-            return true;
-        });
-    }; const filteredMenuItems = getFilteredMenuItems();
     return (
         <Sidebar>
             <SidebarHeader />
@@ -164,7 +145,7 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                {filteredMenuItems.map(item =>
+                                {menuItems.map(item =>
                                     state !== "collapsed" ? (
                                         <Tooltip key={item.path}>
                                             <TooltipTrigger asChild>

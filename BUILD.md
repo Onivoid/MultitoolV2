@@ -1,4 +1,4 @@
-# 🔨 Guide de Build - MultitoolV2
+﻿# 🔨 Guide de Build - MultitoolV2
 
 _Instructions complètes pour compiler MultitoolV2 depuis le code source_
 
@@ -149,27 +149,6 @@ pnpm tauri build
 -   ✅ Pas d'avertissement SmartScreen
 -   ✅ Configuration spéciale via `TAURI_ENV_PORTABLE`
 
-### 🏪 **Build Microsoft Store**
-
-```bash
-# Via script PowerShell avec config spéciale
-.\scripts\build-release.ps1 msix
-```
-
-**Prérequis :**
-
--   Fichier `src-tauri/tauri.microsoftstore.conf.json` configuré
--   Certificat Microsoft Store (pour publication)
--   WebView2 en mode offline installer
-
-**Packaging MSIX (après la CI ou build local) :**
-
-1. Prendre `builds/MicrosoftStoreMSI/MultitoolV2-MicrosoftStore.msi` (ou l’artefact CI `MultitoolV2-Installer-MSStore.msi`).
-2. Ouvrir **MSIX Packaging Tool** → créer le package à partir du MSI.
-3. Dans `Package.appxmanifest`, ajouter la capability **`broadFileSystemAccess`** (voir [`src-tauri/gen/windows/README.md`](src-tauri/gen/windows/README.md) et le snippet XML).
-4. Déclarer cette capability restreinte dans **Partner Center** avant publication.
-5. Rappeler aux utilisateurs d’activer l’accès **Système de fichiers** pour MultitoolV2 dans les paramètres Windows si l’installation de traduction échoue.
-
 ### 🚀 **Build Complet** _(Tous les types)_
 
 ```bash
@@ -203,7 +182,7 @@ Le script `scripts/build-release.ps1` automatise tout le processus :
 
 | Paramètre            | Description         | Valeurs                                         |
 | -------------------- | ------------------- | ----------------------------------------------- |
-| `Type`               | Type de build       | `standard`, `portable`, `msix`, `all`, `public` |
+| `Type`               | Type de build       | `standard`, `portable`, `all`, `public` |
 | `-Clean`             | Nettoie avant build | `$true`/`$false`                                |
 | `-GenerateChecksums` | Génère les SHA256   | `$true`/`$false` (défaut: `$true`)              |
 
@@ -215,9 +194,6 @@ Le script utilise des variables d'environnement pour configurer les builds :
 # Build portable
 $env:TAURI_ENV_PORTABLE = "true"
 $env:TAURI_ENV_DISTRIBUTION = "github"
-
-# Build Microsoft Store
-$env:TAURI_ENV_MS_STORE = "true"
 
 # Build standard
 $env:TAURI_ENV_DISTRIBUTION = "github"
@@ -233,8 +209,6 @@ builds/
 │   └── MultitoolV2-Portable.exe
 ├── installer/
 │   └── MultitoolV2-Installer.msi
-├── MicrosoftStoreMSI/          # (si build MSIX)
-│   └── MultitoolV2-MicrosoftStore.msi
 └── checksums.txt               # SHA256 de tous les fichiers
 ```
 
@@ -437,20 +411,6 @@ pnpm tauri build --debug
     "plugins": {
         "updater": {
             "active": false
-        }
-    }
-}
-```
-
-#### `src-tauri/tauri.microsoftstore.conf.json` - Microsoft Store
-
-```json
-{
-    "bundle": {
-        "windows": {
-            "webviewInstallMode": {
-                "type": "offlineInstaller"
-            }
         }
     }
 }

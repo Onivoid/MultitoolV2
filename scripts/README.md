@@ -34,7 +34,6 @@ node scripts/check-version.js --help
 ```powershell
 .\scripts\build-release.ps1 standard
 .\scripts\build-release.ps1 portable
-.\scripts\build-release.ps1 msix
 .\scripts\build-release.ps1 public
 ```
 

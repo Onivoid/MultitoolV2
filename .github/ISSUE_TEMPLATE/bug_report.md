@@ -34,7 +34,7 @@ assignees: []
 - **OS :** [ex. Windows 11 Pro 22H2]
 - **Version MultitoolV2 :** [ex. 2.0.0]
 - **Version Star Citizen :** [ex. 3.22.0 PTU]
-- **Type d'installation :** [Portable / MSI / Microsoft Store]
+- **Type d'installation :** [Portable / MSI]
 
 ## 📋 Logs / Messages d'Erreur
 

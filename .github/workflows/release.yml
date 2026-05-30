@@ -77,7 +77,6 @@ jobs:
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               run: |
                   $env:TAURI_ENV_DISTRIBUTION = "github"
-                  $env:TAURI_ENV_MS_STORE = $null
                   $env:TAURI_ENV_PORTABLE = $null
                   .\scripts\build-release.ps1 standard
 
@@ -85,28 +84,7 @@ jobs:
               run: |
                   $env:TAURI_ENV_PORTABLE = "true"
                   $env:TAURI_ENV_DISTRIBUTION = "github"
-                  $env:TAURI_ENV_MS_STORE = $null
                   .\scripts\build-release.ps1 portable
-
-            - name: Build Microsoft Store Release
-              run: |
-                  $env:TAURI_ENV_MS_STORE = "true"
-                  $env:TAURI_ENV_DISTRIBUTION = $null
-                  $env:TAURI_ENV_PORTABLE = $null
-                  .\scripts\build-release.ps1 msix
-
-            - name: Rename Microsoft Store MSI for Release
-              run: |
-                  if (Test-Path "builds/MicrosoftStoreMSI") {
-                      $storeMsi = Get-ChildItem "builds/MicrosoftStoreMSI/*.msi" | Select-Object -First 1
-                      if ($storeMsi) {
-                          $newName = "MultitoolV2-Installer-MSStore.msi"
-                          $newPath = "builds/$newName"
-                          Copy-Item $storeMsi.FullName -Destination $newPath
-                          $hash = (Get-FileHash $newPath -Algorithm SHA256).Hash.ToLower()
-                          Add-Content -Path "builds/checksums.txt" -Value "$hash  $newName"
-                      }
-                  }
 
             - name: Verify Build Artifacts
               run: |
@@ -117,7 +95,6 @@ jobs:
                     exit 1
                   }
                   if (-not (Test-Path "builds/checksums.txt")) { exit 1 }
-                  if (-not (Test-Path "builds/MultitoolV2-Installer-MSStore.msi")) { exit 1 }
 
             - name: Create Release Notes
               run: |
@@ -129,7 +106,6 @@ jobs:
 
                   1. **Version Portable** : MultitoolV2-Portable.exe
                   2. **Installer Standard (MSI)** : mises a jour automatiques via tauri-plugin-updater
-                  3. **MS Store** : MultitoolV2-Installer-MSStore.msi (packaging MSIX externe)
 
                   ## Checksums SHA256
 
@@ -148,7 +124,6 @@ jobs:
                       builds/portable/MultitoolV2-Portable.exe
                       builds/installer/MultitoolV2-Installer.msi
                       builds/installer/MultitoolV2-Installer.msi.sig
-                      builds/MultitoolV2-Installer-MSStore.msi
                       builds/checksums.txt
                   draft: true
                   prerelease: false

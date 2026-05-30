@@ -11,7 +11,7 @@ import {
   sortBlueprints,
 } from "@/features/blueprints/blueprints.lib";
 import logger from "@/utils/logger";
-import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
+import { toastError, toastSuccess, toastWarning } from "@/shared/lib/toastHelpers";
 
 export function useBlueprints() {
   const { toast } = useToast();
@@ -23,6 +23,7 @@ export function useBlueprints() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTogglingWatch, setIsTogglingWatch] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [sortKey, setSortKey] = useState<BlueprintSortKey>(loadBlueprintSortKey);
@@ -130,7 +131,7 @@ export function useBlueprints() {
       toast({
         title:
           result.matchesFound > 0
-            ? "Import terminé"
+            ? "Synchronisation terminée"
             : "Aucune occurrence dans les logs scannés",
         description:
           result.matchesFound > 0
@@ -142,9 +143,28 @@ export function useBlueprints() {
         logger.error("Erreurs lecture logs:", result.readErrors);
       }
     } catch (error) {
-      toastError(toast, "Erreur d'import", String(error));
+      toastError(toast, "Synchronisation impossible", String(error));
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const exportBlueprints = async () => {
+    if (blueprints.length === 0) {
+      toastWarning(toast, "Rien à exporter", "Aucun blueprint enregistré.");
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const path = await blueprintsService.exportStore();
+      if (path) {
+        toastSuccess(toast, "Export terminé", path);
+      }
+    } catch (error) {
+      toastError(toast, "Export impossible", String(error));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -155,6 +175,7 @@ export function useBlueprints() {
     isRefreshing,
     isTogglingWatch,
     isImporting,
+    isExporting,
     searchQuery,
     setSearchQuery,
     ownerFilter,
@@ -167,5 +188,6 @@ export function useBlueprints() {
     startWatch,
     stopWatch,
     importHistory,
+    exportBlueprints,
   };
 }
