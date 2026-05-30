@@ -1,125 +1,96 @@
-﻿# Guide de Gestion des Versions - MultitoolV2
+﻿# Guide de gestion des versions
 
-## Présentation
+MultitoolV2 suit le semver `MAJOR.MINOR.PATCH`.
 
-Ce guide décrit le processus pour gérer les versions et publier une release GitHub (MSI + `latest.json` pour l’auto-update Tauri).
+## Fichiers de version
 
-## Système de Versioning
-
-MultitoolV2 utilise le **versioning sémantique** (SemVer) : `MAJOR.MINOR.PATCH`
-
-### Fichiers de Version
-
-Les versions doivent être **identiques** dans :
+Identiques et **sans préfixe `v`** :
 
 - `package.json`
 - `src-tauri/tauri.conf.json`
 
-Utiliser **uniquement** `X.Y.Z` dans ces fichiers (sans préfixe `v`). Le préfixe `v` est réservé aux **tags Git** (`v2.7.6`) et à l’affichage utilisateur.
+Le préfixe `v` est réservé aux tags Git (`v2.8.2`) et à l’affichage.
 
-## Githooks (recommandé)
-
-Inspiré du [Tauri-React-Boilerplate](https://github.com/Onivoid/Tauri-React-Boilerplate/tree/main/.githooks).
-
-### Activation
-
-Les hooks s’activent automatiquement après `pnpm install` (`prepare` → `scripts/setup-hooks.sh`).
-
-Manuel :
-
-```powershell
-.\scripts\setup-githooks.ps1
-```
+Vérification :
 
 ```bash
-./scripts/setup-githooks.sh
+node scripts/check-version.js
 ```
 
-Requiert **Git Bash** sur Windows pour exécuter `pre-commit` / `post-commit`.
+## Hooks Git (branche `master` uniquement)
 
-### À chaque commit
+Les hooks ne bumpent la version **que sur `master`**. Sur une branche feature, `git commit` se comporte normalement.
 
-1. `git commit` → saisie interactive de la nouvelle version (`X.Y.Z` ou `vX.Y.Z` > version actuelle)
-2. `package.json` et `tauri.conf.json` sont mis à jour et stagés
-3. `post-commit` crée le tag `vX.Y.Z` localement
-4. Pousser le commit **et** le tag :
+Activation : `pnpm install` ou `.\scripts\setup-githooks.ps1` (Git Bash requis sur Windows).
+
+### Sur `master`
+
+1. `git commit` → saisie de la nouvelle version (`X.Y.Z`, strictement > actuelle)
+2. `package.json` et `tauri.conf.json` mis à jour et stagés
+3. `post-commit` crée le tag local `vX.Y.Z`
+4. Pousser commit + tag :
 
 ```bash
 git push
 git push origin vX.Y.Z
 ```
 
-### Commit sans bump (docs, WIP)
+### Commit sans bump
 
 ```bash
-git commit --no-verify -m "docs: ..."
+git commit --no-verify -m "docs: …"
 ```
 
-## Vérification de cohérence
+## Convention de message pour une release
 
-```bash
-node scripts/check-version.js
+Le corps de la release GitHub et les notes in-app (`latest.json` via `release.body`) proviennent du **message du commit pointé par le tag**.
+
+Exemple de commit release sur `master` :
+
+```
+Release : v3.0.0
+
+- Refonte DA V3 de toutes les pages
+- Suppression du canal Microsoft Store
+- Page Mises à jour avec changelog versionné
 ```
 
-Exécuté aussi en CI sur les pull requests (`.github/workflows/check-version.yml`).
+Ensuite : bump via hook → tag `v3.0.0` sur ce commit → `git push origin v3.0.0`.
 
-## Processus de Release (GitHub)
+La page Patchnotes n’affiche que les commits dont le sujet commence par `Release :`.
 
-### 1. Développement + bump via githooks
+Fallback CI : si le message est vide, la release affiche `Release vX.Y.Z`.
 
-Commit avec bump de version → tag `vX.Y.Z` créé automatiquement.
+## Processus CI release
 
-### 2. Pousser le tag
+Push d’un tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) :
 
-```bash
-git push origin vX.Y.Z
-```
-
-Le workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) :
-
-1. Crée une **release draft** sur GitHub
-2. Build Windows (standard, portable) et upload des artefacts (dont `.msi` + `.msi.sig`)
-3. Publie la release (`draft: false`)
-4. Génère et uploade **`latest.json`** (`scripts/updater.mjs`, URLs canoniques)
-5. Valide le manifeste (`scripts/validate-latest-json.mjs`)
-
-### 3. Vérifier la release
-
-Sur https://github.com/Onivoid/MultitoolV2/releases :
-
-- `MultitoolV2-Installer.msi`
-- `MultitoolV2-Installer.msi.sig`
-- `latest.json` (champ `"version"` en semver nu, ex. `"2.8.1"`)
-- Dans `latest.json`, les URLs doivent être du type `…/releases/download/vX.Y.Z/MultitoolV2-Installer.msi` (jamais `untagged-…`)
+1. Draft release GitHub
+2. Build Windows (MSI + portable + checksums)
+3. Notes = message du commit tagué + section checksums SHA256
+4. Publication + génération `latest.json` (`scripts/updater.mjs`)
 
 Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
-### Build local (optionnel)
+Artefacts attendus sur la release :
+
+- `MultitoolV2-Installer.msi` + `.msi.sig`
+- `MultitoolV2-Portable.exe`
+- `latest.json` (version nu `X.Y.Z`, URLs `…/releases/download/vX.Y.Z/…`)
+
+## Build local
 
 ```powershell
-.\scripts\build-release.ps1 -Type public
+.\scripts\build-release.ps1 -Type standard
 ```
-
-## Auto-update Tauri (utilisateurs MSI GitHub)
-
-- Endpoint : `releases/latest/download/latest.json`
-- Version **portable** : pas d'updater Tauri intégré (téléchargement manuel sur GitHub)
 
 ## Dépannage
 
-### Versions désynchronisées
+**Versions désynchronisées** — aligner les deux JSON puis recommitter.
 
-```bash
-node scripts/check-version.js
-```
+**Affichage `vv2.X.X`** — retirer le `v` des fichiers de version.
 
-Aligner `package.json` et `tauri.conf.json`, ou refaire un commit avec les githooks.
-
-### Affichage `vv2.X.X`
-
-Les fichiers de version ne doivent pas contenir de préfixe `v`. Corriger les JSON puis recommitter.
-
-### Tag manquant ou incorrect
+**Tag incorrect**
 
 ```bash
 git tag -d vX.Y.Z
@@ -127,39 +98,18 @@ git tag vX.Y.Z
 git push origin vX.Y.Z --force
 ```
 
-### Release sans latest.json
-
-Vérifier que le job `publish-release` a réussi et que `MultitoolV2-Installer.msi.sig` est présent sur la release.
-
-### Mise à jour échoue au téléchargement (prod)
-
-1. Télécharger le manifeste :
-
-   ```bash
-   curl -sL "https://github.com/Onivoid/MultitoolV2/releases/latest/download/latest.json"
-   ```
-
-2. Si une URL contient `/untagged-`, le manifeste a été généré sur une release encore en brouillon. Regénérer après publication (voir ci-dessous).
-
-3. Tester l’URL MSI du JSON :
-
-   ```bash
-   curl -sI "https://github.com/Onivoid/MultitoolV2/releases/download/vX.Y.Z/MultitoolV2-Installer.msi"
-   ```
-
-   Attendu : `HTTP/2 200` ou `302` suivi de `200`.
-
-### Regénérer latest.json sur une release déjà publiée (one-shot)
-
-Utile pour corriger une release existante (ex. `v2.8.1`) sans rebuild complet :
+**Regénérer `latest.json` sans rebuild**
 
 ```bash
-# Token avec scope repo (ou GITHUB_TOKEN en CI)
-export GITHUB_TOKEN=ghp_...
+export GITHUB_TOKEN=…
 export GITHUB_REPOSITORY=Onivoid/MultitoolV2
-
-node scripts/updater.mjs v2.8.1
-node scripts/validate-latest-json.mjs v2.8.1
+node scripts/updater.mjs vX.Y.Z
+node scripts/validate-latest-json.mjs vX.Y.Z
 ```
 
-La release doit déjà être **publiée** (`draft: false`) et contenir `MultitoolV2-Installer.msi` + `.msi.sig`.
+**Cache patchnotes obsolète en dev** — supprimer le cache commits local après changements Rust sur `patchnote.rs`.
+
+## Auto-update
+
+- MSI GitHub : updater Tauri via `latest.json`
+- Portable : téléchargement manuel depuis GitHub

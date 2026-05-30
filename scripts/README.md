@@ -2,59 +2,62 @@
 
 ## Versioning
 
-### Githooks (recommandé)
+### Githooks
 
 ```powershell
 .\scripts\setup-githooks.ps1
 ```
 
-```bash
-./scripts/setup-hooks.sh
-```
-
 Activés aussi via `pnpm install` (`prepare`).
 
-À chaque `git commit` : bump interactif de `package.json` et `tauri.conf.json` + tag `vX.Y.Z` en `post-commit`.
+**Sur `master` uniquement** : à chaque `git commit`, bump interactif de `package.json` / `tauri.conf.json` + tag `vX.Y.Z` en `post-commit`.
+
+Sur les autres branches : pas de prompt version.
 
 Commit sans bump : `git commit --no-verify`
 
 ### check-version.js
 
-Vérifie la cohérence entre `package.json` et `tauri.conf.json`, plus l’état Git.
-
 ```bash
 node scripts/check-version.js
-node scripts/check-version.js --help
 ```
+
+Vérifie la cohérence `package.json` ↔ `tauri.conf.json`. Exécuté en CI sur les PR vers `master`.
 
 ## Release / CI
 
 ### build-release.ps1
 
 ```powershell
+$env:TAURI_ENV_DISTRIBUTION = "github"
 .\scripts\build-release.ps1 standard
 .\scripts\build-release.ps1 portable
-.\scripts\build-release.ps1 public
 ```
+
+Artefacts dans `builds/` (+ `checksums.txt`).
+
+### Notes de release
+
+Le workflow release lit le **message du commit tagué** (`git log -1`) et y ajoute les checksums. Rédigez ce message lors du commit release sur `master` (voir [VERSIONING.md](../VERSIONING.md)).
 
 ### updater.mjs
 
-Génère `latest.json` pour tauri-plugin-updater. La version est lue depuis `package.json`. Les URLs des binaires sont **canoniques** (`…/releases/download/vX.Y.Z/fichier`) pour éviter les liens `untagged-…` des releases brouillon.
+Génère `latest.json` pour tauri-plugin-updater (lit `release.body` sur GitHub).
 
 ```bash
-GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.8.1
+GITHUB_TOKEN=... GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/updater.mjs v2.8.2
 ```
 
 ### validate-latest-json.mjs
 
-Vérifie qu’aucune URL `untagged-` n’est présente et que les binaires répondent en HTTP 200.
+Vérifie les URLs du manifeste (pas de `untagged-`, binaires accessibles).
 
 ```bash
-GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/validate-latest-json.mjs v2.8.1
+GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/validate-latest-json.mjs v2.8.2
 ```
 
-## Flux release GitHub
+## Flux release
 
-1. Githooks : commit + tag `vX.Y.Z`
+1. Sur `master` : commit avec message release → bump + tag `vX.Y.Z`
 2. `git push` + `git push origin vX.Y.Z`
-3. CI : draft → build → **publish** → `latest.json` → validation
+3. CI : draft → build → notes depuis le commit → publish → `latest.json`

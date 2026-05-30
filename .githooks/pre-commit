@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+if [ "$branch" != "master" ]; then
+    exit 0
+fi
+
 PACKAGE_JSON="package.json"
 TAURI_CONF="src-tauri/tauri.conf.json"
 

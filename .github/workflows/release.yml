@@ -1,161 +1,167 @@
 name: Release Windows Builds
 
 on:
-    push:
-        tags:
-            - "v*"
+  push:
+    tags:
+      - "v*"
 
 permissions:
-    contents: write
+  contents: write
 
 env:
-    CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: always
 
 jobs:
-    create-release:
-        name: Create Release
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Create draft release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ github.ref_name }}
-                  name: "Release ${{ github.ref_name }}"
-                  body: "See RELEASE_NOTES.md in build artifacts."
-                  draft: true
-                  prerelease: false
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          body: "Build en cours…"
+          draft: true
+          prerelease: false
 
-    build-windows:
-        name: Build Windows Release
-        needs: create-release
-        runs-on: windows-latest
+  build-windows:
+    name: Build Windows Release
+    needs: create-release
+    runs-on: windows-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 10.15.1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
 
-            - name: Setup Node.js with pnpm cache
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22"
-                  cache: "pnpm"
+      - name: Setup Node.js with pnpm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
 
-            - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                  toolchain: stable
-                  targets: x86_64-pc-windows-msvc
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
 
-            - name: Rust cache
-              uses: swatinem/rust-cache@v2
-              with:
-                  workspaces: "./src-tauri -> target"
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
 
-            - name: Install frontend dependencies
-              run: pnpm install
+      - name: Install frontend dependencies
+        run: pnpm install
 
-            - name: Setup .NET SDK and WiX
-              run: |
-                  Write-Host "Installing .NET SDK and WiX..." -ForegroundColor Cyan
-                  dotnet tool install --global wix --version 5.0.2
-                  $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
-                  echo "$dotnetTools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-                  $env:PATH = "$dotnetTools;$env:PATH"
-                  wix --version
-                  Write-Host "WiX installed successfully" -ForegroundColor Green
+      - name: Setup .NET SDK and WiX
+        run: |
+          Write-Host "Installing .NET SDK and WiX..." -ForegroundColor Cyan
+          dotnet tool install --global wix --version 5.0.2
+          $dotnetTools = Join-Path $env:USERPROFILE ".dotnet\tools"
+          echo "$dotnetTools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $env:PATH = "$dotnetTools;$env:PATH"
+          wix --version
+          Write-Host "WiX installed successfully" -ForegroundColor Green
 
-            - name: Build Standard Release (GitHub Distribution)
-              env:
-                  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-              run: |
-                  $env:TAURI_ENV_DISTRIBUTION = "github"
-                  $env:TAURI_ENV_PORTABLE = $null
-                  .\scripts\build-release.ps1 standard
+      - name: Build Standard Release (GitHub Distribution)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $env:TAURI_ENV_DISTRIBUTION = "github"
+          $env:TAURI_ENV_PORTABLE = $null
+          .\scripts\build-release.ps1 standard
 
-            - name: Build Portable Release
-              run: |
-                  $env:TAURI_ENV_PORTABLE = "true"
-                  $env:TAURI_ENV_DISTRIBUTION = "github"
-                  .\scripts\build-release.ps1 portable
+      - name: Build Portable Release
+        run: |
+          $env:TAURI_ENV_PORTABLE = "true"
+          $env:TAURI_ENV_DISTRIBUTION = "github"
+          .\scripts\build-release.ps1 portable
 
-            - name: Verify Build Artifacts
-              run: |
-                  if (-not (Test-Path "builds/portable/MultitoolV2-Portable.exe")) { exit 1 }
-                  if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi")) { exit 1 }
-                  if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi.sig")) {
-                    Write-Host "MultitoolV2-Installer.msi.sig manquant (createUpdaterArtifacts + TAURI_SIGNING_PRIVATE_KEY)" -ForegroundColor Red
-                    exit 1
-                  }
-                  if (-not (Test-Path "builds/checksums.txt")) { exit 1 }
+      - name: Verify Build Artifacts
+        run: |
+          if (-not (Test-Path "builds/portable/MultitoolV2-Portable.exe")) { exit 1 }
+          if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi")) { exit 1 }
+          if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi.sig")) {
+            Write-Host "MultitoolV2-Installer.msi.sig manquant (createUpdaterArtifacts + TAURI_SIGNING_PRIVATE_KEY)" -ForegroundColor Red
+            exit 1
+          }
+          if (-not (Test-Path "builds/checksums.txt")) { exit 1 }
 
-            - name: Create Release Notes
-              run: |
-                  $version = "${{ github.ref_name }}"
-                  $notes = @"
-                  # MultitoolV2 $version - Release Windows
+      - name: Create Release Notes
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          COMMIT=$(git rev-list -n 1 "$TAG")
+          BODY=$(git log -1 --format=%B "$COMMIT")
+          if [ -z "$(echo "$BODY" | tr -d '[:space:]')" ]; then
+            BODY="Release ${TAG}"
+          fi
+          CHECKSUMS=$(cat builds/checksums.txt)
+          {
+            echo "$BODY"
+            echo ""
+            echo "## Checksums SHA256"
+            echo ""
+            echo '```'
+            echo "$CHECKSUMS"
+            echo '```'
+            echo ""
+            echo "---"
+            echo "Portable : \`MultitoolV2-Portable.exe\` — MSI : \`MultitoolV2-Installer.msi\` (mises à jour auto)"
+          } > RELEASE_NOTES.md
 
-                  ## Options d'Installation
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            builds/portable/MultitoolV2-Portable.exe
+            builds/installer/MultitoolV2-Installer.msi
+            builds/installer/MultitoolV2-Installer.msi.sig
+            builds/checksums.txt
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-                  1. **Version Portable** : MultitoolV2-Portable.exe
-                  2. **Installer Standard (MSI)** : mises a jour automatiques via tauri-plugin-updater
+  publish-release:
+    name: Publish Release
+    needs: build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-                  ## Checksums SHA256
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-                  ````
-                  $(Get-Content builds/checksums.txt -Raw)
-                  ````
-                  "@
-                  $notes | Out-File -FilePath "RELEASE_NOTES.md" -Encoding utf8
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
 
-            - name: Upload release assets
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ github.ref_name }}
-                  body_path: RELEASE_NOTES.md
-                  files: |
-                      builds/portable/MultitoolV2-Portable.exe
-                      builds/installer/MultitoolV2-Installer.msi
-                      builds/installer/MultitoolV2-Installer.msi.sig
-                      builds/checksums.txt
-                  draft: true
-                  prerelease: false
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate and upload latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/updater.mjs ${{ github.ref_name }}
 
-    publish-release:
-        name: Publish Release
-        needs: build-windows
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22"
-
-            - name: Publish release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ github.ref_name }}
-                  draft: false
-                  prerelease: false
-
-            - name: Generate and upload latest.json
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  GITHUB_REPOSITORY: ${{ github.repository }}
-              run: node scripts/updater.mjs ${{ github.ref_name }}
-
-            - name: Validate latest.json
-              env:
-                  GITHUB_REPOSITORY: ${{ github.repository }}
-              run: node scripts/validate-latest-json.mjs ${{ github.ref_name }}
+      - name: Validate latest.json
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/validate-latest-json.mjs ${{ github.ref_name }}
