@@ -1,6 +1,6 @@
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
-import type { ThemePreferences } from "@/types/theme-types";
+import { DEFAULT_THEME_PREFERENCES, type ThemePreferences } from "@/types/theme-types";
 
 export interface ThemeSelectedPayload {
   primary_color: string;
@@ -35,17 +35,23 @@ export function themePreferencesToPayload(
 export function payloadToThemePreferences(
   payload: ThemeSelectedPayload,
 ): ThemePreferences {
+  const defaults = DEFAULT_THEME_PREFERENCES;
   return {
-    primaryColor: payload.primary_color,
-    synthesisColor2: payload.synthesis_color2 ?? "#3b0764",
-    synthesisSpeed: payload.synthesis_speed ?? 0.5,
-    synthesisGlowIntensity: payload.synthesis_glow_intensity ?? 0.42,
-    synthesisDistortion: payload.synthesis_distortion ?? 0.65,
-    synthesisComplexity: payload.synthesis_complexity ?? 6,
-    synthesisFlowFrequency: payload.synthesis_flow_frequency ?? 3.2,
-    synthesisScale: payload.synthesis_scale ?? 1,
-    overlayOpacity: payload.overlay_opacity ?? 0.2,
-    synthesisContrast: payload.synthesis_contrast ?? 1.1,
+    primaryColor: payload.primary_color ?? defaults.primaryColor,
+    synthesisColor2: payload.synthesis_color2 ?? defaults.synthesisColor2,
+    synthesisSpeed: payload.synthesis_speed ?? defaults.synthesisSpeed,
+    synthesisGlowIntensity:
+      payload.synthesis_glow_intensity ?? defaults.synthesisGlowIntensity,
+    synthesisDistortion:
+      payload.synthesis_distortion ?? defaults.synthesisDistortion,
+    synthesisComplexity:
+      payload.synthesis_complexity ?? defaults.synthesisComplexity,
+    synthesisFlowFrequency:
+      payload.synthesis_flow_frequency ?? defaults.synthesisFlowFrequency,
+    synthesisScale: payload.synthesis_scale ?? defaults.synthesisScale,
+    overlayOpacity: payload.overlay_opacity ?? defaults.overlayOpacity,
+    synthesisContrast:
+      payload.synthesis_contrast ?? defaults.synthesisContrast,
   };
 }
 

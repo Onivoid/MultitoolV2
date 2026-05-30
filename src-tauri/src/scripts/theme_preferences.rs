@@ -19,39 +19,39 @@ fn get_theme_config_file_path(path: &PathResolver<impl Runtime>) -> Result<PathB
 }
 
 fn default_synthesis_color2() -> String {
-    "#3b0764".to_string()
+    "#633189".to_string()
 }
 
 fn default_synthesis_speed() -> f32 {
-    0.5
+    0.35
 }
 
 fn default_synthesis_glow_intensity() -> f32 {
-    0.42
+    0.4
 }
 
 fn default_synthesis_distortion() -> f32 {
-    0.65
+    0.7
 }
 
 fn default_synthesis_complexity() -> f32 {
-    6.0
+    7.0
 }
 
 fn default_synthesis_flow_frequency() -> f32 {
-    3.2
+    5.9
 }
 
 fn default_synthesis_scale() -> f32 {
-    1.0
+    1.2
 }
 
 fn default_synthesis_contrast() -> f32 {
-    1.1
+    1.25
 }
 
 fn default_overlay_opacity() -> f32 {
-    0.2
+    0.48
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

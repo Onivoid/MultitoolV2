@@ -20,6 +20,7 @@ interface ColorPickerProps {
   onChange?: (color: string) => void;
   label?: string;
   compact?: boolean;
+  className?: string;
 }
 
 export function ColorPicker({
@@ -27,6 +28,7 @@ export function ColorPicker({
   onChange,
   label = "Choisir une couleur",
   compact = false,
+  className,
 }: ColorPickerProps) {
   const storeColor = useThemeStore((state) => state.primaryColor);
   const setPrimaryColor = useThemeStore((state) => state.setPrimaryColor);
@@ -47,6 +49,7 @@ export function ColorPicker({
       onColorChange={handleColorChange}
       label={label}
       compact={compact}
+      className={className}
     />
   );
 }
@@ -91,8 +94,8 @@ export function GradientPicker({
         <Button
           variant="outline"
           className={cn(
-            "justify-start text-left font-normal",
-            compact ? "w-[160px]" : "w-[220px]",
+            "w-[220px] justify-start text-left font-normal",
+            compact && "w-[160px]",
             !primaryColor && "text-muted-foreground",
             className,
           )}
