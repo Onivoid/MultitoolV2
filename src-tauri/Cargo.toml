@@ -2,7 +2,8 @@
 name = "sandbox"
 version = "2.7.6"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Logan Wilquin"]
+license = "AGPL-3.0-or-later"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

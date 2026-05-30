@@ -1,6 +1,7 @@
 {
     "name": "multitoolv2",
     "private": true,
+    "license": "AGPL-3.0-or-later",
     "version": "2.8.2",
     "packageManager": "pnpm@10.15.1",
     "type": "module",
