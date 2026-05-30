@@ -1,474 +1,79 @@
-# Instructions de Développement - MultitoolV2
+# Instructions de développement — MultitoolV2
 
-## 📋 Vue d'ensemble du projet
+Référence interne pour l’architecture V3 (feature-based).
 
-**MultitoolV2** est une application desktop multiplateforme construite avec **Tauri v2** (Rust backend) et **React + TypeScript** (frontend). L'application permet de gérer les traductions du jeu Star Citizen avec des fonctionnalités avancées de gestion de cache, de personnages et de mises à jour automatiques.
+## Stack
 
-## 🏗️ Architecture
+- **Backend** : Tauri 2, Rust, Tokio, reqwest, serde
+- **Frontend** : React 18, TypeScript, Vite, React Router, Zustand, Tailwind, shadcn/ui
 
-### Stack Technique
-
-#### Backend (Rust - Tauri)
-- **Framework**: Tauri 2.x
-- **Langage**: Rust (Edition 2021)
-- **Async Runtime**: Tokio (full features)
-- **HTTP Client**: reqwest (avec support JSON et blocking)
-- **Sérialisation**: serde + serde_json
-- **UI Effects**: window-vibrancy (effet acrylic sur Windows)
-- **System Tray**: tray-icon (gestion de l'icône système)
-- **Auto-launch**: auto-launch (démarrage automatique)
-- **Image Processing**: image (pour les icônes)
-
-#### Frontend (React + TypeScript)
-- **Framework**: React 18.3+ avec TypeScript 5.7+
-- **Build Tool**: Vite 5.4+
-- **Routing**: React Router DOM 7.0+
-- **State Management**: Zustand 5.0+
-- **UI Components**: 
-  - Radix UI (composants accessibles)
-  - shadcn/ui (composants stylisés)
-  - Lucide React (icônes)
-  - Framer Motion (animations)
-- **Styling**: TailwindCSS 3.4+ avec tailwindcss-animate
-- **Tauri Plugins**: 
-  - @tauri-apps/api
-  - @tauri-apps/plugin-dialog
-  - @tauri-apps/plugin-shell
-  - @tauri-apps/plugin-updater
-
-## 📁 Structure du Projet
+## Structure
 
 ```
-MultitoolV2/
-├── src/                          # Code source Frontend (React)
-│   ├── app/                      # Routes (AppRouter)
-│   ├── features/                 # Domaines métier (Page + hook + service + lib)
-│   ├── shared/                   # API Tauri, hooks/composants transverses
-│   ├── components/               # UI shadcn + shell (sidebar, layout)
-│   ├── stores/                   # Stores Zustand
-│   ├── hooks/                    # Hooks infra (toast, mobile)
-│   ├── types/                    # Types TypeScript
-│   ├── utils/                    # Utilitaires transverses
-│   └── assets/                   # Assets statiques
-│
-├── src-tauri/                    # Code source Backend (Rust)
-│   ├── src/
-│   │   ├── lib.rs               # Point d'entrée principal
-│   │   ├── scripts/             # Modules fonctionnels
-│   │   │   ├── mod.rs           # Déclaration des modules
-│   │   │   ├── translation_functions.rs      # Gestion des traductions
-│   │   │   ├── translation_preferences.rs    # Préférences de traduction
-│   │   │   ├── translations_links.rs         # Liens de traduction
-│   │   │   ├── cache_functions.rs            # Gestion du cache
-│   │   │   ├── local_characters_functions.rs # Gestion des personnages
-│   │   │   ├── presets_list_functions.rs     # Gestion des presets
-│   │   │   ├── gamepath.rs                   # Détection des chemins du jeu
-│   │   │   ├── patchnote.rs                  # Récupération des patchnotes
-│   │   │   ├── theme_preferences.rs          # Préférences de thème
-│   │   │   ├── background_service.rs         # Service de tâche de fond
-│   │   │   ├── system_tray.rs                # Gestion du system tray
-│   │   │   └── startup_manager.rs            # Gestion du démarrage auto
-│   │   └── main.rs              # Entry point (minimal)
-│   ├── Cargo.toml               # Dépendances Rust
-│   ├── tauri.conf.json          # Configuration Tauri
-│   └── icons/                   # Icônes de l'application
-│
-├── public/                       # Assets publics
-├── package.json                  # Dépendances Node.js
-├── tsconfig.json                 # Configuration TypeScript
-├── tailwind.config.js            # Configuration TailwindCSS
-└── vite.config.ts                # Configuration Vite
-
+src/
+  app/              AppRouter, routes
+  features/         Un dossier par domaine (Page, hook, service, lib, components)
+  shared/           tauriClient, composants transverses
+  components/       UI shadcn, layout (components/custom/), navigation
+  stores/           Zustand
+src-tauri/src/scripts/   Modules Rust + #[command]
 ```
 
-## 🎯 Conventions de Code
+## Conventions frontend
 
-### Rust (Backend)
+- **Service** : seul endroit des `invoke()` — `features/<domaine>/*.service.ts`
+- **Hook** : état, effets, toasts — `use*.ts`
+- **Page** : rendu JSX uniquement — `*Page.tsx`
+- Pas d’`invoke()` dans les `.tsx`
 
-#### Organisation des Modules
-- **Un fichier par fonctionnalité** dans `src/scripts/`
-- Chaque module doit être déclaré dans `src/scripts/mod.rs`
-- Utiliser `#[command]` pour exposer les fonctions au frontend
-- Préfixer les fonctions par leur domaine (ex: `get_`, `save_`, `load_`, `is_`)
+Exemple :
 
-#### Style de Code
-```rust
-// ✅ BON: Fonction command bien structurée
-#[command]
-pub fn save_theme_selected(app: tauri::AppHandle, theme: String) -> Result<(), String> {
-    let config_path = get_config_file_path(app.path())?;
-    fs::write(config_path, theme).map_err(|e| e.to_string())
-}
-
-// ✅ BON: Gestion d'erreurs avec Result
-pub fn get_config_file_path(path: &PathResolver<impl Runtime>) -> Result<PathBuf, String> {
-    let config_dir = path.app_config_dir()
-        .map_err(|_| "Impossible d'obtenir le répertoire de configuration".to_string())?;
-    
-    if !config_dir.exists() {
-        fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
-    }
-    
-    Ok(config_dir.join("config.json"))
-}
-
-// ✅ BON: Utilisation de serde pour la sérialisation
-#[derive(Serialize, Deserialize, Clone)]
-pub struct TranslationSetting {
-    pub link: Option<String>,
-    #[serde(rename = "settingsEN")]
-    pub settings_en: bool,
-}
-```
-
-#### Gestion des Erreurs
-- Toujours retourner `Result<T, String>` pour les commands
-- Utiliser `.map_err(|e| e.to_string())` pour convertir les erreurs
-- Messages d'erreur en français et descriptifs
-
-#### Async/Await
-- Utiliser `tokio` pour les opérations asynchrones
-- Préférer `tokio::spawn` pour les tâches de fond
-- Utiliser `reqwest::blocking` pour les requêtes HTTP simples dans les commands
-
-### TypeScript/React (Frontend)
-
-#### Organisation des Composants
 ```typescript
-// ✅ BON: Composant fonctionnel avec TypeScript
-interface ButtonProps {
-  label: string;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary';
-}
-
-export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary' }) => {
-  return (
-    <button 
-      onClick={onClick}
-      className={cn(
-        "px-4 py-2 rounded-lg",
-        variant === 'primary' ? 'bg-blue-500' : 'bg-gray-500'
-      )}
-    >
-      {label}
-    </button>
-  );
+// features/cache/cache.service.ts
+import { invokeCommand } from "@/shared/api/tauriClient";
+export const cacheService = {
+  clear: () => invokeCommand<boolean>("clear_cache"),
 };
 ```
 
-#### Appels Tauri Commands
-```typescript
-// ✅ BON: Service domaine (seul endroit des invoke)
-// features/theme/theme.service.ts
-import { invokeCommand } from '@/shared/api/tauriClient';
-import { TAURI_COMMANDS } from '@/shared/api/commands';
+## Conventions Rust
 
-export const themeService = {
-  save: (data: { primary_color: string }) =>
-    invokeCommand<void>(TAURI_COMMANDS.saveThemeSelected, { data }),
-};
+- Un module par domaine dans `src-tauri/src/scripts/`
+- Déclarer dans `mod.rs`, enregistrer dans `lib.rs` via `generate_handler!`
+- Commands : `Result<T, String>`, messages d’erreur en français
 
-// ✅ BON: Hook = orchestration + toasts ; Page TSX = rendu uniquement
-// features/cache/useCache.ts + features/cache/CachePage.tsx
-```
+## Ajouter une feature
 
-**Règles:** pas de `invoke()` dans les fichiers `.tsx`. Un service par domaine dans `features/*/`.
+1. Module Rust + command dans `src-tauri/src/scripts/`
+2. Entrée dans `TAURI_COMMANDS` + service frontend
+3. Hook + Page dans `src/features/<nom>/`
+4. Route dans `src/app/`
 
-#### State Management (Zustand)
-```typescript
-// ✅ BON: Store Zustand typé
-interface ThemeStore {
-  theme: string;
-  setTheme: (theme: string) => void;
-  loadTheme: () => Promise<void>;
-}
+## Commandes
 
-export const useThemeStore = create<ThemeStore>((set) => ({
-  theme: 'dark',
-  setTheme: (theme) => set({ theme }),
-  loadTheme: async () => {
-    const theme = await themeService.load();
-    set({ theme: theme.primary_color });
-  },
-}));
-```
-
-## 🔧 Workflow de Développement
-
-### 1. Ajout d'une Nouvelle Fonctionnalité Backend
-
-1. **Créer un nouveau module** dans `src-tauri/src/scripts/`
-```rust
-// src-tauri/src/scripts/ma_nouvelle_feature.rs
-use tauri::command;
-
-#[command]
-pub fn ma_fonction(param: String) -> Result<String, String> {
-    // Implémentation
-    Ok(format!("Résultat: {}", param))
-}
-```
-
-2. **Déclarer le module** dans `src-tauri/src/scripts/mod.rs`
-```rust
-pub mod ma_nouvelle_feature;
-```
-
-3. **Importer et enregistrer** dans `src-tauri/src/lib.rs`
-```rust
-use scripts::ma_nouvelle_feature::ma_fonction;
-
-// Dans .invoke_handler()
-.invoke_handler(tauri::generate_handler![
-    // ... autres commands
-    ma_fonction,
-])
-```
-
-### 2. Ajout d'une Nouvelle Page Frontend
-
-1. **Créer la page** dans `src/pages/`
-```typescript
-// src/pages/MaNouvellePage.tsx
-export const MaNouvellePage = () => {
-  return (
-    <div className="p-6">
-      <h1>Ma Nouvelle Page</h1>
-    </div>
-  );
-};
-```
-
-2. **Ajouter la route** dans `src/App.tsx`
-```typescript
-<Route path="/ma-page" element={<MaNouvellePage />} />
-```
-
-### 3. Communication Frontend ↔ Backend
-
-```typescript
-// Frontend: Appel d'une command
-import { invoke } from '@tauri-apps/api/core';
-
-const result = await invoke<string>('ma_fonction', { param: 'valeur' });
-```
-
-```rust
-// Backend: Définition de la command
-#[command]
-pub fn ma_fonction(param: String) -> Result<String, String> {
-    Ok(format!("Résultat: {}", param))
-}
-```
-
-## 📦 Gestion des Dépendances
-
-### Ajouter une Dépendance Rust
 ```bash
-cd src-tauri
-cargo add nom_de_la_crate
-```
-
-### Ajouter une Dépendance Node
-```bash
-pnpm add nom_du_package
-# ou pour dev
-pnpm add -D nom_du_package
-```
-
-## 🚀 Commandes Utiles
-
-### Développement
-```bash
-# Lancer en mode dev (hot-reload)
-pnpm tauri dev
-
-# Build frontend uniquement
-pnpm build
-
-# Linter TypeScript
-pnpm run lint
-```
-
-### Build Production
-```bash
-# Build complet (frontend + backend)
-pnpm tauri build
-
-# Build version portable
-pnpm tauri build -- --config src-tauri/tauri.portable.conf.json
-```
-
-### Tests
-```bash
-# Tests Rust
+pnpm tauri dev          # dev
+pnpm typecheck          # tsc --noEmit
+pnpm lint               # eslint
+pnpm format:check       # prettier (CI)
+pnpm lint:rust          # fmt + clippy + test
+pnpm tauri build        # build prod
 cd src-tauri && cargo test
-
-# Tests Frontend
-pnpm test
 ```
 
-## 🎨 Styling avec TailwindCSS
+Pas de suite de tests frontend configurée pour l’instant.
 
-### Classes Utilitaires Communes
-```typescript
-// Layout
-className="flex items-center justify-between gap-4 p-6"
+## Versioning et release
 
-// Responsive
-className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+- Branche `master` uniquement pour le bump interactif (hooks)
+- Commit release avec message multiligne → tag `vX.Y.Z` → notes GitHub = message du commit
+- Voir [VERSIONING.md](../VERSIONING.md)
 
-// Dark mode
-className="bg-white dark:bg-gray-900 text-black dark:text-white"
+## Checklist PR
 
-// Animations
-className="transition-all duration-300 hover:scale-105"
-```
+- [ ] `pnpm typecheck` + `pnpm lint` + `pnpm format:check`
+- [ ] `pnpm lint:rust` si Rust touché
+- [ ] Test manuel Windows (`pnpm tauri dev`)
+- [ ] Textes UI en français
 
-### Utilisation de `cn()` (class-variance-authority)
-```typescript
-import { cn } from '@/lib/utils';
-
-className={cn(
-  "base-classes",
-  condition && "conditional-classes",
-  variant === 'primary' && "primary-classes"
-)}
-```
-
-## 🔐 Sécurité
-
-### Bonnes Pratiques
-- ✅ Toujours valider les entrées utilisateur côté backend
-- ✅ Utiliser `Result<T, String>` pour la gestion d'erreurs
-- ✅ Ne jamais exposer de chemins système sensibles
-- ✅ Vérifier les permissions avant les opérations fichiers
-- ✅ Utiliser `#[cfg(target_os = "windows")]` pour le code spécifique Windows
-
-### Exemple de Validation
-```rust
-#[command]
-pub fn delete_file(path: String) -> Result<(), String> {
-    // Validation du chemin
-    let path = Path::new(&path);
-    if !path.exists() {
-        return Err("Le fichier n'existe pas".to_string());
-    }
-    
-    // Vérification de sécurité
-    if path.to_str().unwrap().contains("..") {
-        return Err("Chemin invalide".to_string());
-    }
-    
-    fs::remove_file(path).map_err(|e| e.to_string())
-}
-```
-
-## 📝 Documentation
-
-### Documenter une Command Rust
-```rust
-/// Sauvegarde le thème sélectionné par l'utilisateur
-///
-/// # Arguments
-/// * `app` - Handle de l'application Tauri
-/// * `theme` - Nom du thème à sauvegarder
-///
-/// # Returns
-/// * `Ok(())` si la sauvegarde réussit
-/// * `Err(String)` avec un message d'erreur en cas d'échec
-#[command]
-pub fn save_theme_selected(app: tauri::AppHandle, theme: String) -> Result<(), String> {
-    // ...
-}
-```
-
-### Documenter un Composant React
-```typescript
-/**
- * Bouton personnalisé avec variantes
- * 
- * @param label - Texte du bouton
- * @param onClick - Fonction appelée au clic
- * @param variant - Style du bouton ('primary' | 'secondary')
- */
-export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary' }) => {
-  // ...
-};
-```
-
-## 🐛 Debugging
-
-### Logs Rust
-```rust
-println!("Debug: {}", variable);
-eprintln!("Error: {}", error);
-```
-
-### Logs Frontend
-```typescript
-console.log('Debug:', variable);
-console.error('Error:', error);
-```
-
-### DevTools
-- **Frontend**: F12 dans l'application
-- **Backend**: Les logs Rust apparaissent dans le terminal
-
-## 🔄 Gestion des Mises à Jour
-
-L'application utilise `tauri-plugin-updater` pour les mises à jour automatiques.
-
-### Configuration
-- Fichier de configuration: `src-tauri/tauri.conf.json`
-- Endpoint de mise à jour défini dans la configuration
-
-## 📚 Ressources
-
-### Documentation Officielle
-- [Tauri v2 Docs](https://v2.tauri.app/)
-- [React Docs](https://react.dev/)
-- [TailwindCSS Docs](https://tailwindcss.com/)
-- [Zustand Docs](https://zustand-demo.pmnd.rs/)
-
-### Crates Rust Importantes
-- [tokio](https://tokio.rs/) - Async runtime
-- [serde](https://serde.rs/) - Sérialisation
-- [reqwest](https://docs.rs/reqwest/) - HTTP client
-- [tray-icon](https://docs.rs/tray-icon/) - System tray
-- [auto-launch](https://docs.rs/auto-launch/) - Auto-startup
-
-## 🎯 Checklist pour une PR
-
-- [ ] Le code compile sans warnings
-- [ ] Les tests passent
-- [ ] Le code suit les conventions établies
-- [ ] La documentation est à jour
-- [ ] Les erreurs sont gérées correctement
-- [ ] Le code est testé sur Windows
-- [ ] Les messages utilisateur sont en français
-- [ ] Pas de `console.log` ou `println!` de debug
-
-## 💡 Tips & Astuces
-
-### Performance
-- Utiliser `useMemo` et `useCallback` pour optimiser React
-- Préférer `tokio::spawn` pour les tâches longues côté Rust
-- Lazy load les composants lourds avec `React.lazy()`
-
-### UX
-- Toujours afficher un feedback utilisateur (toast, loading, etc.)
-- Gérer les états de chargement
-- Prévoir les cas d'erreur avec des messages clairs
-
-### Maintenance
-- Commenter le code complexe
-- Utiliser des noms de variables descriptifs
-- Garder les fonctions courtes et focalisées
-- Éviter la duplication de code
-
----
-
-**Dernière mise à jour**: 2025-01-21
-**Version**: 2.1.12
+Dernière mise à jour : 2026-05-30
