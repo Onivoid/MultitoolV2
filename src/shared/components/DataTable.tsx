@@ -33,7 +33,7 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="rounded-md border max-h-[calc(100vh-100px)] overflow-y-scroll">
+    <div className="min-h-0 flex-1 overflow-y-auto rounded-md border pb-20">
       <Table className="bg-background/50 text-foreground hover:bg-background/60 duration-150 ease-in-out">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

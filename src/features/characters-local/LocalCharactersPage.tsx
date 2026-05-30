@@ -3,6 +3,7 @@ import { DataTable } from "@/shared/components/DataTable";
 import FetchingOverlay from "@/shared/components/FetchingOverlay";
 import PageHeader from "@/shared/components/PageHeader";
 import PageMotion from "@/shared/components/PageMotion";
+import { PAGE_CENTER } from "@/shared/components/pageStyles";
 import { buildLocalCharactersColumns } from "@/features/characters-local/components/localCharactersColumns";
 import { useLocalCharacters } from "@/features/characters-local/useLocalCharacters";
 import { useLocalCharactersActions } from "@/features/characters-local/useLocalCharactersActions";
@@ -20,9 +21,11 @@ export default function LocalCharactersPage() {
 
   if (pathsLoading || !gamePaths) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p>Recherche des installations de Star Citizen...</p>
-      </div>
+      <PageMotion>
+        <div className={PAGE_CENTER}>
+          <p>Recherche des installations de Star Citizen...</p>
+        </div>
+      </PageMotion>
     );
   }
 
@@ -31,7 +34,7 @@ export default function LocalCharactersPage() {
   }
 
   return (
-    <PageMotion className="flex flex-col w-full max-h-[calc(100vh-50px)]">
+    <PageMotion className="gap-4 px-4 pt-2">
       <PageHeader
         icon={<IconUsers className="h-6 w-6" />}
         title="Gestionnaire de presets de Personnages"

@@ -21,8 +21,8 @@ export default function CachePage() {
   };
 
   return (
-    <PageMotion className="flex flex-col w-full max-h-[calc(100vh-50px)]">
-      <div className="flex items-center justify-between">
+    <PageMotion className="gap-4 px-4 pt-2">
+      <div className="flex shrink-0 items-center justify-between">
         <PageHeader
           icon={<BrushCleaning className="h-6 w-6" />}
           title="Gestionnaire du cache"

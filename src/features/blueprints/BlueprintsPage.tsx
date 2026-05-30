@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/shared/components/PageHeader";
 import PageMotion from "@/shared/components/PageMotion";
+import { PAGE_CENTER, PAGE_SCROLL } from "@/shared/components/pageStyles";
 import BlueprintListToolbar from "@/components/blueprints/BlueprintListToolbar";
 import BlueprintRow from "@/components/blueprints/BlueprintRow";
 import { useBlueprints } from "@/features/blueprints/useBlueprints";
@@ -19,8 +20,8 @@ export default function BlueprintsPage() {
   const watching = vm.status?.watching ?? false;
 
   return (
-    <PageMotion className="flex max-h-[calc(100vh-50px)] w-full flex-1 flex-col">
-      <div className="flex shrink-0 flex-col gap-4 pr-3">
+    <PageMotion className="px-4 pt-2">
+      <div className="flex shrink-0 flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <PageHeader
             icon={<ScrollText className="h-6 w-6" />}
@@ -93,11 +94,11 @@ export default function BlueprintsPage() {
       </div>
 
       {vm.isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
+        <div className={PAGE_CENTER}>
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : vm.blueprints.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center text-muted-foreground">
+        <div className={`${PAGE_CENTER} gap-2 px-4 text-center text-muted-foreground`}>
           <p>Aucun blueprint enregistré pour le moment.</p>
           <p className="text-sm">
             Démarrez la surveillance ou importez l'historique depuis les
@@ -119,7 +120,7 @@ export default function BlueprintsPage() {
           />
 
           {vm.filteredBlueprints.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
+            <div className={`${PAGE_CENTER} gap-3 px-4 text-center text-muted-foreground`}>
               <p>
                 Aucun schéma pour «{" "}
                 <span className="font-medium text-foreground">
@@ -139,7 +140,7 @@ export default function BlueprintsPage() {
               </Button>
             </div>
           ) : (
-            <div className="app-scroll-root min-h-0 flex-1 overflow-x-hidden overflow-y-auto mt-2 pb-4 pr-3">
+            <div className={`${PAGE_SCROLL} mt-2 pb-4`}>
               <div className="flex flex-col gap-2">
                 {vm.filteredBlueprints.map((bp) => (
                   <BlueprintRow

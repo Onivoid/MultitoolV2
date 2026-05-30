@@ -1,4 +1,6 @@
 import { motion, type HTMLMotionProps } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { PAGE_ROOT } from "@/shared/components/pageStyles";
 
 const defaultTransition = {
   duration: 0.8,
@@ -16,7 +18,7 @@ export default function PageMotion({
       initial={{ opacity: 0, x: 100 }}
       animate={{ opacity: 1, x: 0 }}
       transition={defaultTransition}
-      className={className}
+      className={cn(PAGE_ROOT, className)}
       {...props}
     >
       {children}
