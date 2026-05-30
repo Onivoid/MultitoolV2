@@ -7,18 +7,11 @@ import {
 
 export const useThemeStore = create<ThemeStore>((set) => ({
   ...DEFAULT_THEME_PREFERENCES,
-  primaryColorChoices: [
-    "#6463b6",
-    "#3B3B98",
-    "#B33771",
-    "#FC427B",
-    "#FEA47B",
-  ],
+  primaryColorChoices: ["#6463b6", "#3B3B98", "#B33771", "#FC427B", "#FEA47B"],
   setPrimaryColor: (primaryColor) => set({ primaryColor }),
   setSynthesisColor2: (synthesisColor2) => set({ synthesisColor2 }),
   setThemePreference: (key, value) => set({ [key]: value }),
-  setThemePreferences: (prefs) =>
-    set((state) => ({ ...state, ...prefs })),
+  setThemePreferences: (prefs) => set((state) => ({ ...state, ...prefs })),
 }));
 
 export function getThemePreferencesFromStore(): ThemePreferences {

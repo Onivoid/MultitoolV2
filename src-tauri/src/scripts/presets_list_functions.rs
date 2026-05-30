@@ -14,10 +14,8 @@ pub async fn get_characters(
     let order = order_type.as_deref().unwrap_or("latest");
     let search_q = search.unwrap_or_default();
 
-    let mut url = format!(
-        "https://www.star-citizen-characters.com/api/heads?page={}&orderBy={}",
-        page, order
-    );
+    let mut url =
+        format!("https://www.star-citizen-characters.com/api/heads?page={page}&orderBy={order}");
     if !search_q.is_empty() {
         url.push_str(&format!("&search={}", urlencoding::encode(&search_q)));
     }

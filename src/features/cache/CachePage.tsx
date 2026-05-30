@@ -63,9 +63,7 @@ export default function CachePage() {
             </section>
           ) : (
             <section className="settings-section px-4 py-8 text-center">
-              <p className="text-sm font-medium text-foreground">
-                Cache vide
-              </p>
+              <p className="text-sm font-medium text-foreground">Cache vide</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Aucun dossier cache n&apos;a été détecté pour le moment.
               </p>

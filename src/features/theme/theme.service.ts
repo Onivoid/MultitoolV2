@@ -42,16 +42,13 @@ export function payloadToThemePreferences(
     synthesisSpeed: payload.synthesis_speed ?? defaults.synthesisSpeed,
     synthesisGlowIntensity:
       payload.synthesis_glow_intensity ?? defaults.synthesisGlowIntensity,
-    synthesisDistortion:
-      payload.synthesis_distortion ?? defaults.synthesisDistortion,
-    synthesisComplexity:
-      payload.synthesis_complexity ?? defaults.synthesisComplexity,
+    synthesisDistortion: payload.synthesis_distortion ?? defaults.synthesisDistortion,
+    synthesisComplexity: payload.synthesis_complexity ?? defaults.synthesisComplexity,
     synthesisFlowFrequency:
       payload.synthesis_flow_frequency ?? defaults.synthesisFlowFrequency,
     synthesisScale: payload.synthesis_scale ?? defaults.synthesisScale,
     overlayOpacity: payload.overlay_opacity ?? defaults.overlayOpacity,
-    synthesisContrast:
-      payload.synthesis_contrast ?? defaults.synthesisContrast,
+    synthesisContrast: payload.synthesis_contrast ?? defaults.synthesisContrast,
   };
 }
 

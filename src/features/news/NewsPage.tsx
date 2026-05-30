@@ -5,8 +5,7 @@ import { NewsCard } from "@/features/news/components/NewsCard";
 import { NewsToolbar } from "@/features/news/components/NewsToolbar";
 import { useNews } from "@/features/news/useNews";
 
-const NEWS_GRID_CLASS =
-  "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3";
+const NEWS_GRID_CLASS = "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3";
 
 export default function NewsPage() {
   const { news, isLoading, isRefreshing, refresh } = useNews();
@@ -31,8 +30,7 @@ export default function NewsPage() {
               Aucune actualité disponible
             </p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Impossible de récupérer le flux pour le moment. Réessayez avec
-              Rafraîchir.
+              Impossible de récupérer le flux pour le moment. Réessayez avec Rafraîchir.
             </p>
           </section>
         </div>

@@ -1,52 +1,52 @@
 {
-    "$schema": "https://schema.tauri.app/config/2",
-    "productName": "Multitool",
-    "version": "2.8.2",
-    "identifier": "com.multitool.app",
-    "build": {
-        "beforeDevCommand": "pnpm dev",
-        "devUrl": "http://localhost:1420",
-        "beforeBuildCommand": "pnpm build",
-        "frontendDist": "../dist"
-    },
-    "app": {
-        "windows": [
-            {
-                "title": "MultiTool V2",
-                "minWidth": 1600,
-                "minHeight": 870,
-                "center": true,
-                "decorations": false,
-                "transparent": false
-            }
-        ],
-        "security": {
-            "csp": null
-        }
-    },
-    "bundle": {
-        "active": true,
-        "targets": "all",
-        "createUpdaterArtifacts": true,
-        "icon": [
-            "icons/32x32.png",
-            "icons/128x128.png",
-            "icons/128x128@2x.png",
-            "icons/icon.icns",
-            "icons/icon.ico"
-        ]
-    },
-    "plugins": {
-        "updater": {
-            "active": true,
-            "endpoints": [
-                "https://github.com/Onivoid/MultitoolV2/releases/latest/download/latest.json"
-            ],
-            "dialog": false,
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZBNzc3MTY3QTEzOTZCNUUKUldSZWF6bWhaM0YzK3ZXR0tJNWdnSVZKOHFGTmNHcGlMTHVTRU9CRm9qVHdqSE15K05RZEdMWEEK",
-            "windows": {
-                "installMode": "passive"
-            }
-        }
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Multitool",
+  "version": "2.8.2",
+  "identifier": "com.multitool.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "MultiTool V2",
+        "minWidth": 1600,
+        "minHeight": 870,
+        "center": true,
+        "decorations": false,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
     }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Onivoid/MultitoolV2/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZBNzc3MTY3QTEzOTZCNUUKUldSZWF6bWhaM0YzK3ZXR0tJNWdnSVZKOHFGTmNHcGlMTHVTRU9CRm9qVHdqSE15K05RZEdMWEEK",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
 }

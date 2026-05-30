@@ -57,13 +57,7 @@ fn load_commit_cache(app: tauri::AppHandle) -> Result<Vec<Commit>, String> {
 fn matches_patchnote_keyword(full_message: &str) -> bool {
     let lower = full_message.to_lowercase();
     [
-        "feat :",
-        "feat(",
-        "bugfix :",
-        "fix :",
-        "fix(",
-        "release ",
-        "release:",
+        "feat :", "feat(", "bugfix :", "fix :", "fix(", "release ", "release:",
     ]
     .iter()
     .any(|keyword| lower.contains(keyword))
@@ -85,7 +79,10 @@ fn split_commit_message(full_message: &str) -> (String, Option<String>) {
 
     let mut lines = full_message.lines();
     let subject = lines.next().unwrap_or("").trim().to_string();
-    let body: Vec<&str> = lines.map(str::trim).filter(|line| !line.is_empty()).collect();
+    let body: Vec<&str> = lines
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect();
 
     if body.is_empty() {
         (subject, None)
@@ -103,10 +100,7 @@ pub async fn get_latest_commits(
     owner: String,
     repo: String,
 ) -> Result<Vec<Commit>, String> {
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/commits?per_page=100",
-        owner, repo
-    );
+    let url = format!("https://api.github.com/repos/{owner}/{repo}/commits?per_page=100");
     let client = reqwest::Client::new();
     let response = client
         .get(&url)

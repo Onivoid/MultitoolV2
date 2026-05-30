@@ -4,7 +4,6 @@ import logoDark from "@/assets/svg/logo-w.svg";
 import logoLight from "@/assets/svg/logo-b.svg";
 
 export default function HomePage() {
-
   return (
     <PageMotion className={PAGE_CENTER}>
       <div className="flex flex-col items-center gap-5">

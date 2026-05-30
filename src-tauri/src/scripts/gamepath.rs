@@ -9,8 +9,8 @@ use tauri::command;
 fn get_log_file_path() -> Option<String> {
     if cfg!(target_os = "windows") {
         if let Ok(appdata) = env::var("APPDATA") {
-            let rsi_launcher_path = format!("{}\\rsilauncher", appdata);
-            let log_file_path = format!("{}\\logs\\log.log", rsi_launcher_path);
+            let rsi_launcher_path = format!("{appdata}\\rsilauncher");
+            let log_file_path = format!("{rsi_launcher_path}\\logs\\log.log");
             return Some(log_file_path);
         }
     }
@@ -38,8 +38,8 @@ fn check_and_add_path(path: &str, check_exists: bool, sc_install_paths: &mut Vec
         if !check_exists {
             sc_install_paths.push(normalized_path);
         } else {
-            let exe_path = format!("{}\\Bin64\\StarCitizen.exe", normalized_path);
-            let data_p4k_path = format!("{}\\Data.p4k", normalized_path);
+            let exe_path = format!("{normalized_path}\\Bin64\\StarCitizen.exe");
+            let data_p4k_path = format!("{normalized_path}\\Data.p4k");
             if Path::new(&exe_path).exists() && Path::new(&data_p4k_path).exists() {
                 sc_install_paths.push(normalized_path);
             }
@@ -133,7 +133,8 @@ pub fn get_live_install_path_sync() -> Result<String, String> {
         .get("LIVE")
         .map(|info| info.path.clone())
         .ok_or_else(|| {
-            "Installation Star Citizen LIVE introuvable. Vérifiez que le jeu est installé.".to_string()
+            "Installation Star Citizen LIVE introuvable. Vérifiez que le jeu est installé."
+                .to_string()
         })
 }
 

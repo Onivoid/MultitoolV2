@@ -3,6 +3,5 @@ import { TAURI_COMMANDS } from "@/shared/api/commands";
 import type { GamePaths } from "@/types/translation";
 
 export const gamePathService = {
-  getVersions: () =>
-    invokeCommand<GamePaths>(TAURI_COMMANDS.getStarCitizenVersions),
+  getVersions: () => invokeCommand<GamePaths>(TAURI_COMMANDS.getStarCitizenVersions),
 };

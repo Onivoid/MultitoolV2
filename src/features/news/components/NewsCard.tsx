@@ -15,10 +15,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ item, index }: NewsCardProps) {
-  const { url: thumbUrl, isVideo } = extractThumbnail(
-    item.content_html,
-    item.tags,
-  );
+  const { url: thumbUrl, isVideo } = extractThumbnail(item.content_html, item.tags);
   const title = extractTitleFromUrl(item.url);
 
   const openArticle = () => openExternalUrl(item.url);

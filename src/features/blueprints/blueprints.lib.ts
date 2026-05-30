@@ -64,9 +64,7 @@ export function getUniqueOwners(blueprints: BlueprintEntry[]): string[] {
     const o = bp.owner?.trim() ?? "";
     if (o) owners.add(o);
   }
-  return [...owners].sort((a, b) =>
-    a.localeCompare(b, "fr", { sensitivity: "base" }),
-  );
+  return [...owners].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 }
 
 export function filterBlueprints(
@@ -116,7 +114,9 @@ export function sortBlueprints(
           sensitivity: "base",
         });
         if (byOwner !== 0) return byOwner;
-        return a.productName.localeCompare(b.productName, "fr", { sensitivity: "base" });
+        return a.productName.localeCompare(b.productName, "fr", {
+          sensitivity: "base",
+        });
       });
       break;
     case "ownerDesc":
@@ -125,7 +125,9 @@ export function sortBlueprints(
           sensitivity: "base",
         });
         if (byOwner !== 0) return byOwner;
-        return a.productName.localeCompare(b.productName, "fr", { sensitivity: "base" });
+        return a.productName.localeCompare(b.productName, "fr", {
+          sensitivity: "base",
+        });
       });
       break;
     case "dateDesc":

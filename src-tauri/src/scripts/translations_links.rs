@@ -22,24 +22,21 @@ pub struct TranslationLink {
 /// Récupère le lien de traduction pour un type de version spécifique.
 #[command]
 pub async fn get_translation_by_setting(setting_type: String) -> Result<Value, String> {
-    println!("Requesting translation for setting type: {}", setting_type);
-    let url = format!(
-        "https://multitool.onivoid.fr/api/translations/{}",
-        setting_type
-    );
-    println!("URL: {}", url);
+    println!("Requesting translation for setting type: {setting_type}");
+    let url = format!("https://multitool.onivoid.fr/api/translations/{setting_type}");
+    println!("URL: {url}");
 
     let response = reqwest::get(&url).await.map_err(|e| e.to_string())?;
 
     let status = response.status();
-    println!("Response status: {}", status);
+    println!("Response status: {status}");
 
     if !status.is_success() {
-        return Err(format!("API returned error status: {}", status));
+        return Err(format!("API returned error status: {status}"));
     }
 
     let text = response.text().await.map_err(|e| e.to_string())?;
-    println!("Response body: {}", text);
+    println!("Response body: {text}");
 
     if text.starts_with('"') && text.ends_with('"') {
         let clean_url = text.trim_matches('"');
@@ -52,7 +49,7 @@ pub async fn get_translation_by_setting(setting_type: String) -> Result<Value, S
     match json_result {
         Ok(json) => Ok(json),
         Err(e) => {
-            println!("Error parsing JSON: {}", e);
+            println!("Error parsing JSON: {e}");
             Ok(serde_json::json!({
                 "link": text
             }))

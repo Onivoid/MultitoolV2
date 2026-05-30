@@ -24,7 +24,9 @@ export function useUpdate() {
   const downloaded = useRef(0);
 
   useEffect(() => {
-    getVersion().then(setCurrentVersion).catch(() => {});
+    getVersion()
+      .then(setCurrentVersion)
+      .catch(() => {});
     getBuildInfo()
       .then(async (info) => {
         setBuildInfo(info);

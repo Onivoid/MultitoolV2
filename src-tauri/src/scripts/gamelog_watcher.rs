@@ -11,8 +11,8 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 use tauri::path::PathResolver;
-use tauri::{command, AppHandle, Manager, Runtime};
 use tauri::State;
+use tauri::{command, AppHandle, Manager, Runtime};
 use tauri_plugin_dialog::DialogExt;
 
 const BLUEPRINT_CORRELATION_WINDOW_SEC: f64 = 5.0;
@@ -59,20 +59,12 @@ impl Default for BlueprintStoreFile {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct GamelogWatcherConfig {
     #[serde(default)]
     pub auto_start: bool,
     #[serde(default)]
     pub enabled: bool,
-}
-
-impl Default for GamelogWatcherConfig {
-    fn default() -> Self {
-        Self {
-            auto_start: false,
-            enabled: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -326,11 +318,7 @@ impl WatcherState {
             let debug_name = active
                 .as_ref()
                 .map(|a| a.debug_name.clone())
-                .or_else(|| {
-                    self.guid_map
-                        .get(guid)
-                        .map(|e| e.debug_name.clone())
-                })
+                .or_else(|| self.guid_map.get(guid).map(|e| e.debug_name.clone()))
                 .unwrap_or_else(|| "?".to_string());
             self.recent_lifecycle.push_back(MissionLifecycleEvent {
                 trigger: "complete".to_string(),
@@ -497,7 +485,8 @@ fn process_line(line: &str, state: &mut WatcherState) -> Option<BlueprintEntry> 
 
 /// Lit un fichier log en UTF-8 permissif (évite les échecs silencieux sur octets invalides).
 fn read_log_file_lossy(path: &Path) -> Result<String, String> {
-    let bytes = fs::read(path).map_err(|e| format!("Impossible de lire {}: {e}", path.display()))?;
+    let bytes =
+        fs::read(path).map_err(|e| format!("Impossible de lire {}: {e}", path.display()))?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
@@ -791,9 +780,7 @@ fn export_gamelog_blueprints_sync(app: &AppHandle) -> Result<Option<String>, Str
         return Ok(None);
     };
 
-    let path = destination
-        .into_path()
-        .map_err(|e| e.to_string())?;
+    let path = destination.into_path().map_err(|e| e.to_string())?;
 
     let json = serde_json::to_string_pretty(&store).map_err(|e| e.to_string())?;
     fs::write(&path, json).map_err(|e| e.to_string())?;
@@ -838,10 +825,8 @@ pub async fn import_blueprints_from_logbackups(
         .collect();
     files.sort();
 
-    if include_current && game_log.is_file() {
-        if !files.iter().any(|p| p == &game_log) {
-            files.push(game_log.clone());
-        }
+    if include_current && game_log.is_file() && !files.iter().any(|p| p == &game_log) {
+        files.push(game_log.clone());
     }
 
     if files.is_empty() {
@@ -1004,10 +989,7 @@ mod tests {
                 .iter()
                 .any(|e| e.product_name == "Jambes Morozov-SH Thule"),
             "expected Morozov blueprint, got: {:?}",
-            found
-                .iter()
-                .map(|e| &e.product_name)
-                .collect::<Vec<_>>()
+            found.iter().map(|e| &e.product_name).collect::<Vec<_>>()
         );
     }
 
@@ -1022,8 +1004,12 @@ mod tests {
             found.iter().map(|e| &e.product_name).collect::<Vec<_>>()
         );
         assert!(found.iter().any(|e| e.product_name == "Jambes Monde"));
-        assert!(found.iter().any(|e| e.product_name == "Torse Antium Désert"));
-        assert!(found.iter().any(|e| e.product_name == "Jambes Palatino Sunstone"));
+        assert!(found
+            .iter()
+            .any(|e| e.product_name == "Torse Antium Désert"));
+        assert!(found
+            .iter()
+            .any(|e| e.product_name == "Jambes Palatino Sunstone"));
     }
 
     /// Vérifie le scan sur l'installation LIVE réelle (ignoré si SC absent).
@@ -1086,13 +1072,12 @@ mod tests {
         }
         let found = scan_file_for_blueprints(&path).expect("scan game build");
         assert!(
-            found.iter().any(|e| e.product_name == "Torse Antium Désert"),
-            "expected Torse Antium Désert, got {} entries: {:?}",
-            found.len(),
             found
                 .iter()
-                .map(|e| &e.product_name)
-                .collect::<Vec<_>>()
+                .any(|e| e.product_name == "Torse Antium Désert"),
+            "expected Torse Antium Désert, got {} entries: {:?}",
+            found.len(),
+            found.iter().map(|e| &e.product_name).collect::<Vec<_>>()
         );
         assert!(
             found

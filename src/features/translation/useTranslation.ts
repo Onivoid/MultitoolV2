@@ -13,16 +13,10 @@ import {
   resolveTranslationVersionStates,
 } from "@/features/translation/translation.lib";
 import { gamePathService } from "@/features/game-path/gamePath.service";
-import {
-  toFriendlyFsError,
-} from "@/utils/fs-permissions";
+import { toFriendlyFsError } from "@/utils/fs-permissions";
 import { detectDistribution } from "@/utils/buildInfo";
 import logger from "@/utils/logger";
-import {
-  toastError,
-  toastSuccess,
-  toastWarning,
-} from "@/shared/lib/toastHelpers";
+import { toastError, toastSuccess, toastWarning } from "@/shared/lib/toastHelpers";
 
 export function useTranslation() {
   const [paths, setPaths] = useState<GamePaths | null>();
@@ -136,19 +130,14 @@ export function useTranslation() {
         };
         setTranslationsSelected(updatedTranslations);
         await saveSelectedTranslations(updatedTranslations);
-        await translationService.initFiles(
-          versionPath,
-          link,
-          DEFAULT_TRANSLATION_LANG,
-        );
+        await translationService.initFiles(versionPath, link, DEFAULT_TRANSLATION_LANG);
         toastSuccess(toast, `Traduction installée · ${version}`);
         if (paths) await checkTranslationsState(paths);
       };
 
       if (!versionSettings?.link) {
         try {
-          const translationData =
-            await translationService.getBySetting("settings-fr");
+          const translationData = await translationService.getBySetting("settings-fr");
           const link = extractTranslationLink(translationData);
           if (link) {
             await installWithLink(link);
@@ -216,8 +205,7 @@ export function useTranslation() {
           DEFAULT_TRANSLATION_LANG,
         );
         if (translationsSelected) {
-          const current =
-            translationsSelected[buttonId as keyof TranslationsChoosen];
+          const current = translationsSelected[buttonId as keyof TranslationsChoosen];
           const updatedTranslations = {
             ...translationsSelected,
             [buttonId]: {
@@ -318,11 +306,7 @@ export function useTranslation() {
           );
         }
       } catch (error) {
-        toastError(
-          toast,
-          "Changement de langue impossible",
-          String(error),
-        );
+        toastError(toast, "Changement de langue impossible", String(error));
       } finally {
         setLoadingButtonId(null);
       }

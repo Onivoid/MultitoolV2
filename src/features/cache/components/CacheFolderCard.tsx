@@ -9,11 +9,7 @@ interface CacheFolderCardProps {
   onDelete: (path: string) => void;
 }
 
-export function CacheFolderCard({
-  folder,
-  index,
-  onDelete,
-}: CacheFolderCardProps) {
+export function CacheFolderCard({ folder, index, onDelete }: CacheFolderCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

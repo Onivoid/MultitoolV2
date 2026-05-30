@@ -17,11 +17,7 @@ export function getBlueprintKey(blueprint: BlueprintEntry): string {
   return `${blueprint.owner}-${blueprint.productName}-${blueprint.ts}`;
 }
 
-export function BlueprintCard({
-  blueprint,
-  index = 0,
-  className,
-}: BlueprintCardProps) {
+export function BlueprintCard({ blueprint, index = 0, className }: BlueprintCardProps) {
   const hasMission =
     Boolean(blueprint.missionDebugName) || Boolean(blueprint.missionTrigger);
 
@@ -30,10 +26,7 @@ export function BlueprintCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: (index % 16) * 0.03 }}
-      className={cn(
-        "settings-section flex flex-col overflow-hidden",
-        className,
-      )}
+      className={cn("settings-section flex flex-col overflow-hidden", className)}
       data-blueprint-key={getBlueprintKey(blueprint)}
       data-no-window-drag
     >

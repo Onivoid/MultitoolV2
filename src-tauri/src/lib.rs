@@ -8,14 +8,14 @@ use scripts::background_service::{
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
 };
-use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
+use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
 use scripts::gamelog_watcher::{
     export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
-    load_gamelog_blueprints,
-    load_gamelog_watcher_config, save_gamelog_watcher_config, start_gamelog_watcher,
-    start_gamelog_watcher_internal, stop_gamelog_watcher, GamelogWatcherState,
+    load_gamelog_blueprints, load_gamelog_watcher_config, save_gamelog_watcher_config,
+    start_gamelog_watcher, start_gamelog_watcher_internal, stop_gamelog_watcher,
+    GamelogWatcherState,
 };
-use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
+use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
 use scripts::local_characters_functions::{
     delete_character, download_character, duplicate_character, get_character_informations,
     open_characters_folder,
@@ -91,13 +91,13 @@ pub fn run() {
                                 start_background_service_internal(state_clone, app_handle_clone)
                                     .await
                             {
-                                eprintln!("Échec du démarrage du service de fond: {}", e);
+                                eprintln!("Échec du démarrage du service de fond: {e}");
                             }
                         });
                     }
                 }
                 Err(e) => {
-                    eprintln!("Échec du chargement de la config du service de fond: {}", e);
+                    eprintln!("Échec du chargement de la config du service de fond: {e}");
                 }
             }
 
@@ -112,24 +112,24 @@ pub fn run() {
                         if let Err(e) =
                             start_gamelog_watcher_internal(&state_clone, app_handle_clone)
                         {
-                            eprintln!("Échec du démarrage du gamelog watcher: {}", e);
+                            eprintln!("Échec du démarrage du gamelog watcher: {e}");
                         }
                     }
                 }
                 Err(e) => {
-                    eprintln!("Échec du chargement de la config gamelog watcher: {}", e);
+                    eprintln!("Échec du chargement de la config gamelog watcher: {e}");
                 }
             }
             app.manage(gamelog_watcher_state);
 
-            if let Err(e) = setup_system_tray(&app.handle()) {
-                eprintln!("Échec de la configuration du system tray: {}", e);
+            if let Err(e) = setup_system_tray(app.handle()) {
+                eprintln!("Échec de la configuration du system tray: {e}");
             }
 
             let args: Vec<String> = std::env::args().collect();
             if args.contains(&"--minimized".to_string()) {
                 if let Err(e) = window.hide() {
-                    eprintln!("Échec de la minimisation de la fenêtre au démarrage: {}", e);
+                    eprintln!("Échec de la minimisation de la fenêtre au démarrage: {e}");
                 }
             }
 
@@ -139,7 +139,7 @@ pub fn run() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 if let Err(e) = window.hide() {
-                    eprintln!("Échec de la minimisation dans le tray: {}", e);
+                    eprintln!("Échec de la minimisation dans le tray: {e}");
                 }
             }
         })

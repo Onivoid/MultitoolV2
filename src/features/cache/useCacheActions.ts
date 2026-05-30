@@ -1,8 +1,5 @@
 import { useToast } from "@/hooks/use-toast";
-import {
-  cacheService,
-  type CacheFolder,
-} from "@/features/cache/cache.service";
+import { cacheService, type CacheFolder } from "@/features/cache/cache.service";
 import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
 
 export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => void) {
@@ -38,7 +35,11 @@ export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => voi
         toastSuccess(toast, "Dossier supprimé");
         onDeleted(path);
       } else {
-        toastError(toast, "Suppression impossible", "Le dossier n'a pas pu être retiré.");
+        toastError(
+          toast,
+          "Suppression impossible",
+          "Le dossier n'a pas pu être retiré.",
+        );
       }
     } catch (error) {
       toastError(toast, "Suppression impossible", String(error));

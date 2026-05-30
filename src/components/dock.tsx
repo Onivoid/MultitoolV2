@@ -9,20 +9,11 @@ import {
   AnimatePresence,
 } from "motion/react";
 import { Link } from "react-router-dom";
-import React, {
-  useState,
-  useRef,
-  createContext,
-  useContext,
-  useEffect,
-} from "react";
+import React, { useState, useRef, createContext, useContext, useEffect } from "react";
 import { X, Menu } from "lucide-react";
 
 function dockPillClass(active: boolean) {
-  return cn(
-    "dock-item-pill",
-    active ? "dock-item-pill-active" : "dock-item-pill-idle",
-  );
+  return cn("dock-item-pill", active ? "dock-item-pill-active" : "dock-item-pill-idle");
 }
 
 // Context to manage dock state
@@ -65,9 +56,7 @@ export const Dock = ({
   navClassName,
   embedded = false,
 }: DockProps) => {
-  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const closeTimeoutsRef = useRef<Record<string, NodeJS.Timeout | null>>({});
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -135,12 +124,11 @@ export const Dock = ({
                 {React.Children.map(children, (child) => {
                   if (
                     React.isValidElement(child) &&
-                    (child.type as { displayName?: string }).displayName ===
-                      "DockItem"
+                    (child.type as { displayName?: string }).displayName === "DockItem"
                   ) {
                     return React.cloneElement(
                       child as React.ReactElement<DockItemProps>,
-                      { renderType: "content" }
+                      { renderType: "content" },
                     );
                   }
                   return null;
@@ -154,7 +142,7 @@ export const Dock = ({
                         child as React.ReactElement<
                           DockItemProps | DockIconProps | DockLinkProps
                         >,
-                        { renderType: "trigger" }
+                        { renderType: "trigger" },
                       );
                     }
                     return null;
@@ -181,7 +169,6 @@ export const Dock = ({
                         if (!React.isValidElement(child)) return null;
 
                         // Handle DockLink (Top level links)
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         if ((child.type as any).displayName === "DockLink") {
                           const props = child.props as DockLinkProps;
                           return (
@@ -196,7 +183,6 @@ export const Dock = ({
                         }
 
                         // Handle DockItem (Sections with dropdowns)
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         if ((child.type as any).displayName === "DockItem") {
                           const props = child.props as DockItemProps;
                           return (
@@ -205,41 +191,35 @@ export const Dock = ({
                                 {props.label}
                               </span>
                               <div className="flex flex-col gap-4 pl-4 border-l border-neutral-200 dark:border-neutral-800">
-                                {React.Children.map(
-                                  props.children,
-                                  (subChild) => {
-                                    if (
-                                      React.isValidElement(subChild) &&
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      (subChild.type as any).displayName ===
-                                        "DockDropdownItem"
-                                    ) {
-                                      const subProps =
-                                        subChild.props as DockDropdownItemProps;
-                                      return (
-                                        <Link
-                                          to={subProps.href}
-                                          className="text-black dark:text-white text-xl font-medium flex items-center gap-3"
-                                          onClick={() =>
-                                            setIsMobileMenuOpen(false)
-                                          }
-                                        >
-                                          {subProps.image && (
-                                            <img
-                                              src={subProps.image}
-                                              alt=""
-                                              width={32}
-                                              height={32}
-                                              className="rounded-lg object-cover"
-                                            />
-                                          )}
-                                          {subProps.label}
-                                        </Link>
-                                      );
-                                    }
-                                    return null;
+                                {React.Children.map(props.children, (subChild) => {
+                                  if (
+                                    React.isValidElement(subChild) &&
+                                    (subChild.type as any).displayName ===
+                                      "DockDropdownItem"
+                                  ) {
+                                    const subProps =
+                                      subChild.props as DockDropdownItemProps;
+                                    return (
+                                      <Link
+                                        to={subProps.href}
+                                        className="text-black dark:text-white text-xl font-medium flex items-center gap-3"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                      >
+                                        {subProps.image && (
+                                          <img
+                                            src={subProps.image}
+                                            alt=""
+                                            width={32}
+                                            height={32}
+                                            className="rounded-lg object-cover"
+                                          />
+                                        )}
+                                        {subProps.label}
+                                      </Link>
+                                    );
                                   }
-                                )}
+                                  return null;
+                                })}
                               </div>
                             </div>
                           );
@@ -257,7 +237,7 @@ export const Dock = ({
                   "flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all duration-300 relative z-50",
                   isMobileMenuOpen
                     ? "bg-transparent border border-black dark:border-white text-black dark:text-white"
-                    : "bg-white dark:bg-neutral-900 text-black dark:text-white border border-neutral-200 dark:border-neutral-800"
+                    : "bg-white dark:bg-neutral-900 text-black dark:text-white border border-neutral-200 dark:border-neutral-800",
                 )}
               >
                 <span className="font-medium text-lg">Menu</span>
@@ -286,20 +266,15 @@ export const DockItem = ({
   renderType,
   className,
 }: DockItemProps) => {
-  const {
-    openDropdowns,
-    handleDropdownEnter,
-    handleDropdownLeave,
-    activePage,
-  } = useDock();
+  const { openDropdowns, handleDropdownEnter, handleDropdownLeave, activePage } =
+    useDock();
   const itemId = id || label.toLowerCase().replace(/\s+/g, "-");
   const isOpen = openDropdowns[itemId] || false;
 
   const isAnyChildActive = React.Children.toArray(children).some((child) => {
     if (
       React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName ===
-        "DockDropdownItem" &&
+      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
       child.props.href &&
       activePage
     ) {
@@ -322,7 +297,7 @@ export const DockItem = ({
         }}
         className={cn(
           "w-full overflow-hidden",
-          isOpen ? "pointer-events-auto min-h-[100px]" : "pointer-events-none"
+          isOpen ? "pointer-events-auto min-h-[100px]" : "pointer-events-none",
         )}
         onMouseEnter={() => handleDropdownEnter(itemId)}
         onMouseLeave={() => handleDropdownLeave(itemId)}
@@ -375,8 +350,7 @@ const DockItemImagePreview = ({ children }: { children: React.ReactNode }) => {
   const activeChild = React.Children.toArray(children).find((child) => {
     if (
       React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName ===
-        "DockDropdownItem" &&
+      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
       child.props.href &&
       activePage
     ) {
@@ -388,8 +362,7 @@ const DockItemImagePreview = ({ children }: { children: React.ReactNode }) => {
   const hoveredChild = React.Children.toArray(children).find((child) => {
     return (
       React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName ===
-        "DockDropdownItem" &&
+      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
       child.props.href === hoveredLink
     );
   }) as React.ReactElement<DockDropdownItemProps> | undefined;
@@ -427,11 +400,7 @@ interface DockDropdownItemProps {
   className?: string;
 }
 
-export const DockDropdownItem = ({
-  href,
-  label,
-  className,
-}: DockDropdownItemProps) => {
+export const DockDropdownItem = ({ href, label, className }: DockDropdownItemProps) => {
   const { hoveredLink, setHoveredLink, activePage } = useDock();
 
   const isMenuItemActive = activePage === href;
@@ -478,8 +447,7 @@ export const DockIcon = ({
 
   if (renderType === "content") return null;
 
-  const isActive =
-    isActiveProp ?? (href !== undefined && activePage === href);
+  const isActive = isActiveProp ?? (href !== undefined && activePage === href);
 
   const inner = (
     <m.div

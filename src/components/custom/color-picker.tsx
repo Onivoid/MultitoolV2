@@ -1,17 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Paintbrush } from "lucide-react";
-import {
-  applyThemePreferences,
-} from "@/utils/custom-theme-provider";
+import { applyThemePreferences } from "@/utils/custom-theme-provider";
 import { getThemePreferencesFromStore, useThemeStore } from "@/stores/theme-store";
 import { HexColorPicker } from "react-colorful";
 
@@ -40,7 +34,10 @@ export function ColorPicker({
       return;
     }
     setPrimaryColor(nextColor);
-    applyThemePreferences({ ...getThemePreferencesFromStore(), primaryColor: nextColor });
+    applyThemePreferences({
+      ...getThemePreferencesFromStore(),
+      primaryColor: nextColor,
+    });
   };
 
   return (
@@ -109,9 +106,7 @@ export function GradientPicker({
             ) : (
               <Paintbrush className="h-4 w-4 shrink-0" />
             )}
-            <div className="truncate flex-1">
-              {primaryColor ? primaryColor : label}
-            </div>
+            <div className="truncate flex-1">{primaryColor ? primaryColor : label}</div>
           </div>
         </Button>
       </PopoverTrigger>
@@ -143,8 +138,7 @@ export function GradientPicker({
                 style={{ background: choice }}
                 className={cn(
                   "h-8 w-8 cursor-pointer rounded-md transition-transform hover:scale-105",
-                  primaryColor === choice &&
-                    "ring-2 ring-offset-2 ring-primary",
+                  primaryColor === choice && "ring-2 ring-offset-2 ring-primary",
                 )}
                 onClick={() => onColorChange(choice)}
                 aria-label={`Couleur ${choice}`}
@@ -157,10 +151,7 @@ export function GradientPicker({
               data-no-window-drag
               onMouseDown={(e) => e.stopPropagation()}
             >
-              <HexColorPicker
-                color={customColor}
-                onChange={handleCustomColorChange}
-              />
+              <HexColorPicker color={customColor} onChange={handleCustomColorChange} />
               <Input
                 maxLength={7}
                 value={customColor}

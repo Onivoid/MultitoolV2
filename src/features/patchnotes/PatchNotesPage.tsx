@@ -50,7 +50,11 @@ export default function PatchNotesPage() {
         <div className={`${PAGE_SCROLL} pb-20`}>
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
             {releaseCommits.map((commit, index) => (
-              <PatchnoteCard key={`${commit.date}-${index}`} commit={commit} index={index} />
+              <PatchnoteCard
+                key={`${commit.date}-${index}`}
+                commit={commit}
+                index={index}
+              />
             ))}
           </div>
         </div>

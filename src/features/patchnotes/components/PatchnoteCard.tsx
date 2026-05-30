@@ -30,9 +30,7 @@ export function PatchnoteCard({ commit, index }: PatchnoteCardProps) {
         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/10">
           <Tag className="h-3.5 w-3.5 text-primary" aria-hidden />
         </div>
-        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug">
-          {message}
-        </h3>
+        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug">{message}</h3>
       </header>
 
       {lines.length > 0 && (

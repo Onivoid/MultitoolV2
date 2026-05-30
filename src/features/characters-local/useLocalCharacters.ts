@@ -26,9 +26,7 @@ export function useLocalCharacters() {
     async (gamePath: string) => {
       try {
         const result = await charactersService.getInformations(gamePath);
-        setLocalCharacters((prev) =>
-          mergeCharacterScanResult(prev, result, gamePaths),
-        );
+        setLocalCharacters((prev) => mergeCharacterScanResult(prev, result, gamePaths));
       } catch {
         toastError(
           toast,

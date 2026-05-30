@@ -73,8 +73,7 @@ export function useCharactersRemote() {
     const isInitialLoad =
       !hasInitialized.current && charactersPresets.length === 0 && !isLoading;
     const isSearchChanged = lastSearchTerm.current !== debouncedSearch;
-    const isSearchCleared =
-      debouncedSearch === "" && lastSearchTerm.current !== "";
+    const isSearchCleared = debouncedSearch === "" && lastSearchTerm.current !== "";
     if (isInitialLoad || isSearchChanged || isSearchCleared) {
       hasInitialized.current = true;
       lastSearchTerm.current = debouncedSearch;
