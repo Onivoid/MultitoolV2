@@ -231,7 +231,9 @@ pnpm tauri build
 
 ## 📄 Licence
 
-Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence **[GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html)** (ou version ultérieure) — voir le fichier [LICENSE](LICENSE) pour le texte intégral.
+
+En résumé : vous pouvez utiliser, modifier et redistribuer ce logiciel à condition de **publier le code source** de vos modifications sous la même licence, y compris si vous proposez une version accessible via un réseau (clause Affero). Les dépendances tierces restent soumises à leurs propres licences.
 
 ---
 
