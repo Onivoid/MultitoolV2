@@ -1,4 +1,4 @@
-# Instructions de développement — MultitoolV2
+# Instructions de développement — Multitool
 
 Référence interne pour l’architecture V3 (feature-based).
 

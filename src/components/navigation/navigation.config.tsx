@@ -36,6 +36,26 @@ export const infoRoutes: NavRoute[] = [
   { path: "/updates", label: "Mises à jour" },
 ];
 
+/** Toutes les routes du dock (Features, News, Informations). */
+export const allDockRoutes: NavRoute[] = [
+  ...featuresRoutes,
+  ...newsRoutes,
+  ...infoRoutes,
+];
+
+const routeTitleByPath: Record<string, string> = {
+  ...Object.fromEntries(allDockRoutes.map((route) => [route.path, route.label])),
+  "/settings": "Paramètres",
+};
+
+/** Libellé affiché en barre de titre (aligné sur le dock). */
+export function getRouteTitle(pathname: string): string | null {
+  if (pathname === "/") return null;
+  const segment = pathname.split("/").filter(Boolean)[0];
+  if (!segment) return null;
+  return routeTitleByPath[`/${segment}`] ?? null;
+}
+
 export const externalLinks: ExternalLink[] = [
   {
     href: "https://www.youtube.com/@onivoid",

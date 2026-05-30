@@ -1,4 +1,4 @@
-# Scripts MultitoolV2
+# Scripts Multitool
 
 ## Versioning
 

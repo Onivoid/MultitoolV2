@@ -1,6 +1,6 @@
 ﻿# Guide de gestion des versions
 
-MultitoolV2 suit le semver `MAJOR.MINOR.PATCH`.
+Multitool suit le semver `MAJOR.MINOR.PATCH`.
 
 ## Fichiers de version
 

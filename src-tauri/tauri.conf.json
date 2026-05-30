@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MultiTool V2",
+        "title": "Multitool",
         "minWidth": 1600,
         "minHeight": 870,
         "center": true,

@@ -11,7 +11,7 @@ contact_links:
     about: Pour les discussions générales, questions, et échange d'idées avec la communauté
   - name: 📚 Documentation - BUILD.md
     url: https://github.com/Onivoid/MultitoolV2/blob/main/BUILD.md
-    about: Instructions complètes pour compiler MultitoolV2 depuis le code source
+    about: Instructions pour compiler Multitool depuis le code source
   - name: 🤝 Guide de Contribution
     url: https://github.com/Onivoid/MultitoolV2/blob/main/CONTRIBUTING.md
     about: Comment contribuer au projet - standards de code, processus de PR, etc.
