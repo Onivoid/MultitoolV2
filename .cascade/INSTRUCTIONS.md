@@ -41,12 +41,14 @@
 ```
 MultitoolV2/
 ├── src/                          # Code source Frontend (React)
-│   ├── components/               # Composants React réutilisables
-│   ├── pages/                    # Pages de l'application
+│   ├── app/                      # Routes (AppRouter)
+│   ├── features/                 # Domaines métier (Page + hook + service + lib)
+│   ├── shared/                   # API Tauri, hooks/composants transverses
+│   ├── components/               # UI shadcn + shell (sidebar, layout)
 │   ├── stores/                   # Stores Zustand
-│   ├── hooks/                    # Custom React hooks
+│   ├── hooks/                    # Hooks infra (toast, mobile)
 │   ├── types/                    # Types TypeScript
-│   ├── utils/                    # Fonctions utilitaires
+│   ├── utils/                    # Utilitaires transverses
 │   └── assets/                   # Assets statiques
 │
 ├── src-tauri/                    # Code source Backend (Rust)
@@ -157,18 +159,21 @@ export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'prima
 
 #### Appels Tauri Commands
 ```typescript
-// ✅ BON: Appel de command avec gestion d'erreur
-import { invoke } from '@tauri-apps/api/core';
+// ✅ BON: Service domaine (seul endroit des invoke)
+// features/theme/theme.service.ts
+import { invokeCommand } from '@/shared/api/tauriClient';
+import { TAURI_COMMANDS } from '@/shared/api/commands';
 
-const saveTheme = async (theme: string) => {
-  try {
-    await invoke('save_theme_selected', { theme });
-    toast.success('Thème sauvegardé');
-  } catch (error) {
-    toast.error(`Erreur: ${error}`);
-  }
+export const themeService = {
+  save: (data: { primary_color: string }) =>
+    invokeCommand<void>(TAURI_COMMANDS.saveThemeSelected, { data }),
 };
+
+// ✅ BON: Hook = orchestration + toasts ; Page TSX = rendu uniquement
+// features/cache/useCache.ts + features/cache/CachePage.tsx
 ```
+
+**Règles:** pas de `invoke()` dans les fichiers `.tsx`. Un service par domaine dans `features/*/`.
 
 #### State Management (Zustand)
 ```typescript
@@ -183,8 +188,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   theme: 'dark',
   setTheme: (theme) => set({ theme }),
   loadTheme: async () => {
-    const theme = await invoke<string>('load_theme_selected');
-    set({ theme });
+    const theme = await themeService.load();
+    set({ theme: theme.primary_color });
   },
 }));
 ```
