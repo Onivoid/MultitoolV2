@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import AppRouter from "./components/utils/routes";
+import AppRouter from "./app/routes";
 import './index.css';
 import { ThemeProvider } from "@/components/utils/theme-provider";
 import ControlMenu from "@/components/custom/control-menu";

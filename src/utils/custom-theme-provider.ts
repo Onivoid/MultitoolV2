@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
 import { useThemeStore } from "@/stores/theme-store";
+import { themeService } from "@/features/theme/theme.service";
 import logger from "@/utils/logger";
 
 // Fonction pour convertir une couleur hexadécimale en HSL
@@ -152,7 +152,7 @@ export function applyTheme(primaryColor: string): void {
 
     styleElement.innerHTML = themeCSS;
 
-    invoke("save_theme_selected", { data: { primary_color: primaryColor } })
+    themeService.save({ primary_color: primaryColor })
         .then(() => logger.log("Thème enregistré avec succès"))
         .catch((error) =>
             logger.error("Erreur lors de l'enregistrement du thème", error)
@@ -161,7 +161,7 @@ export function applyTheme(primaryColor: string): void {
 
 export function loadAndApplyTheme(): void {
     const { setPrimaryColor } = useThemeStore.getState();
-    invoke("load_theme_selected")
+    themeService.load()
         .then((value) => {
             const theme = value as { primary_color: string };
             setPrimaryColor(theme.primary_color);
