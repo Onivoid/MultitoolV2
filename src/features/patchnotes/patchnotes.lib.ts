@@ -3,7 +3,7 @@ import { stripVersionPrefix } from "@/utils/version";
 
 export const PATCHNOTES_REPO = {
   owner: "Onivoid",
-  name: "Multitool",
+  name: "MultitoolV2",
 } as const;
 
 export const PATCHNOTES_GITHUB_URL = `https://github.com/${PATCHNOTES_REPO.owner}/${PATCHNOTES_REPO.name}`;
