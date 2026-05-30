@@ -40,11 +40,7 @@
 
 Tour rapide des pages : traduction, cache, personnages, blueprints, actualités, patchnotes et mises à jour — le tout depuis le dock en bas de l'écran.
 
-<p align="center">
-  <video src="docs/demo-pages.mp4" autoplay loop muted playsinline width="100%">
-    Votre navigateur ne supporte pas la vidéo — voir <a href="docs/demo-pages.mp4">docs/demo-pages.mp4</a>.
-  </video>
-</p>
+https://github.com/user-attachments/assets/d89cce9a-6759-4ce3-96c0-1d2663edb44d
 
 ---
 
