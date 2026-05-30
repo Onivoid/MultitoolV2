@@ -135,13 +135,9 @@ export function UpdatePanel({
       !availableChangelog ||
       installedChangelog.version !== availableChangelog.version);
 
-  const showAvailableChangelog =
-    status === "available" && availableChangelog;
+  const showAvailableChangelog = status === "available" && availableChangelog;
 
-  const showUpdaterBody =
-    status === "available" &&
-    update?.body &&
-    !availableChangelog;
+  const showUpdaterBody = status === "available" && update?.body && !availableChangelog;
 
   return (
     <motion.section
@@ -153,10 +149,7 @@ export function UpdatePanel({
     >
       <div className="space-y-3 px-3 py-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={getStatusBadgeVariant(status)}
-            className="text-[11px]"
-          >
+          <Badge variant={getStatusBadgeVariant(status)} className="text-[11px]">
             {getStatusLabel(status)}
           </Badge>
         </div>
@@ -183,10 +176,7 @@ export function UpdatePanel({
         )}
 
         {showAvailableChangelog && (
-          <VersionChangelogBlock
-            changelog={availableChangelog}
-            variant="available"
-          />
+          <VersionChangelogBlock changelog={availableChangelog} variant="available" />
         )}
 
         {showUpdaterBody && (

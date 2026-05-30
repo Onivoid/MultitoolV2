@@ -29,9 +29,7 @@ export const featuresRoutes: NavRoute[] = [
   { path: "/ships3d", label: "Vaisseaux 3D" },
 ];
 
-export const newsRoutes: NavRoute[] = [
-  { path: "/news", label: "News SC" },
-];
+export const newsRoutes: NavRoute[] = [{ path: "/news", label: "News SC" }];
 
 export const infoRoutes: NavRoute[] = [
   { path: "/patchnotes", label: "Patchnotes" },

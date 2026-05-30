@@ -14,9 +14,7 @@ export interface GamelogWatcherConfig {
 
 export const settingsService = {
   loadBackgroundConfig: () =>
-    invokeCommand<BackgroundServiceConfig>(
-      TAURI_COMMANDS.loadBackgroundServiceConfig,
-    ),
+    invokeCommand<BackgroundServiceConfig>(TAURI_COMMANDS.loadBackgroundServiceConfig),
 
   saveBackgroundConfig: (config: BackgroundServiceConfig) =>
     invokeCommand<void>(TAURI_COMMANDS.saveBackgroundServiceConfig, { config }),

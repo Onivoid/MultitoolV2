@@ -46,8 +46,8 @@ export default function BlueprintsPage() {
               Aucun blueprint enregistré
             </p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Démarrez la surveillance ou synchronisez depuis les
-              logbackups Star Citizen.
+              Démarrez la surveillance ou synchronisez depuis les logbackups Star
+              Citizen.
             </p>
           </section>
         </div>

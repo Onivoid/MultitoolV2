@@ -34,7 +34,7 @@ pub fn is_game_translated_sync(path: String, lang: String) -> bool {
         None => return false,
     };
 
-    if !user_cfg_content.contains(&format!("g_language = {}", lang_folder_name)) {
+    if !user_cfg_content.contains(&format!("g_language = {lang_folder_name}")) {
         return false;
     }
 
@@ -70,13 +70,13 @@ pub fn init_translation_files(
     let data_path = base_path.join("data");
     if !data_path.exists() {
         fs::create_dir(&data_path)
-            .map_err(|e| format!("Erreur lors de la création de 'data': {}", e))?;
+            .map_err(|e| format!("Erreur lors de la création de 'data': {e}"))?;
     }
 
     let localization_path = data_path.join("Localization");
     if !localization_path.exists() {
         fs::create_dir(&localization_path)
-            .map_err(|e| format!("Erreur lors de la création de 'Localization': {}", e))?;
+            .map_err(|e| format!("Erreur lors de la création de 'Localization': {e}"))?;
     }
 
     let lang_folder_name =
@@ -85,7 +85,7 @@ pub fn init_translation_files(
     let lang_folder_path = localization_path.join(lang_folder_name);
     if !lang_folder_path.exists() {
         fs::create_dir(&lang_folder_path)
-            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {e}"))?;
     }
 
     let global_ini_path = lang_folder_path.join("global.ini");
@@ -93,25 +93,22 @@ pub fn init_translation_files(
     let response = client
         .get(&translation_link)
         .send()
-        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+        .map_err(|e| format!("Erreur lors du téléchargement: {e}"))?;
     let content = response
         .text()
-        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {e}"))?;
     let mut file = File::create(&global_ini_path)
-        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {e}"))?;
     file.write_all(UTF8_BOM)
         .and_then(|_| file.write_all(content.as_bytes()))
-        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {e}"))?;
 
     let user_cfg_path = base_path.join("user.cfg");
     let mut file = File::create(&user_cfg_path)
-        .map_err(|e| format!("Erreur lors de la création de 'user.cfg': {}", e))?;
-    let cfg_content = format!(
-        "g_language = {}\ng_languageAudio = english\n",
-        lang_folder_name
-    );
+        .map_err(|e| format!("Erreur lors de la création de 'user.cfg': {e}"))?;
+    let cfg_content = format!("g_language = {lang_folder_name}\ng_languageAudio = english\n");
     file.write_all(cfg_content.as_bytes())
-        .map_err(|e| format!("Erreur lors de l'écriture dans 'user.cfg': {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'écriture dans 'user.cfg': {e}"))?;
 
     Ok(())
 }
@@ -208,7 +205,7 @@ pub fn update_translation(
     // Vérifier et créer le dossier de langue s'il n'existe pas
     if !lang_folder_path.exists() {
         fs::create_dir_all(&lang_folder_path)
-            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {e}"))?;
     }
 
     let global_ini_path = lang_folder_path.join("global.ini");
@@ -217,16 +214,16 @@ pub fn update_translation(
     let response = client
         .get(&translation_link)
         .send()
-        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+        .map_err(|e| format!("Erreur lors du téléchargement: {e}"))?;
     let content = response
         .text()
-        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {e}"))?;
 
     let mut file = File::create(&global_ini_path)
-        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {e}"))?;
     file.write_all(UTF8_BOM)
         .and_then(|_| file.write_all(content.as_bytes()))
-        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {e}"))?;
 
     Ok(())
 }
@@ -239,13 +236,13 @@ pub fn uninstall_translation(path: String) -> Result<(), String> {
     let data_path = base_path.join("data");
     if data_path.exists() {
         fs::remove_dir_all(&data_path)
-            .map_err(|e| format!("Erreur lors de la suppression de 'data': {}", e))?;
+            .map_err(|e| format!("Erreur lors de la suppression de 'data': {e}"))?;
     }
 
     let user_cfg_path = base_path.join("user.cfg");
     if user_cfg_path.exists() {
         fs::remove_file(&user_cfg_path)
-            .map_err(|e| format!("Erreur lors de la suppression de 'user.cfg': {}", e))?;
+            .map_err(|e| format!("Erreur lors de la suppression de 'user.cfg': {e}"))?;
     }
 
     Ok(())
@@ -331,7 +328,7 @@ pub async fn update_translation_async(
     // Vérifier et créer le dossier de langue s'il n'existe pas
     if !lang_folder_path.exists() {
         fs::create_dir_all(&lang_folder_path)
-            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {}", e))?;
+            .map_err(|e| format!("Erreur lors de la création du dossier de langue: {e}"))?;
     }
 
     let global_ini_path = lang_folder_path.join("global.ini");
@@ -341,17 +338,17 @@ pub async fn update_translation_async(
         .get(&translation_link)
         .send()
         .await
-        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+        .map_err(|e| format!("Erreur lors du téléchargement: {e}"))?;
     let content = response
         .text()
         .await
-        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {e}"))?;
 
     let mut file = File::create(&global_ini_path)
-        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de la création de 'global.ini': {e}"))?;
     file.write_all(UTF8_BOM)
         .and_then(|_| file.write_all(content.as_bytes()))
-        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'écriture de 'global.ini': {e}"))?;
 
     Ok(())
 }

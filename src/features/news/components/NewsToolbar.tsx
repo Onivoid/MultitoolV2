@@ -46,9 +46,7 @@ export function NewsToolbar({
         disabled={isRefreshing || isLoading}
         data-no-window-drag
       >
-        <RefreshCw
-          className={cn("h-4 w-4 shrink-0", isRefreshing && "animate-spin")}
-        />
+        <RefreshCw className={cn("h-4 w-4 shrink-0", isRefreshing && "animate-spin")} />
         Rafraîchir
       </Button>
     </section>

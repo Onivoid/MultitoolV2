@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import Synthesis from "@/components/synthesis";
 import { useThemeStore } from "@/stores/theme-store";
-import { deriveSynthesisColor1, loadAndApplyTheme } from "@/utils/custom-theme-provider";
+import {
+  deriveSynthesisColor1,
+  loadAndApplyTheme,
+} from "@/utils/custom-theme-provider";
 
 export function AppBackground() {
   const primaryColor = useThemeStore((state) => state.primaryColor);
   const synthesisColor2 = useThemeStore((state) => state.synthesisColor2);
   const synthesisSpeed = useThemeStore((state) => state.synthesisSpeed);
-  const synthesisGlowIntensity = useThemeStore(
-    (state) => state.synthesisGlowIntensity,
-  );
+  const synthesisGlowIntensity = useThemeStore((state) => state.synthesisGlowIntensity);
   const synthesisDistortion = useThemeStore((state) => state.synthesisDistortion);
   const synthesisComplexity = useThemeStore((state) => state.synthesisComplexity);
-  const synthesisFlowFrequency = useThemeStore(
-    (state) => state.synthesisFlowFrequency,
-  );
+  const synthesisFlowFrequency = useThemeStore((state) => state.synthesisFlowFrequency);
   const synthesisScale = useThemeStore((state) => state.synthesisScale);
   const synthesisContrast = useThemeStore((state) => state.synthesisContrast);
   const overlayOpacity = useThemeStore((state) => state.overlayOpacity);
@@ -26,10 +25,7 @@ export function AppBackground() {
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
 
-  const color1 = useMemo(
-    () => deriveSynthesisColor1(primaryColor),
-    [primaryColor],
-  );
+  const color1 = useMemo(() => deriveSynthesisColor1(primaryColor), [primaryColor]);
 
   const speed = useMemo(
     () => synthesisSpeed * (prefersReducedMotion ? 0.35 : 1),
@@ -45,8 +41,7 @@ export function AppBackground() {
       setIsVisible(document.visibilityState === "visible");
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   useEffect(() => {

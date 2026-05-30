@@ -20,11 +20,7 @@ export function useNews() {
         }
       } catch (error) {
         logger.error("Erreur lors du chargement des news:", error);
-        toastError(
-          toast,
-          "Erreur",
-          "Impossible de charger les news Star Citizen",
-        );
+        toastError(toast, "Erreur", "Impossible de charger les news Star Citizen");
       }
     },
     [toast],

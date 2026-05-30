@@ -8,15 +8,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TranslationsChoosen } from "@/types/translation";
 import { cn } from "@/lib/utils";
 import { TranslationLanguageToggle } from "@/features/translation/components/TranslationLanguageToggle";
-import { formatLastUpdated, TRANSLATION_CARD_WIDTH_CLASS } from "@/features/translation/translation.lib";
+import {
+  formatLastUpdated,
+  TRANSLATION_CARD_WIDTH_CLASS,
+} from "@/features/translation/translation.lib";
 
 interface TranslationVersionCardProps {
   versionKey: string;
@@ -45,8 +44,7 @@ function StatusBadge({
   if (upToDate) {
     return (
       <Badge variant="default" className="gap-1 text-[11px]">
-        <CheckCircle className="h-3 w-3" />
-        À jour
+        <CheckCircle className="h-3 w-3" />À jour
       </Badge>
     );
   }
@@ -77,8 +75,8 @@ function VersionNotice({ versionKey }: { versionKey: string }) {
       >
         <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Version publique : la traduction est maintenue et visée comme
-          complète pour cette branche.
+          Version publique : la traduction est maintenue et visée comme complète pour
+          cette branche.
         </p>
       </div>
     );
@@ -91,8 +89,8 @@ function VersionNotice({ versionKey }: { versionKey: string }) {
     >
       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Version de test : la traduction n&apos;est pas forcément complète et
-        des problèmes peuvent survenir.
+        Version de test : la traduction n&apos;est pas forcément complète et des
+        problèmes peuvent survenir.
       </p>
     </div>
   );
@@ -130,18 +128,13 @@ export function TranslationVersionCard({
     >
       <header className="settings-section-header flex items-center justify-between gap-2 px-3 py-2 pl-3">
         <h3 className="text-sm font-semibold leading-tight">{versionKey}</h3>
-        <StatusBadge
-          translated={version.translated}
-          upToDate={version.up_to_date}
-        />
+        <StatusBadge translated={version.translated} upToDate={version.up_to_date} />
       </header>
 
       <div className="space-y-3 px-3 py-3">
         <Tooltip>
           <TooltipTrigger asChild>
-            <p className="truncate text-xs text-muted-foreground">
-              {version.path}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{version.path}</p>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-sm break-all">
             {version.path}
@@ -193,9 +186,7 @@ export function TranslationVersionCard({
               size="sm"
               className="w-full"
               disabled={loadingButtonId === `update-${versionKey}`}
-              onClick={() =>
-                onUpdate(version.path, settings.link!, versionKey)
-              }
+              onClick={() => onUpdate(version.path, settings.link!, versionKey)}
             >
               {loadingButtonId === `update-${versionKey}` ? (
                 <>

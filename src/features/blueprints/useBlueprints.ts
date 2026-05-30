@@ -37,10 +37,7 @@ export function useBlueprints() {
 
   const filteredBlueprints = useMemo(
     () =>
-      sortBlueprints(
-        filterBlueprints(blueprints, searchQuery, ownerFilter),
-        sortKey,
-      ),
+      sortBlueprints(filterBlueprints(blueprints, searchQuery, ownerFilter), sortKey),
     [blueprints, searchQuery, ownerFilter, sortKey],
   );
 
@@ -106,7 +103,10 @@ export function useBlueprints() {
     try {
       await blueprintsService.stopWatcher();
       await loadData(true);
-      toast({ title: "Surveillance arrêtée", description: "La capture du Game.log est inactive" });
+      toast({
+        title: "Surveillance arrêtée",
+        description: "La capture du Game.log est inactive",
+      });
     } catch (error) {
       toastError(toast, "Erreur", String(error));
     } finally {

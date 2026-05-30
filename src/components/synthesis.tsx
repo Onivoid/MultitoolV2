@@ -93,9 +93,7 @@ const Effect = ({
   glowIntensity,
   flowFrequency,
   contrast,
-}: Required<
-  Omit<SynthesisProps, "className" | "backgroundColor" | "frameloop">
->) => {
+}: Required<Omit<SynthesisProps, "className" | "backgroundColor" | "frameloop">>) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
   const uniforms = useMemo(
@@ -112,7 +110,7 @@ const Effect = ({
       uFlowFrequency: { value: flowFrequency },
       uContrast: { value: contrast },
     }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -141,11 +139,10 @@ const Effect = ({
 
   useFrame((state) => {
     if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value =
-        state.clock.getElapsedTime() * speed;
+      materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime() * speed;
       materialRef.current.uniforms.uResolution.value.set(
         state.size.width,
-        state.size.height
+        state.size.height,
       );
     }
   });

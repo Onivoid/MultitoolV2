@@ -48,8 +48,7 @@ export function BlueprintsToolbar({
   filteredCount,
   totalCount,
 }: BlueprintsToolbarProps) {
-  const isFiltering =
-    searchQuery.trim().length > 0 || ownerFilter.trim().length > 0;
+  const isFiltering = searchQuery.trim().length > 0 || ownerFilter.trim().length > 0;
   const countLabel =
     isFiltering && filteredCount !== totalCount
       ? `${filteredCount} / ${totalCount} schémas`
@@ -74,9 +73,7 @@ export function BlueprintsToolbar({
         {availableOwners.length > 0 && (
           <Select
             value={selectValue}
-            onValueChange={(v) =>
-              onOwnerFilterChange(v === ALL_OWNERS_VALUE ? "" : v)
-            }
+            onValueChange={(v) => onOwnerFilterChange(v === ALL_OWNERS_VALUE ? "" : v)}
           >
             <SelectTrigger
               className={cn(

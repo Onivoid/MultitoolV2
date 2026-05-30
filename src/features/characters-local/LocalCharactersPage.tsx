@@ -47,12 +47,10 @@ export default function LocalCharactersPage() {
           </div>
         ) : (
           <div className="px-4 text-center">
-            <p className="text-lg font-semibold text-foreground">
-              Aucun preset local
-            </p>
+            <p className="text-lg font-semibold text-foreground">Aucun preset local</p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Aucun personnage personnalisé n&apos;a été trouvé sur vos
-              installations Star Citizen.
+              Aucun personnage personnalisé n&apos;a été trouvé sur vos installations
+              Star Citizen.
             </p>
           </div>
         )}

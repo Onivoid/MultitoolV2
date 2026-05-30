@@ -12,7 +12,7 @@ pub fn enable_auto_startup() -> Result<(), String> {
     {
         let app_name = "MultitoolV2";
         let app_path = std::env::current_exe()
-            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {}", e))?;
+            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {e}"))?;
 
         let auto_launch = AutoLaunch::new(
             app_name,
@@ -20,12 +20,9 @@ pub fn enable_auto_startup() -> Result<(), String> {
             &["--minimized"],
         );
 
-        auto_launch.enable().map_err(|e| {
-            format!(
-                "Erreur lors de l'activation du démarrage automatique: {}",
-                e
-            )
-        })?;
+        auto_launch
+            .enable()
+            .map_err(|e| format!("Erreur lors de l'activation du démarrage automatique: {e}"))?;
 
         println!("[Startup Manager] Démarrage automatique activé");
         Ok(())
@@ -44,7 +41,7 @@ pub fn disable_auto_startup() -> Result<(), String> {
     {
         let app_name = "MultitoolV2";
         let app_path = std::env::current_exe()
-            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {}", e))?;
+            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {e}"))?;
 
         let auto_launch = AutoLaunch::new(
             app_name,
@@ -53,10 +50,7 @@ pub fn disable_auto_startup() -> Result<(), String> {
         );
 
         auto_launch.disable().map_err(|e| {
-            format!(
-                "Erreur lors de la désactivation du démarrage automatique: {}",
-                e
-            )
+            format!("Erreur lors de la désactivation du démarrage automatique: {e}")
         })?;
 
         println!("[Startup Manager] Démarrage automatique désactivé");
@@ -76,7 +70,7 @@ pub fn is_auto_startup_enabled() -> Result<bool, String> {
     {
         let app_name = "MultitoolV2";
         let app_path = std::env::current_exe()
-            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {}", e))?;
+            .map_err(|e| format!("Impossible de récupérer le chemin de l'exécutable: {e}"))?;
 
         let auto_launch = AutoLaunch::new(
             app_name,
@@ -84,12 +78,9 @@ pub fn is_auto_startup_enabled() -> Result<bool, String> {
             &["--minimized"],
         );
 
-        auto_launch.is_enabled().map_err(|e| {
-            format!(
-                "Erreur lors de la vérification du démarrage automatique: {}",
-                e
-            )
-        })
+        auto_launch
+            .is_enabled()
+            .map_err(|e| format!("Erreur lors de la vérification du démarrage automatique: {e}"))
     }
 
     #[cfg(not(target_os = "windows"))]

@@ -4,10 +4,7 @@ import { ColorPicker } from "@/components/custom/color-picker";
 import { SettingRow } from "@/shared/components/v3/SettingRow";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  getThemePreferencesFromStore,
-  useThemeStore,
-} from "@/stores/theme-store";
+import { getThemePreferencesFromStore, useThemeStore } from "@/stores/theme-store";
 import { applyThemePreferences } from "@/utils/custom-theme-provider";
 import { DEFAULT_THEME_PREFERENCES, type ThemePreferences } from "@/types/theme-types";
 import { cn } from "@/lib/utils";
@@ -127,9 +124,7 @@ export function ThemeAppearanceSettings() {
               step={0.02}
               value={prefs.overlayOpacity}
               format={(v) => `${Math.round(v * 100)} %`}
-              onChange={(overlayOpacity) =>
-                updatePreferences({ overlayOpacity })
-              }
+              onChange={(overlayOpacity) => updatePreferences({ overlayOpacity })}
             />
 
             <ThemeSlider
@@ -140,9 +135,7 @@ export function ThemeAppearanceSettings() {
               step={0.05}
               value={prefs.synthesisSpeed}
               format={(v) => v.toFixed(2)}
-              onChange={(synthesisSpeed) =>
-                updatePreferences({ synthesisSpeed })
-              }
+              onChange={(synthesisSpeed) => updatePreferences({ synthesisSpeed })}
             />
 
             <ThemeSlider
@@ -204,9 +197,7 @@ export function ThemeAppearanceSettings() {
               step={0.1}
               value={prefs.synthesisScale}
               format={(v) => v.toFixed(1)}
-              onChange={(synthesisScale) =>
-                updatePreferences({ synthesisScale })
-              }
+              onChange={(synthesisScale) => updatePreferences({ synthesisScale })}
             />
 
             <ThemeSlider
@@ -217,9 +208,7 @@ export function ThemeAppearanceSettings() {
               step={0.05}
               value={prefs.synthesisContrast}
               format={(v) => v.toFixed(2)}
-              onChange={(synthesisContrast) =>
-                updatePreferences({ synthesisContrast })
-              }
+              onChange={(synthesisContrast) => updatePreferences({ synthesisContrast })}
             />
           </div>
         )}

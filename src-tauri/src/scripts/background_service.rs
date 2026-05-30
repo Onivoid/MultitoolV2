@@ -157,7 +157,7 @@ async fn run_background_service(
         }
 
         if let Err(e) = check_and_update_translations(&app, &config.language).await {
-            eprintln!("[Background Service] Erreur lors de la vérification: {}", e);
+            eprintln!("[Background Service] Erreur lors de la vérification: {e}");
         }
 
         let interval = Duration::from_secs(config.check_interval_minutes * 60);
@@ -184,7 +184,7 @@ async fn check_and_update_translations(app: &AppHandle, lang: &str) -> Result<()
     println!("[Background Service] Vérification des mises à jour de traduction...");
     let version_paths = get_star_citizen_versions()
         .await
-        .map_err(|e| format!("Impossible de récupérer les versions: {}", e))?;
+        .map_err(|e| format!("Impossible de récupérer les versions: {e}"))?;
     if version_paths.versions.is_empty() {
         println!("[Background Service] Aucune version du jeu trouvée");
         return Ok(());
@@ -208,10 +208,7 @@ async fn check_and_update_translations(app: &AppHandle, lang: &str) -> Result<()
                     )
                     .await
                     {
-                        println!(
-                            "[Background Service] Mise à jour disponible pour {}",
-                            version_name
-                        );
+                        println!("[Background Service] Mise à jour disponible pour {version_name}");
                         match update_translation_async(
                             version_path.clone(),
                             lang.to_string(),
@@ -221,44 +218,36 @@ async fn check_and_update_translations(app: &AppHandle, lang: &str) -> Result<()
                         {
                             Ok(_) => {
                                 println!(
-                                    "[Background Service] Traduction mise à jour pour {}",
-                                    version_name
+                                    "[Background Service] Traduction mise à jour pour {version_name}"
                                 );
                                 updates_count += 1;
                                 match app.notification()
                                     .builder()
                                     .title("Traduction mise à jour")
-                                    .body(format!("La traduction {} a été mise à jour avec succès", version_name))
+                                    .body(format!("La traduction {version_name} a été mise à jour avec succès"))
                                     .show() {
                                     Ok(_) => println!("[Background Service] Notification envoyée avec succès"),
-                                    Err(e) => eprintln!("[Background Service] Erreur lors de l'envoi de la notification: {}", e),
+                                    Err(e) => eprintln!("[Background Service] Erreur lors de l'envoi de la notification: {e}"),
                                 }
                             }
                             Err(e) => {
                                 eprintln!(
-                                    "[Background Service] Erreur lors de la mise à jour de {}: {}",
-                                    version_name, e
+                                    "[Background Service] Erreur lors de la mise à jour de {version_name}: {e}"
                                 );
                             }
                         }
                     } else {
-                        println!("[Background Service] {} est à jour", version_name);
+                        println!("[Background Service] {version_name} est à jour");
                     }
                 } else {
-                    println!(
-                        "[Background Service] Traduction non installée pour {}",
-                        version_name
-                    );
+                    println!("[Background Service] Traduction non installée pour {version_name}");
                 }
             }
         }
     }
 
     if updates_count > 0 {
-        println!(
-            "[Background Service] {} traduction(s) mise(s) à jour",
-            updates_count
-        );
+        println!("[Background Service] {updates_count} traduction(s) mise(s) à jour");
     } else {
         println!("[Background Service] Toutes les traductions sont à jour");
     }

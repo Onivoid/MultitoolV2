@@ -5,10 +5,9 @@ import type { LocalCharactersResult } from "@/types/charactersList";
 
 export const charactersService = {
   getInformations: async (path: string): Promise<LocalCharactersResult> => {
-    const raw = await invokeCommand<string>(
-      TAURI_COMMANDS.getCharacterInformations,
-      { path },
-    );
+    const raw = await invokeCommand<string>(TAURI_COMMANDS.getCharacterInformations, {
+      path,
+    });
     return parseJsonResponse<LocalCharactersResult>(raw);
   },
 

@@ -1,17 +1,9 @@
-import {
-  Loader2,
-  Power,
-  PowerOff,
-} from "lucide-react";
+import { Loader2, Power, PowerOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeAppearanceSettings } from "@/features/settings/components/ThemeAppearanceSettings";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PageMotion from "@/shared/components/PageMotion";
 import { PAGE_SCROLL } from "@/shared/components/pageStyles";
 import { SettingRow } from "@/shared/components/v3/SettingRow";
@@ -38,11 +30,11 @@ function SettingsSection({
   className?: string;
 }) {
   return (
-    <section className={cn("settings-section flex flex-col overflow-hidden", className)}>
+    <section
+      className={cn("settings-section flex flex-col overflow-hidden", className)}
+    >
       <header className="settings-section-header px-4 py-2.5 pl-3.5">
-        <h2 className="text-sm font-semibold leading-tight text-foreground">
-          {title}
-        </h2>
+        <h2 className="text-sm font-semibold leading-tight text-foreground">{title}</h2>
         {description && (
           <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {description}

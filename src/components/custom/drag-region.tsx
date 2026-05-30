@@ -16,7 +16,7 @@ const DRAG_EXCLUDED_SELECTOR = [
   '[role="link"]',
   '[role="slider"]',
   '[role="tab"]',
-  '[data-no-window-drag]',
+  "[data-no-window-drag]",
   ".react-colorful",
   "[data-radix-popper-content-wrapper]",
 ].join(", ");

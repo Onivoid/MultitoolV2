@@ -52,7 +52,7 @@ fn get_character_informations_sync(path: String) -> Result<String, String> {
                         }
                     }
                     Err(e) => {
-                        println!("Erreur lors de la lecture de l'entrée: {}", e);
+                        println!("Erreur lors de la lecture de l'entrée: {e}");
                     }
                 }
             }
@@ -68,7 +68,7 @@ fn get_character_informations_sync(path: String) -> Result<String, String> {
 
     let output = Output { characters };
     serde_json::to_string_pretty(&output)
-        .map_err(|e| format!("Erreur lors de la sérialisation JSON: {}", e))
+        .map_err(|e| format!("Erreur lors de la sérialisation JSON: {e}"))
 }
 
 /// Récupère les informations sur tous les personnages personnalisés pour une version de Star Citizen.
@@ -112,9 +112,9 @@ pub async fn open_characters_folder(path: String) -> Result<bool, String> {
     }
 
     Command::new("explorer")
-        .arg(&base_path)
+        .arg(base_path)
         .spawn()
-        .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'ouverture du dossier : {e}"))?;
 
     Ok(true)
 }
@@ -126,7 +126,7 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
     let source = Path::new(&character_path);
 
     if !source.exists() {
-        return Err(format!("Le fichier '{}' n'existe pas.", character_path));
+        return Err(format!("Le fichier '{character_path}' n'existe pas."));
     }
 
     let file_name = match source.file_name() {
@@ -161,7 +161,7 @@ pub fn duplicate_character(character_path: String) -> Result<bool, String> {
         }
 
         let dest_file = dest_dir.join(file_name);
-        if let Err(e) = fs::copy(&source, dest_file) {
+        if let Err(e) = fs::copy(source, dest_file) {
             return Err(format!(
                 "Erreur lors de la copie vers '{}': {}",
                 dest_dir.display(),
@@ -201,20 +201,20 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
 
     let re = Regex::new(r#"[<>:"/\\|?*]"#).unwrap();
     let sanitized = re.replace_all(&title, "_");
-    let file_path = dest_dir.join(format!("{}.chf", sanitized));
+    let file_path = dest_dir.join(format!("{sanitized}.chf"));
 
-    println!("[DEBUG] Téléchargement depuis: {}", dna_url);
+    println!("[DEBUG] Téléchargement depuis: {dna_url}");
 
     let client = Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .redirect(reqwest::redirect::Policy::limited(10))
         .build()
-        .map_err(|e| format!("Erreur lors de la création du client: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la création du client: {e}"))?;
 
     let response = client
         .get(&dna_url)
         .send()
-        .map_err(|e| format!("Erreur lors du téléchargement: {}", e))?;
+        .map_err(|e| format!("Erreur lors du téléchargement: {e}"))?;
 
     println!("[DEBUG] Status HTTP: {}", response.status());
     println!("[DEBUG] URL finale: {}", response.url());
@@ -230,12 +230,12 @@ pub fn download_character(dna_url: String, title: String) -> Result<bool, String
 
     let bytes = response
         .bytes()
-        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {e}"))?;
 
     println!("[DEBUG] Taille téléchargée: {} bytes", bytes.len());
 
     fs::write(&file_path, &bytes)
-        .map_err(|e| format!("Erreur lors de l'écriture du fichier: {}", e))?;
+        .map_err(|e| format!("Erreur lors de l'écriture du fichier: {e}"))?;
 
     println!(
         "[DEBUG] Fichier écrit: {} ({} bytes)",

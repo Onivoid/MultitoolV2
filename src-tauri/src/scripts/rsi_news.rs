@@ -10,7 +10,7 @@ pub async fn fetch_rsi_news() -> Result<String, String> {
         .header("User-Agent", "MultitoolV2")
         .send()
         .await
-        .map_err(|e| format!("Erreur lors de la requête: {}", e))?;
+        .map_err(|e| format!("Erreur lors de la requête: {e}"))?;
 
     if !response.status().is_success() {
         return Err(format!("Erreur HTTP: {}", response.status()));
@@ -19,5 +19,5 @@ pub async fn fetch_rsi_news() -> Result<String, String> {
     response
         .text()
         .await
-        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {}", e))
+        .map_err(|e| format!("Erreur lors de la lecture de la réponse: {e}"))
 }

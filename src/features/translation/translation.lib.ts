@@ -54,7 +54,12 @@ export const CANONICAL_VERSION_ORDER = [
 export function establishVersionOrder(keys: string[]): string[] {
   const known = CANONICAL_VERSION_ORDER.filter((key) => keys.includes(key));
   const unknown = keys
-    .filter((key) => !CANONICAL_VERSION_ORDER.includes(key as (typeof CANONICAL_VERSION_ORDER)[number]))
+    .filter(
+      (key) =>
+        !CANONICAL_VERSION_ORDER.includes(
+          key as (typeof CANONICAL_VERSION_ORDER)[number],
+        ),
+    )
     .sort((a, b) => a.localeCompare(b, "fr"));
   return [...known, ...unknown];
 }
@@ -103,8 +108,7 @@ export async function resolveTranslationVersionStates(
   translationsSelected: TranslationsChoosen,
   versionOrder?: string[],
 ): Promise<GamePaths> {
-  const order =
-    versionOrder ?? establishVersionOrder(Object.keys(gamePaths.versions));
+  const order = versionOrder ?? establishVersionOrder(Object.keys(gamePaths.versions));
   const updatedPaths: GamePaths = {
     versions: { ...gamePaths.versions },
   };
@@ -114,8 +118,7 @@ export async function resolveTranslationVersionStates(
       .filter((key) => gamePaths.versions[key])
       .map(async (key) => {
         const value = gamePaths.versions[key];
-        const versionSettings =
-          translationsSelected[key as keyof TranslationsChoosen];
+        const versionSettings = translationsSelected[key as keyof TranslationsChoosen];
 
         const translated = await translationService.isGameTranslated(
           value.path,

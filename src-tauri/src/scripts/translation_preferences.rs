@@ -18,20 +18,11 @@ fn get_config_file_path(path: &PathResolver<impl Runtime>) -> Result<PathBuf, St
     Ok(config_file)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct TranslationSetting {
     pub link: Option<String>,
     #[serde(rename = "settingsEN")]
     pub settings_en: bool,
-}
-
-impl Default for TranslationSetting {
-    fn default() -> Self {
-        Self {
-            link: None,
-            settings_en: false,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -60,7 +51,7 @@ pub fn save_translations_selected(
     let config_path = get_config_file_path(app.path()).map_err(|e| e.to_string())?;
 
     let json_data = serde_json::to_string(&data).map_err(|e| e.to_string())?;
-    println!("JSON à sauvegarder: {}", json_data);
+    println!("JSON à sauvegarder: {json_data}");
 
     fs::write(config_path, json_data).map_err(|e| e.to_string())
 }
@@ -80,7 +71,7 @@ pub fn load_translations_selected(app: tauri::AppHandle) -> Result<TranslationsS
             Ok(data)
         }
         Err(e) => {
-            println!("Erreur de désérialisation au format standard: {}", e);
+            println!("Erreur de désérialisation au format standard: {e}");
             println!("Tentative de conversion depuis l'ancien format");
 
             let converted = convert_old_format(&json_data)?;
@@ -142,7 +133,7 @@ fn convert_old_format(json_str: &str) -> Result<TranslationsSelected, String> {
             }
         }
         Err(e) => {
-            println!("Échec de la conversion depuis Value générique: {}", e);
+            println!("Échec de la conversion depuis Value générique: {e}");
         }
     }
 

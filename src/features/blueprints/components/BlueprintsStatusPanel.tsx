@@ -1,18 +1,7 @@
-import {
-  FileDown,
-  Loader2,
-  Play,
-  RefreshCw,
-  Square,
-  FolderSync,
-} from "lucide-react";
+import { FileDown, Loader2, Play, RefreshCw, Square, FolderSync } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GamelogWatcherStatus } from "@/features/blueprints/blueprints.service";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
