@@ -16,11 +16,7 @@ export function useNews() {
         const data = await newsService.fetchFeed();
         setNews(data.items || []);
         if (!silent) {
-          toastSuccess(
-            toast,
-            "News mises à jour",
-            `${data.items?.length || 0} articles chargés`,
-          );
+          toastSuccess(toast, "Actualités mises à jour");
         }
       } catch (error) {
         logger.error("Erreur lors du chargement des news:", error);

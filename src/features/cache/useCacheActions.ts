@@ -3,7 +3,7 @@ import {
   cacheService,
   type CacheFolder,
 } from "@/features/cache/cache.service";
-import { toastLegacyError, toastLegacySuccess } from "@/shared/lib/toastHelpers";
+import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
 
 export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => void) {
   const { toast } = useToast();
@@ -12,14 +12,10 @@ export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => voi
     try {
       const res = await cacheService.openFolder();
       if (res) {
-        toastLegacySuccess(toast, "Dossier ouvert", "Le dossier du cache a bien été ouvert.");
+        toastSuccess(toast, "Dossier cache ouvert");
       }
     } catch (error) {
-      toastLegacyError(
-        toast,
-        "Erreur lors de l'ouverture",
-        `Une erreur est survenue : ${error}`,
-      );
+      toastError(toast, "Ouverture impossible", String(error));
     }
   };
 
@@ -28,14 +24,10 @@ export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => voi
       const res = await cacheService.clearAll();
       if (res) {
         onFoldersChange([]);
-        toastLegacySuccess(toast, "Cache nettoyé", "Le cache a bien été nettoyé.");
+        toastSuccess(toast, "Cache vidé");
       }
     } catch (error) {
-      toastLegacyError(
-        toast,
-        "Erreur lors du nettoyage",
-        `Une erreur est survenue : ${error}`,
-      );
+      toastError(toast, "Nettoyage impossible", String(error));
     }
   };
 
@@ -43,25 +35,13 @@ export function useCacheActions(onFoldersChange: (folders: CacheFolder[]) => voi
     try {
       const res = await cacheService.deleteFolder(path);
       if (res) {
-        toastLegacySuccess(
-          toast,
-          "Dossier supprimé",
-          `Le dossier ${path} a bien été supprimé.`,
-        );
+        toastSuccess(toast, "Dossier supprimé");
         onDeleted(path);
       } else {
-        toastLegacySuccess(
-          toast,
-          "Erreur lors de la suppression",
-          `Une erreur est survenue lors de la suppression du dossier ${path}.`,
-        );
+        toastError(toast, "Suppression impossible", "Le dossier n'a pas pu être retiré.");
       }
     } catch (error) {
-      toastLegacyError(
-        toast,
-        "Erreur lors de la suppression",
-        `Une erreur est survenue : ${error}`,
-      );
+      toastError(toast, "Suppression impossible", String(error));
     }
   };
 

@@ -24,6 +24,7 @@ export interface TranslationOption {
 export interface TranslationSetting {
     link: string | null;
     settingsEN: boolean;
+    lastUpdatedAt?: string;
 }
 
 export interface TranslationsChoosen {
