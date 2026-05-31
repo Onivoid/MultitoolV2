@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { TranslationLanguageToggle } from "@/features/translation/components/TranslationLanguageToggle";
 import {
   formatLastUpdated,
+  isLiveVersionKey,
   TRANSLATION_CARD_WIDTH_CLASS,
 } from "@/features/translation/translation.lib";
 
@@ -65,7 +66,7 @@ function StatusBadge({
 }
 
 function VersionNotice({ versionKey }: { versionKey: string }) {
-  const isLive = versionKey === "LIVE";
+  const isLive = isLiveVersionKey(versionKey);
 
   if (isLive) {
     return (

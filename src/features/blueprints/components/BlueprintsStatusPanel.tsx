@@ -2,7 +2,9 @@ import { FileDown, Loader2, Play, RefreshCw, Square, FolderSync } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { BlueprintsImportProgressDisplay } from "@/features/blueprints/components/BlueprintsImportProgressDisplay";
 import type { GamelogWatcherStatus } from "@/features/blueprints/blueprints.service";
+import type { BlueprintsImportProgress } from "@/features/blueprints/blueprints.import.types";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -13,6 +15,8 @@ interface BlueprintsStatusPanelProps {
   isRefreshing: boolean;
   isLoading: boolean;
   isImporting: boolean;
+  importProgress: BlueprintsImportProgress | null;
+  importStartedAt: number | null;
   isExporting: boolean;
   isTogglingWatch: boolean;
   onRefresh: () => void;
@@ -65,6 +69,8 @@ export function BlueprintsStatusPanel({
   isRefreshing,
   isLoading,
   isImporting,
+  importProgress,
+  importStartedAt,
   isExporting,
   isTogglingWatch,
   onRefresh,
@@ -109,6 +115,15 @@ export function BlueprintsStatusPanel({
           </TooltipContent>
         )}
       </Tooltip>
+
+      {isImporting && (
+        <BlueprintsImportProgressDisplay
+          isImporting={isImporting}
+          progress={importProgress}
+          operationStartedAt={importStartedAt}
+          className="w-full lg:max-w-md"
+        />
+      )}
 
       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
         <ActionButton

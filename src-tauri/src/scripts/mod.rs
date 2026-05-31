@@ -1,12 +1,16 @@
 pub mod background_service;
 pub mod cache_functions;
+pub mod game_log;
 pub mod gamelog_watcher;
 pub mod gamepath;
+pub mod home_dashboard;
 pub mod local_characters_functions;
 pub mod patchnote;
 pub mod presets_list_functions;
+pub mod recent_routes;
 pub mod rsi_news;
 pub mod startup_manager;
+pub mod system_metrics;
 pub mod system_tray;
 pub mod theme_preferences;
 pub mod translation_functions;

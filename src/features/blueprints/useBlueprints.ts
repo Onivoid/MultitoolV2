@@ -10,11 +10,18 @@ import {
   saveBlueprintSortKey,
   sortBlueprints,
 } from "@/features/blueprints/blueprints.lib";
+import { useBlueprintsImport } from "@/features/blueprints/hooks/useBlueprintsImport";
 import logger from "@/utils/logger";
 import { toastError, toastSuccess, toastWarning } from "@/shared/lib/toastHelpers";
 
 export function useBlueprints() {
   const { toast } = useToast();
+  const {
+    isImporting,
+    progress: importProgress,
+    operationStartedAt: importStartedAt,
+    importFromLogbackups,
+  } = useBlueprintsImport();
   const [blueprints, setBlueprints] = useState<BlueprintEntry[]>([]);
   const [status, setStatus] = useState<Awaited<
     ReturnType<typeof blueprintsService.getWatcherStatus>
@@ -22,7 +29,6 @@ export function useBlueprints() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTogglingWatch, setIsTogglingWatch] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
@@ -115,9 +121,8 @@ export function useBlueprints() {
   };
 
   const importHistory = async () => {
-    setIsImporting(true);
     try {
-      const result = await blueprintsService.importFromLogbackups(true);
+      const result = await importFromLogbackups(true);
       await loadData(true);
       const errHint =
         result.filesFailed > 0
@@ -144,8 +149,6 @@ export function useBlueprints() {
       }
     } catch (error) {
       toastError(toast, "Synchronisation impossible", String(error));
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -175,6 +178,8 @@ export function useBlueprints() {
     isRefreshing,
     isTogglingWatch,
     isImporting,
+    importProgress,
+    importStartedAt,
     isExporting,
     searchQuery,
     setSearchQuery,

@@ -29,3 +29,7 @@ builds/
 .env
 todo.md
 temp/
+
+# Données locales de dev / scan (ne pas versionner)
+game_stats_cache.json
+Game.log

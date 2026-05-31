@@ -12,6 +12,10 @@ const appVersion = tauriConfig.version;
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+  },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
     "process.env.TAURI_ENV_PORTABLE": JSON.stringify(process.env.TAURI_ENV_PORTABLE),

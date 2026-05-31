@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { RouteVisitTracker } from "@/app/RouteVisitTracker";
 import { AppShell } from "@/components/navigation/AppShell";
 import HomePage from "@/features/home/HomePage";
 import TranslationPage from "@/features/translation/TranslationPage";
@@ -12,6 +13,7 @@ import NewsPage from "@/features/news/NewsPage";
 import Ships3DPage from "@/features/ships3d/Ships3DPage";
 import BlueprintsPage from "@/features/blueprints/BlueprintsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import StatisticsPage from "@/features/game-stats/StatisticsPage";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -27,6 +29,7 @@ const AppRouter = () => (
   <Router>
     <AppShell>
       <ScrollToTop />
+      <RouteVisitTracker />
       <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -39,6 +42,7 @@ const AppRouter = () => (
           <Route path="/news" element={<NewsPage />} />
           <Route path="/ships3d" element={<Ships3DPage />} />
           <Route path="/blueprints" element={<BlueprintsPage />} />
+          <Route path="/statistiques" element={<StatisticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </div>

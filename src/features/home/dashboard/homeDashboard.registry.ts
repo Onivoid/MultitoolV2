@@ -1,0 +1,74 @@
+import type { ComponentType } from "react";
+import { Activity, BarChart3, HardDrive, Languages, Package, Sparkles } from "lucide-react";
+import type { HomeWidgetType } from "@/features/home/dashboard/homeDashboard.types";
+import { GameStatsWidgetContent } from "@/features/home/dashboard/widgets/GameStatsWidgetContent";
+import { TopRoutesWidgetContent } from "@/features/home/dashboard/widgets/TopRoutesWidgetContent";
+import { BlueprintsWidgetContent } from "@/features/home/dashboard/widgets/BlueprintsWidgetContent";
+import { TranslationWidgetContent } from "@/features/home/dashboard/widgets/TranslationWidgetContent";
+import { CacheWidgetContent } from "@/features/home/dashboard/widgets/CacheWidgetContent";
+import { PerformanceWidgetContent } from "@/features/home/dashboard/widgets/PerformanceWidgetContent";
+
+export interface HomeWidgetDefinition {
+  type: HomeWidgetType;
+  label: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+  Content: ComponentType;
+  /** Lien « Voir tout » dans l'en-tête du widget (optionnel). */
+  headerRoute?: string;
+}
+
+export const HOME_WIDGET_REGISTRY: HomeWidgetDefinition[] = [
+  {
+    type: "top_routes",
+    label: "Fonctionnalités utilisées",
+    description: "Vos 3 pages les plus visitées.",
+    icon: Sparkles,
+    Content: TopRoutesWidgetContent,
+  },
+  {
+    type: "game_stats",
+    label: "Statistiques",
+    description: "Résumé des stats extraites des logs.",
+    icon: BarChart3,
+    Content: GameStatsWidgetContent,
+    headerRoute: "/statistiques",
+  },
+  {
+    type: "translation",
+    label: "Traduction",
+    description: "État des traductions par version et actions rapides.",
+    icon: Languages,
+    Content: TranslationWidgetContent,
+    headerRoute: "/traduction",
+  },
+  {
+    type: "blueprints",
+    label: "Schémas",
+    description: "Surveillance Game.log, sync et derniers schémas reçus.",
+    icon: Package,
+    Content: BlueprintsWidgetContent,
+    headerRoute: "/blueprints",
+  },
+  {
+    type: "cache",
+    label: "Cache",
+    description: "Dossiers cache détectés, recherche et nettoyage rapide.",
+    icon: HardDrive,
+    Content: CacheWidgetContent,
+    headerRoute: "/cache",
+  },
+  {
+    type: "system_performance",
+    label: "Performance",
+    description: "Utilisation CPU, GPU et mémoire en temps réel.",
+    icon: Activity,
+    Content: PerformanceWidgetContent,
+  },
+];
+
+export function getWidgetDefinition(
+  type: HomeWidgetType,
+): HomeWidgetDefinition | undefined {
+  return HOME_WIDGET_REGISTRY.find((w) => w.type === type);
+}

@@ -40,6 +40,9 @@ export function FeatureSearchField({
         placeholder={placeholder}
         className={cn(
           "min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none",
+          // Chromium/Edge : croix native sur type="search" (doublon avec le bouton ci-dessous)
+          "[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
+          "[&::-ms-clear]:hidden",
           inputClassName,
         )}
         data-no-window-drag

@@ -40,6 +40,15 @@ export const TAURI_COMMANDS = {
   saveThemeSelected: "save_theme_selected",
   loadThemeSelected: "load_theme_selected",
   openExternal: "open_external",
+  recordPageVisit: "record_page_visit",
+  getTopRoutes: "get_top_routes",
+  getHomeDashboard: "get_home_dashboard",
+  saveHomeDashboard: "save_home_dashboard",
+  getCachedGameStats: "get_cached_game_stats",
+  getGameStatsScanStatus: "get_game_stats_scan_status",
+  getGameStats: "get_game_stats",
+  syncGameStats: "sync_game_stats",
+  getSystemMetrics: "get_system_metrics",
 } as const;
 
 export type TauriCommand = (typeof TAURI_COMMANDS)[keyof typeof TAURI_COMMANDS];

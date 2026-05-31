@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml"
+    "lint:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.2",
@@ -51,6 +52,7 @@
     "react-colorful": "^5.6.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.2",
+    "recharts": "^2.15.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.184.0",
@@ -75,6 +77,7 @@
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.60.0",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^3.0.5"
   }
 }

@@ -64,15 +64,78 @@ fn get_game_install_path(list_data: Vec<String>, check_exists: bool) -> Vec<Stri
     sc_install_paths
 }
 
-fn get_game_channel_id(install_path: &str) -> String {
-    let re = Regex::new(r"StarCitizen\\([A-Za-z0-9_\\.\\@-]+)\\?$").unwrap();
-    if let Some(cap) = re.captures(install_path) {
-        if let Some(version) = cap.get(1) {
-            let version_str = version.as_str();
-            return version_str.trim_end_matches('\\').to_string();
+/// Normalise les séparateurs Windows / Unix avant analyse.
+fn normalize_install_path(path: &str) -> String {
+    path.replace('/', "\\").trim_end_matches('\\').to_string()
+}
+
+/// Extrait le segment de canal (dossier sous `StarCitizen\`).
+pub fn get_game_channel_id(install_path: &str) -> String {
+    let path = normalize_install_path(install_path);
+    let upper = path.to_uppercase();
+
+    if let Some(idx) = upper.rfind("STARCITIZEN\\") {
+        let after = &path[idx + "STARCITIZEN\\".len()..];
+        let segment = after
+            .split('\\')
+            .find(|s| !s.is_empty())
+            .unwrap_or(after)
+            .trim();
+        if !segment.is_empty() {
+            return segment.to_string();
         }
     }
+
+    let re = Regex::new(r"(?i)StarCitizen[\\/]([A-Za-z0-9_\\.\\@\\-\\s]+)").unwrap();
+    if let Some(cap) = re.captures(&path) {
+        if let Some(version) = cap.get(1) {
+            let segment = version
+                .as_str()
+                .split('\\')
+                .next()
+                .unwrap_or(version.as_str())
+                .trim();
+            if !segment.is_empty() {
+                return segment.to_string();
+            }
+        }
+    }
+
     "UNKNOWN".to_string()
+}
+
+/// Si LIVE est présent dans le nom de version ou le chemin, retourne la clé canonique `LIVE`.
+pub fn canonicalize_version_key(raw_channel_id: &str, install_path: &str) -> String {
+    if raw_channel_id == "UNKNOWN" {
+        if install_path_indicates_live(install_path) {
+            return "LIVE".to_string();
+        }
+        return "UNKNOWN".to_string();
+    }
+    if channel_id_indicates_live(raw_channel_id) || install_path_indicates_live(install_path) {
+        return "LIVE".to_string();
+    }
+    raw_channel_id.to_string()
+}
+
+/// Le chemin d'installation pointe vers un dossier LIVE (segment ou sous-chaîne après StarCitizen).
+pub fn install_path_indicates_live(install_path: &str) -> bool {
+    let path = normalize_install_path(install_path);
+    let upper = path.to_uppercase();
+    if !upper.contains("STARCITIZEN") {
+        return false;
+    }
+
+    if let Some(idx) = upper.rfind("STARCITIZEN\\") {
+        for segment in path[idx + "STARCITIZEN\\".len()..].split('\\') {
+            let seg = segment.trim();
+            if !seg.is_empty() && channel_id_indicates_live(seg) {
+                return true;
+            }
+        }
+    }
+
+    upper.contains("\\LIVE\\") || upper.ends_with("\\LIVE")
 }
 
 /// Informations sur une version installée de Star Citizen.
@@ -97,18 +160,42 @@ pub fn get_star_citizen_versions_sync() -> VersionPaths {
 
     let mut versions = HashMap::new();
     for path in &sc_install_paths {
-        let normalized_path = path.trim_end_matches('\\').to_string();
-        let version = get_game_channel_id(&normalized_path);
+        let normalized_path = normalize_install_path(path);
+        let raw_channel = get_game_channel_id(&normalized_path);
+        let version = canonicalize_version_key(&raw_channel, &normalized_path);
 
-        if version != "UNKNOWN" && !versions.contains_key(&version) {
-            versions.insert(
-                version,
-                VersionInfo {
-                    path: normalized_path,
-                    translated: false,
-                    up_to_date: false,
-                },
-            );
+        if version == "UNKNOWN" {
+            continue;
+        }
+
+        // Fusionne les alias (ex. clé « StarCitizen/LIVE ») vers la clé canonique LIVE.
+        match versions.get(&version) {
+            None => {
+                versions.insert(
+                    version.clone(),
+                    VersionInfo {
+                        path: normalized_path,
+                        translated: false,
+                        up_to_date: false,
+                    },
+                );
+            }
+            Some(existing) => {
+                let prefer_new = version == "LIVE"
+                    && (existing.path.to_uppercase().ends_with("\\LIVE")
+                        || normalized_path.to_uppercase().ends_with("\\LIVE"))
+                    && !existing.path.to_uppercase().ends_with("\\LIVE");
+                if prefer_new {
+                    versions.insert(
+                        version,
+                        VersionInfo {
+                            path: normalized_path,
+                            translated: false,
+                            up_to_date: false,
+                        },
+                    );
+                }
+            }
         }
     }
     VersionPaths { versions }
@@ -125,17 +212,99 @@ pub async fn get_star_citizen_versions() -> Result<VersionPaths, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Canaux connus qui ne doivent pas être confondus avec LIVE (même si le nom contient « live »).
+fn is_exclusive_non_live_channel(channel_id: &str) -> bool {
+    let upper = channel_id.to_uppercase();
+    matches!(
+        upper.as_str(),
+        "PTU" | "EPTU" | "HOTFIX" | "TECH-PREVIEW" | "TECH_PREVIEW"
+    )
+}
+
+/// Indique si l'identifiant de canal correspond au LIVE (nom exact, segment, ou « StarCitizen/LIVE »).
+pub fn channel_id_indicates_live(channel_id: &str) -> bool {
+    if channel_id.is_empty() {
+        return false;
+    }
+    let normalized = channel_id.replace('/', "\\");
+    for segment in normalized.split('\\') {
+        let seg = segment.trim();
+        if seg.is_empty() {
+            continue;
+        }
+        if is_exclusive_non_live_channel(seg) {
+            continue;
+        }
+        let upper = seg.to_uppercase();
+        if upper == "LIVE" || upper.contains("LIVE") {
+            return true;
+        }
+    }
+    false
+}
+
+/// Score de correspondance LIVE (plus petit = meilleur). `None` si ce n'est pas le canal LIVE.
+fn live_channel_match_score(channel_id: &str) -> Option<u16> {
+    if !channel_id_indicates_live(channel_id) {
+        return None;
+    }
+    let upper = channel_id.to_uppercase();
+    if upper == "LIVE" {
+        return Some(0);
+    }
+    if upper.starts_with("LIVE") {
+        return Some(100 + upper.len() as u16);
+    }
+    Some(1000 + upper.len() as u16)
+}
+
+/// Résout l'installation LIVE depuis la map des versions (même logique que la page Traduction).
+///
+/// Certaines installations ont un dossier canal renommé (ex. `LIVE_corrompu`) : on accepte toute
+/// clé ou segment de chemin contenant « LIVE », en excluant PTU / EPTU / etc.
+pub fn resolve_live_install_path_from_versions(
+    versions: &HashMap<String, VersionInfo>,
+) -> Option<String> {
+    if let Some(info) = versions.get("LIVE") {
+        return Some(info.path.clone());
+    }
+
+    let mut best: Option<(u16, String)> = None;
+
+    for (key, info) in versions {
+        if let Some(score) = live_channel_match_score(key) {
+            consider_live_candidate(&mut best, score, &info.path);
+        }
+    }
+
+    if best.is_none() {
+        for info in versions.values() {
+            let folder_id = get_game_channel_id(&info.path);
+            if let Some(score) = live_channel_match_score(&folder_id) {
+                consider_live_candidate(&mut best, score + 50, &info.path);
+            }
+        }
+    }
+
+    best.map(|(_, path)| path)
+}
+
+fn consider_live_candidate(best: &mut Option<(u16, String)>, score: u16, path: &str) {
+    match best {
+        None => *best = Some((score, path.to_string())),
+        Some((best_score, _)) if score < *best_score => {
+            *best = Some((score, path.to_string()));
+        }
+        _ => {}
+    }
+}
+
 /// Retourne le chemin d'installation du canal LIVE, s'il est détecté.
 pub fn get_live_install_path_sync() -> Result<String, String> {
     let versions = get_star_citizen_versions_sync();
-    versions
-        .versions
-        .get("LIVE")
-        .map(|info| info.path.clone())
-        .ok_or_else(|| {
-            "Installation Star Citizen LIVE introuvable. Vérifiez que le jeu est installé."
-                .to_string()
-        })
+    resolve_live_install_path_from_versions(&versions.versions).ok_or_else(|| {
+        "Installation Star Citizen LIVE introuvable (canal contenant « LIVE »). Vérifiez que le jeu est installé.".to_string()
+    })
 }
 
 /// Retourne le chemin attendu vers `Game.log` du canal LIVE (le fichier peut ne pas exister tant que le jeu n'a pas été lancé).
@@ -152,4 +321,88 @@ pub async fn get_live_game_log_path() -> Result<String, String> {
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn info(path: &str) -> VersionInfo {
+        VersionInfo {
+            path: path.to_string(),
+            translated: false,
+            up_to_date: false,
+        }
+    }
+
+    #[test]
+    fn resolve_live_prefers_exact_key() {
+        let mut versions = HashMap::new();
+        versions.insert(
+            "LIVE_backup".to_string(),
+            info(r"C:\StarCitizen\LIVE_backup"),
+        );
+        versions.insert("LIVE".to_string(), info(r"C:\StarCitizen\LIVE"));
+        let resolved = resolve_live_install_path_from_versions(&versions).unwrap();
+        assert!(resolved.ends_with("LIVE"));
+        assert!(!resolved.ends_with("LIVE_backup"));
+    }
+
+    #[test]
+    fn resolve_live_fuzzy_folder_name() {
+        let mut versions = HashMap::new();
+        versions.insert(
+            "LIVE (1)".to_string(),
+            info(r"C:\Games\StarCitizen\LIVE (1)"),
+        );
+        let resolved = resolve_live_install_path_from_versions(&versions).unwrap();
+        assert!(resolved.contains("LIVE"));
+    }
+
+    #[test]
+    fn resolve_live_ignores_ptu() {
+        let mut versions = HashMap::new();
+        versions.insert("PTU".to_string(), info(r"C:\StarCitizen\PTU"));
+        assert!(resolve_live_install_path_from_versions(&versions).is_none());
+    }
+
+    #[test]
+    fn channel_id_indicates_live_cases() {
+        assert!(channel_id_indicates_live("LIVE"));
+        assert!(channel_id_indicates_live("LIVE_old"));
+        assert!(channel_id_indicates_live("StarCitizen/LIVE"));
+        assert!(channel_id_indicates_live(r"StarCitizen\LIVE"));
+        assert!(!channel_id_indicates_live("PTU"));
+        assert!(!channel_id_indicates_live("EPTU"));
+    }
+
+    #[test]
+    fn canonicalize_starcitizen_slash_live() {
+        assert_eq!(
+            canonicalize_version_key("StarCitizen/LIVE", r"C:\Games\StarCitizen\LIVE"),
+            "LIVE"
+        );
+    }
+
+    #[test]
+    fn versions_map_uses_canonical_live_key() {
+        let mut versions = HashMap::new();
+        versions.insert(
+            "LIVE".to_string(),
+            info(r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE"),
+        );
+        let raw =
+            get_game_channel_id(r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE");
+        assert_eq!(
+            canonicalize_version_key(&raw, r"C:\...\StarCitizen\LIVE"),
+            "LIVE"
+        );
+        assert!(resolve_live_install_path_from_versions(&versions).is_some());
+    }
+
+    #[test]
+    fn install_path_with_forward_slashes() {
+        assert!(install_path_indicates_live("C:/Games/StarCitizen/LIVE"));
+        assert_eq!(get_game_channel_id("C:/Games/StarCitizen/LIVE"), "LIVE");
+    }
 }
