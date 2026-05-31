@@ -1,6 +1,6 @@
 ﻿# Guide de gestion des versions
 
-Multitool suit le semver `MAJOR.MINOR.PATCH`.
+Multitool suit le semver `MAJOR.MINOR.PATCH`, avec identifiants de pré-release optionnels (`-beta.N`, `-alpha.N`, `-rc.N`).
 
 ## Fichiers de version
 
@@ -9,7 +9,9 @@ Identiques et **sans préfixe `v`** :
 - `package.json`
 - `src-tauri/tauri.conf.json`
 
-Le préfixe `v` est réservé aux tags Git (`v2.8.2`) et à l’affichage.
+Exemples : `2.8.2`, `3.0.0-beta.1`
+
+Le préfixe `v` est réservé aux tags Git (`v2.8.2`, `v3.0.0-beta.1`) et à l’affichage.
 
 Vérification :
 
@@ -17,23 +19,47 @@ Vérification :
 node scripts/check-version.js
 ```
 
-## Hooks Git (branche `master` uniquement)
+## Canaux de release
 
-Les hooks ne bumpent la version **que sur `master`**. Sur une branche feature, `git commit` se comporte normalement.
+La config centrale est [`scripts/versioning/config.json`](scripts/versioning/config.json).
+
+| Canal   | Version exemple   | GitHub        | `latest.json` (auto-update stable) |
+|---------|-------------------|---------------|-------------------------------------|
+| stable  | `3.0.0`           | release       | oui                                 |
+| beta    | `3.0.0-beta.1`    | pre-release   | non                                 |
+| alpha   | `3.0.0-alpha.1`   | pre-release   | non                                 |
+| rc      | `3.0.0-rc.1`      | pre-release   | non                                 |
+
+La CI déduit le canal **uniquement du tag** (`v3.0.0-beta.1` → beta). Pas besoin de modifier le workflow à chaque bêta.
+
+Inspecter un tag :
+
+```bash
+node scripts/versioning/release-channel.mjs --tag v3.0.0-beta.1
+```
+
+Branches avec bump automatique (modifiable dans `config.json`) : `master`, `v3`, `V3`.
+
+## Hooks Git
+
+Les hooks ne bumpent la version **que sur les branches listées** dans `config.json`. Sur les autres branches, `git commit` se comporte normalement.
 
 Activation : `pnpm install` ou `.\scripts\setup-githooks.ps1` (Git Bash requis sur Windows).
 
-### Sur `master`
+### Bump interactif
 
-1. `git commit` → saisie de la nouvelle version (`X.Y.Z`, strictement > actuelle)
-2. `package.json` et `tauri.conf.json` mis à jour et stagés
-3. `post-commit` crée le tag local `vX.Y.Z`
-4. Pousser commit + tag :
+1. `git commit` → choix du **canal** (stable / beta / alpha / rc)
+2. Saisie de la version de base `X.Y.Z` (+ numéro de pré-release si besoin)
+3. `package.json` et `tauri.conf.json` mis à jour et stagés
+4. `post-commit` crée le tag local `v{version}` (ex. `v3.0.0-beta.1`)
+5. Pousser commit + tag :
 
 ```bash
 git push
-git push origin vX.Y.Z
+git push origin v3.0.0-beta.1
 ```
+
+Le numéro `beta.N` suivant est **suggéré** à partir des tags Git existants.
 
 ### Commit sans bump
 
@@ -65,10 +91,13 @@ Fallback CI : si le message est vide, la release affiche `Release vX.Y.Z`.
 
 Push d’un tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) :
 
-1. Draft release GitHub
-2. Build Windows (MSI + portable + checksums)
-3. Notes = message du commit tagué + section checksums SHA256
-4. Publication + génération `latest.json` (`scripts/updater.mjs`)
+1. Détection du canal (`scripts/versioning/release-channel.mjs`)
+2. Draft release GitHub (`prerelease: true` si beta/alpha/rc)
+3. Build Windows (MSI + portable + checksums)
+4. Notes = message du commit tagué + section checksums SHA256
+5. Publication (`make_latest` uniquement pour **stable**)
+6. `latest.json` + validation **uniquement** pour **stable**
+7. Vérification que la pre-release n’est pas devenue « Latest » sur GitHub
 
 Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
@@ -76,7 +105,7 @@ Artefacts attendus sur la release :
 
 - `MultitoolV2-Installer.msi` + `.msi.sig`
 - `MultitoolV2-Portable.exe`
-- `latest.json` (version nu `X.Y.Z`, URLs `…/releases/download/vX.Y.Z/…`)
+- `latest.json` — **stable uniquement** (version nu `X.Y.Z`, URLs `…/releases/download/vX.Y.Z/…`)
 
 ## Build local
 

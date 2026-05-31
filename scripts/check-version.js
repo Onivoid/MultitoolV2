@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import { parseVersion } from "./versioning/semver.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.join(__dirname, "..");
@@ -72,6 +73,12 @@ function checkVersions() {
   log("white", `  tauri.conf.json: ${tauriVersion}`);
   console.log("");
 
+  if (!parseVersion(packageVersion)) {
+    log("red", `❌ Format de version invalide : ${packageVersion}`);
+    log("white", "  Attendu : X.Y.Z ou X.Y.Z-beta.N (voir VERSIONING.md)");
+    process.exit(1);
+  }
+
   if (packageVersion === tauriVersion) {
     log("green", "✅ Toutes les versions sont cohérentes !");
     console.log("");
@@ -110,10 +117,12 @@ function checkVersions() {
 
   if (currentTag) {
     log("white", `  Tag actuel : ${currentTag}`);
-    if (stripV(currentTag) === packageVersion) {
+    const tagVersion = stripV(currentTag);
+    if (tagVersion === packageVersion) {
       log("green", "  ✅ Tag correspond à la version");
     } else {
       log("yellow", "  ⚠️  Tag ne correspond pas à la version");
+      log("gray", `     tag v${tagVersion} ≠ package ${packageVersion}`);
     }
   } else {
     log("gray", "  Pas de tag sur le commit actuel");

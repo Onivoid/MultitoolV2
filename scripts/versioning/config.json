@@ -1,0 +1,33 @@
+{
+  "bumpBranches": ["master", "v3", "V3"],
+  "channels": {
+    "stable": {
+      "label": "stable (production, auto-update)",
+      "prerelease": false,
+      "publishUpdater": true,
+      "makeLatest": true,
+      "prereleaseId": null
+    },
+    "beta": {
+      "label": "beta (pre-release GitHub, pas de Latest)",
+      "prerelease": true,
+      "publishUpdater": false,
+      "makeLatest": false,
+      "prereleaseId": "beta"
+    },
+    "alpha": {
+      "label": "alpha (tests précoces)",
+      "prerelease": true,
+      "publishUpdater": false,
+      "makeLatest": false,
+      "prereleaseId": "alpha"
+    },
+    "rc": {
+      "label": "rc (release candidate)",
+      "prerelease": true,
+      "publishUpdater": false,
+      "makeLatest": false,
+      "prereleaseId": "rc"
+    }
+  }
+}

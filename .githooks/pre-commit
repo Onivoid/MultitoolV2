@@ -2,80 +2,10 @@
 set -e
 
 branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-if [ "$branch" != "master" ]; then
+
+if ! node scripts/versioning/should-bump-branch.mjs "$branch"; then
     exit 0
 fi
 
-PACKAGE_JSON="package.json"
-TAURI_CONF="src-tauri/tauri.conf.json"
-
-strip_v() { echo "$1" | sed 's/^v//I'; }
-
-current_version=$(strip_v "$(node -p "require('./${PACKAGE_JSON}').version")")
-
-echo ""
-echo "┌─────────────────────────────────────────┐"
-echo "│ Version Bump Required                   │"
-echo "├─────────────────────────────────────────┤"
-echo "│ Current version: v${current_version}    "
-echo "└─────────────────────────────────────────┘"
-echo ""
-
-# Read from /dev/tty so it works even when stdin is git's pipe
 exec < /dev/tty
-read -rp " Enter new version (must be > ${current_version}): " new_version
-
-if [ -z "$new_version" ]; then
-    echo " ✗ No version entered. Commit aborted."
-    exit 1
-fi
-
-new_version=$(strip_v "$new_version")
-
-# Basic semver format check (optional v prefix stripped above)
-if ! echo "$new_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-    echo " ✗ Invalid version format '${new_version}'. Expected x.y.z"
-    exit 1
-fi
-
-# Compare versions: new must be strictly greater than current
-compare_versions() {
-    IFS='.' read -r -a a <<< "$1"
-    IFS='.' read -r -a b <<< "$2"
-    for i in 0 1 2; do
-        if (( ${a[$i]:-0} > ${b[$i]:-0} )); then return 0; fi
-        if (( ${a[$i]:-0} < ${b[$i]:-0} )); then return 1; fi
-    done
-    return 1
-}
-
-if ! compare_versions "$new_version" "$current_version"; then
-    echo " ✗ Version '${new_version}' must be greater than current '${current_version}'"
-    exit 1
-fi
-
-# Bump package.json
-node -e "
-const fs = require('fs');
-const pkg = JSON.parse(fs.readFileSync('${PACKAGE_JSON}', 'utf8'));
-pkg.version = '${new_version}';
-fs.writeFileSync('${PACKAGE_JSON}', JSON.stringify(pkg, null, 4) + '\n');
-"
-
-# Bump tauri.conf.json
-node -e "
-const fs = require('fs');
-const conf = JSON.parse(fs.readFileSync('${TAURI_CONF}', 'utf8'));
-conf.version = '${new_version}';
-fs.writeFileSync('${TAURI_CONF}', JSON.stringify(conf, null, 4) + '\n');
-"
-
-# Stage the bumped files
-git add "${PACKAGE_JSON}" "${TAURI_CONF}"
-
-# Store new version for post-commit
-echo "$new_version" > .git/BUMP_VERSION
-
-echo ""
-echo " ✓ Bumped to v${new_version}"
-echo ""
+node scripts/versioning/bump-version.mjs

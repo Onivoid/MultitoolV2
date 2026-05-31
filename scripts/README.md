@@ -10,11 +10,17 @@
 
 Activés aussi via `pnpm install` (`prepare`).
 
-**Sur `master` uniquement** : à chaque `git commit`, bump interactif de `package.json` / `tauri.conf.json` + tag `vX.Y.Z` en `post-commit`.
+**Sur les branches configurées** (`scripts/versioning/config.json`, ex. `master`, `v3`) : à chaque `git commit`, choix du canal (stable / beta / alpha / rc) + bump de `package.json` / `tauri.conf.json` + tag `v{version}` en `post-commit`.
 
 Sur les autres branches : pas de prompt version.
 
 Commit sans bump : `git commit --no-verify`
+
+### Versioning (canaux + CI)
+
+- [`scripts/versioning/config.json`](versioning/config.json) — branches et canaux
+- [`scripts/versioning/bump-version.mjs`](versioning/bump-version.mjs) — prompt interactif (githooks)
+- [`scripts/versioning/release-channel.mjs`](versioning/release-channel.mjs) — détection canal depuis le tag (CI)
 
 ### check-version.js
 
@@ -58,6 +64,6 @@ GITHUB_REPOSITORY=Onivoid/MultitoolV2 node scripts/validate-latest-json.mjs v2.8
 
 ## Flux release
 
-1. Sur `master` : commit avec message release → bump + tag `vX.Y.Z`
-2. `git push` + `git push origin vX.Y.Z`
-3. CI : draft → build → notes depuis le commit → publish → `latest.json`
+1. Sur une branche de release (`master`, `v3`, …) : commit avec message release → bump (canal + version) + tag `vX.Y.Z` ou `vX.Y.Z-beta.N`
+2. `git push` + `git push origin vX.Y.Z-beta.N`
+3. CI : canal depuis le tag → draft → build → publish (pre-release si beta) → `latest.json` seulement si stable
