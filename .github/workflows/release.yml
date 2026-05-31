@@ -29,25 +29,9 @@ jobs:
         id: meta
         run: node scripts/versioning/release-channel.mjs --tag "${{ github.ref_name }}" --github-output "$GITHUB_OUTPUT"
 
-  create-release:
-    name: Create Release
-    needs: resolve-channel
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Create draft release
-        uses: softprops/action-gh-release@v2.5.1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ needs.resolve-channel.outputs.release_name }}
-          body: "Build en cours…"
-          draft: true
-          prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}
-
   build-windows:
     name: Build Windows Release
-    needs: [resolve-channel, create-release]
+    needs: resolve-channel
     runs-on: windows-latest
 
     steps:
@@ -141,10 +125,11 @@ jobs:
             echo "Portable : \`MultitoolV2-Portable.exe\` — ${UPDATER_NOTE}"
           } > RELEASE_NOTES.md
 
-      - name: Upload release assets
+      - name: Upload assets to draft release
         uses: softprops/action-gh-release@v2.5.1
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ needs.resolve-channel.outputs.release_name }}
           body_path: RELEASE_NOTES.md
           files: |
             builds/portable/MultitoolV2-Portable.exe
@@ -168,14 +153,51 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Publish release
-        uses: softprops/action-gh-release@v2.5.1
+      # softprops avec draft:false crée parfois une 2e release vide (sans assets).
+      # On finalise explicitement le brouillon qui contient les binaires.
+      - name: Publish draft release
+        uses: actions/github-script@v7
+        env:
+          TAG: ${{ github.ref_name }}
+          RELEASE_NAME: ${{ needs.resolve-channel.outputs.release_name }}
+          PRERELEASE: ${{ needs.resolve-channel.outputs.prerelease }}
+          MAKE_LATEST: ${{ needs.resolve-channel.outputs.make_latest }}
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ needs.resolve-channel.outputs.release_name }}
-          draft: false
-          prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}
-          make_latest: ${{ needs.resolve-channel.outputs.make_latest == 'true' && 'true' || 'false' }}
+          script: |
+            const tag = process.env.TAG;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prerelease = process.env.PRERELEASE === "true";
+            const makeLatest = process.env.MAKE_LATEST === "true";
+
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            const draft = releases.find((r) => r.tag_name === tag && r.draft);
+            if (!draft) {
+              const published = releases.find((r) => r.tag_name === tag && !r.draft);
+              if (published) {
+                core.info(`Release ${tag} already published (id ${published.id}).`);
+                return;
+              }
+              core.setFailed(`No draft release found for tag ${tag}. Upload step may have failed.`);
+              return;
+            }
+
+            await github.rest.repos.updateRelease({
+              owner,
+              repo,
+              release_id: draft.id,
+              name: process.env.RELEASE_NAME,
+              draft: false,
+              prerelease,
+              make_latest: makeLatest,
+            });
+
+            core.info(`Published release ${tag} (id ${draft.id}) with ${draft.assets?.length ?? 0} assets from draft.`);
 
       - name: Generate and upload latest.json
         if: needs.resolve-channel.outputs.publish_updater == 'true'
