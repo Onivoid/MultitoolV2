@@ -2,7 +2,7 @@
     "name": "multitoolv2",
     "private": true,
     "license": "AGPL-3.0-or-later",
-    "version": "3.0.0-beta.1",
+    "version": "3.0.0-2",
     "packageManager": "pnpm@10.15.1",
     "type": "module",
     "proxy": "https://multitool.onivoid.fr",

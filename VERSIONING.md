@@ -9,9 +9,10 @@ Identiques et **sans préfixe `v`** :
 - `package.json`
 - `src-tauri/tauri.conf.json`
 
-Exemples : `2.8.2`, `3.0.0-beta.1`
+Exemples : `2.8.2`, `3.0.0-1` (bêta MSI-compatible)
 
-Le préfixe `v` est réservé aux tags Git (`v2.8.2`, `v3.0.0-beta.1`) et à l’affichage.
+Le préfixe `v` est réservé aux tags Git (`v2.8.2`, `v3.0.0-beta.1` pour l’affichage).  
+**Important MSI** : `package.json` / `tauri.conf.json` utilisent une pré-release **numérique** (`3.0.0-1`), pas `3.0.0-beta.1` — limitation WiX/Tauri ([PR #6096](https://github.com/tauri-apps/tauri/pull/6096)).
 
 Vérification :
 
@@ -26,7 +27,7 @@ La config centrale est [`scripts/versioning/config.json`](scripts/versioning/con
 | Canal   | Version exemple   | GitHub        | `latest.json` (auto-update stable) |
 |---------|-------------------|---------------|-------------------------------------|
 | stable  | `3.0.0`           | release       | oui                                 |
-| beta    | `3.0.0-beta.1`    | pre-release   | non                                 |
+| beta    | `3.0.0-1` + tag `v3.0.0-beta.1` | pre-release   | non                                 |
 | alpha   | `3.0.0-alpha.1`   | pre-release   | non                                 |
 | rc      | `3.0.0-rc.1`      | pre-release   | non                                 |
 
@@ -51,7 +52,7 @@ Activation : `pnpm install` ou `.\scripts\setup-githooks.ps1` (Git Bash requis s
 1. `git commit` → choix du **canal** (stable / beta / alpha / rc)
 2. Saisie de la version de base `X.Y.Z` (+ numéro de pré-release si besoin)
 3. `package.json` et `tauri.conf.json` mis à jour et stagés
-4. `post-commit` crée le tag local `v{version}` (ex. `v3.0.0-beta.1`)
+4. `post-commit` crée le tag local (ex. `v3.0.0-beta.1` ; version fichiers `3.0.0-1`)
 5. Pousser commit + tag :
 
 ```bash
@@ -114,6 +115,10 @@ Artefacts attendus sur la release :
 ```
 
 ## Dépannage
+
+**Erreur MSI `pre-release identifier must be numeric-only`**
+
+La version dans `package.json` / `tauri.conf.json` ne doit pas contenir `beta`, `alpha`, etc. Utiliser `3.0.0-1` (hook canal beta) et un tag Git `v3.0.0-beta.1` si vous voulez un libellé lisible.
 
 **Versions désynchronisées** — aligner les deux JSON puis recommitter.
 

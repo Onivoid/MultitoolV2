@@ -70,5 +70,24 @@ export function formatVersion(base, channelConfig, prereleaseNumber) {
   if (!Number.isInteger(n) || n < 1) {
     throw new Error(`Invalid prerelease number: ${prereleaseNumber}`);
   }
+  // WiX/MSI (Tauri) : pré-release numérique uniquement — ex. 3.0.0-1, pas 3.0.0-beta.1
+  if (channelConfig.msiNumericPrerelease) {
+    return `${core.raw}-${n}`;
+  }
   return `${core.raw}-${id}.${n}`;
+}
+
+/** Tag Git lisible (ex. v3.0.0-beta.1) quand la version MSI est 3.0.0-1. */
+export function formatReleaseTag(base, channelConfig, prereleaseNumber) {
+  const core = parseVersion(base);
+  if (!core || core.prerelease) {
+    throw new Error(`Invalid base version: ${base}`);
+  }
+  const id = channelConfig?.prereleaseId;
+  if (!id) return `v${core.raw}`;
+  const n = Number(prereleaseNumber);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new Error(`Invalid prerelease number: ${prereleaseNumber}`);
+  }
+  return `v${core.raw}-${id}.${n}`;
 }

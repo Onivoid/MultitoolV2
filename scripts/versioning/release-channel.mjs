@@ -14,7 +14,18 @@ import { parseVersion } from "./semver.mjs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const config = JSON.parse(readFileSync(join(__dirname, "config.json"), "utf8"));
 
+function detectChannelFromLabel(raw) {
+  const lower = String(raw || "").toLowerCase();
+  if (/-beta(?:\.|$|-)/i.test(lower) || lower.includes(".beta.")) return "beta";
+  if (/-alpha(?:\.|$|-)/i.test(lower) || lower.includes(".alpha.")) return "alpha";
+  if (/-rc(?:\.|$|-)/i.test(lower)) return "rc";
+  return null;
+}
+
 function detectChannelId(version) {
+  const byLabel = detectChannelFromLabel(version);
+  if (byLabel) return byLabel;
+
   const parsed = parseVersion(version);
   if (!parsed) return null;
   if (!parsed.prerelease) return "stable";
@@ -23,6 +34,15 @@ function detectChannelId(version) {
   for (const [id, ch] of Object.entries(config.channels)) {
     if (ch.prereleaseId === head) return id;
   }
+
+  // Version MSI 3.0.0-1 (pré-release purement numérique) → canal beta par convention
+  if (/^\d+$/.test(head)) {
+    const numericChannel = Object.entries(config.channels).find(
+      ([, ch]) => ch.msiNumericPrerelease && ch.prereleaseId === "beta",
+    );
+    if (numericChannel) return numericChannel[0];
+  }
+
   return "unknown";
 }
 
