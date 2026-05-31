@@ -93,12 +93,13 @@ Fallback CI : si le message est vide, la release affiche `Release vX.Y.Z`.
 Push d’un tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) :
 
 1. Détection du canal (`scripts/versioning/release-channel.mjs`)
-2. Draft release GitHub (`prerelease: true` si beta/alpha/rc)
-3. Build Windows (MSI + portable + checksums)
-4. Notes = message du commit tagué + section checksums SHA256
-5. Publication (`make_latest` uniquement pour **stable**)
-6. `latest.json` + validation **uniquement** pour **stable**
-7. Vérification que la pre-release n’est pas devenue « Latest » sur GitHub
+2. Build Windows (MSI + portable + checksums)
+3. Upload des assets sur une **release brouillon** (même tag)
+4. Publication du brouillon via l’API GitHub (`draft: false`) — évite une 2e release vide
+5. Notes = message du commit tagué + section checksums SHA256
+6. `make_latest` uniquement pour **stable**
+7. `latest.json` + validation **uniquement** pour **stable**
+8. Vérification que la pre-release n’est pas devenue « Latest » sur GitHub
 
 Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
@@ -115,6 +116,10 @@ Artefacts attendus sur la release :
 ```
 
 ## Dépannage
+
+**Deux releases pour le même tag (brouillon avec MSI + pre-release sans assets)**
+
+Cause : l’ancien job `publish` avec `action-gh-release` + `draft: false` créait une **nouvelle** release au lieu de publier le brouillon. Supprimer manuellement la release vide sur GitHub ; le workflow corrigé ne garde qu’un brouillon puis le publie via `actions/github-script`.
 
 **Erreur MSI `pre-release identifier must be numeric-only`**
 
