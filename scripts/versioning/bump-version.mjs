@@ -4,7 +4,7 @@
  * Writes .git/BUMP_VERSION for post-commit tagging.
  */
 
-import { readFileSync, writeFileSync, openSync } from "fs";
+import { readFileSync, writeFileSync, openSync, unlinkSync } from "fs";
 import { createInterface } from "readline";
 import { execSync } from "child_process";
 import { dirname, join } from "path";
@@ -13,6 +13,7 @@ import {
   parseVersion,
   isGreaterThan,
   formatVersion,
+  formatReleaseTag,
 } from "./semver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,7 @@ const config = JSON.parse(
 const PACKAGE_JSON = join(rootDir, "package.json");
 const TAURI_CONF = join(rootDir, "src-tauri", "tauri.conf.json");
 const BUMP_FILE = join(rootDir, ".git", "BUMP_VERSION");
+const BUMP_TAG_FILE = join(rootDir, ".git", "BUMP_TAG");
 
 function createPrompt() {
   try {
@@ -48,11 +50,12 @@ function readCurrentVersion() {
   return String(pkg.version || "").replace(/^v/i, "");
 }
 
-function suggestPrereleaseNumber(base, prereleaseId) {
+function suggestPrereleaseNumber(base, prereleaseId, msiNumericPrerelease) {
   const prefix = `v${base}-${prereleaseId}.`;
+  const numericPrefix = `v${base}-`;
   let tags = [];
   try {
-    const out = execSync(`git tag -l "${prefix}*"`, {
+    const out = execSync(`git tag -l "v${base}*"`, {
       cwd: rootDir,
       encoding: "utf8",
     }).trim();
@@ -61,14 +64,24 @@ function suggestPrereleaseNumber(base, prereleaseId) {
     tags = [];
   }
   let max = 0;
+  const baseEsc = base.replace(/\./g, "\\.");
   for (const tag of tags) {
-    const m = tag.match(new RegExp(`^v${base.replace(/\./g, "\\.")}-${prereleaseId}\\.(\\d+)$`));
-    if (m) max = Math.max(max, Number(m[1]));
+    const labelMatch = tag.match(
+      new RegExp(`^v${baseEsc}-${prereleaseId}\\.(\\d+)$`),
+    );
+    if (labelMatch) {
+      max = Math.max(max, Number(labelMatch[1]));
+      continue;
+    }
+    if (msiNumericPrerelease) {
+      const numericMatch = tag.match(new RegExp(`^v${baseEsc}-(\\d+)$`));
+      if (numericMatch) max = Math.max(max, Number(numericMatch[1]));
+    }
   }
   return max + 1;
 }
 
-function applyVersion(version) {
+function applyVersion(version, gitTag) {
   const pkg = JSON.parse(readFileSync(PACKAGE_JSON, "utf8"));
   pkg.version = version;
   writeFileSync(PACKAGE_JSON, `${JSON.stringify(pkg, null, 4)}\n`, "utf8");
@@ -83,6 +96,15 @@ function applyVersion(version) {
   });
 
   writeFileSync(BUMP_FILE, version, "utf8");
+  if (gitTag) {
+    writeFileSync(BUMP_TAG_FILE, gitTag, "utf8");
+  } else {
+    try {
+      unlinkSync(BUMP_TAG_FILE);
+    } catch {
+      /* absent */
+    }
+  }
 }
 
 async function main() {
@@ -128,12 +150,14 @@ async function main() {
   }
 
   let newVersion;
+  let gitTag = null;
   if (!channelConfig.prereleaseId) {
     newVersion = baseCore;
   } else {
     const suggested = suggestPrereleaseNumber(
       baseCore,
       channelConfig.prereleaseId,
+      Boolean(channelConfig.msiNumericPrerelease),
     );
     const numInput = await ask(
       rl,
@@ -142,6 +166,7 @@ async function main() {
     const num = numInput === "" ? suggested : Number(numInput);
     try {
       newVersion = formatVersion(baseCore, channelConfig, num);
+      gitTag = formatReleaseTag(baseCore, channelConfig, num);
     } catch (err) {
       console.error(err.message);
       rl.close();
@@ -159,11 +184,15 @@ async function main() {
 
   rl.close();
 
-  applyVersion(newVersion);
+  applyVersion(newVersion, gitTag);
 
   console.log("");
-  console.log(` ✓ Bumped to v${newVersion} (${channelId})`);
-  console.log(` ✓ Tag v${newVersion} will be created in post-commit`);
+  console.log(` ✓ Version ${newVersion} (${channelId})`);
+  if (gitTag && gitTag !== `v${newVersion}`) {
+    console.log(` ✓ Tag Git ${gitTag} (affichage) — MSI utilise ${newVersion}`);
+  } else {
+    console.log(` ✓ Tag ${gitTag ?? `v${newVersion}`} will be created in post-commit`);
+  }
   if (!channelConfig.publishUpdater) {
     console.log("   → Pre-release: CI will not publish stable latest.json");
   }

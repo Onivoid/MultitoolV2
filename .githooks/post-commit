@@ -8,6 +8,7 @@ if ! node scripts/versioning/should-bump-branch.mjs "$branch"; then
 fi
 
 BUMP_FILE=".git/BUMP_VERSION"
+BUMP_TAG_FILE=".git/BUMP_TAG"
 
 if [ ! -f "$BUMP_FILE" ]; then
     exit 0
@@ -16,9 +17,16 @@ fi
 new_version=$(cat "$BUMP_FILE")
 rm -f "$BUMP_FILE"
 
-git tag "v${new_version}"
+if [ -f "$BUMP_TAG_FILE" ]; then
+    tag_name=$(cat "$BUMP_TAG_FILE")
+    rm -f "$BUMP_TAG_FILE"
+else
+    tag_name="v${new_version}"
+fi
+
+git tag "$tag_name"
 
 echo ""
-echo " ✓ Tag v${new_version} created locally"
-echo " → Push it with: git push origin v${new_version}"
+echo " ✓ Tag ${tag_name} created locally (version ${new_version})"
+echo " → Push it with: git push origin ${tag_name}"
 echo ""

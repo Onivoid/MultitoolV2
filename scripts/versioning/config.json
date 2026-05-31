@@ -13,21 +13,24 @@
       "prerelease": true,
       "publishUpdater": false,
       "makeLatest": false,
-      "prereleaseId": "beta"
+      "prereleaseId": "beta",
+      "msiNumericPrerelease": true
     },
     "alpha": {
       "label": "alpha (tests précoces)",
       "prerelease": true,
       "publishUpdater": false,
       "makeLatest": false,
-      "prereleaseId": "alpha"
+      "prereleaseId": "alpha",
+      "msiNumericPrerelease": true
     },
     "rc": {
       "label": "rc (release candidate)",
       "prerelease": true,
       "publishUpdater": false,
       "makeLatest": false,
-      "prereleaseId": "rc"
+      "prereleaseId": "rc",
+      "msiNumericPrerelease": true
     }
   }
 }
