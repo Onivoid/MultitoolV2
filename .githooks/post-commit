@@ -2,7 +2,8 @@
 set -e
 
 branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-if [ "$branch" != "master" ]; then
+
+if ! node scripts/versioning/should-bump-branch.mjs "$branch"; then
     exit 0
 fi
 

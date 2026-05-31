@@ -12,24 +12,42 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  resolve-channel:
+    name: Resolve release channel
+    runs-on: ubuntu-latest
+    outputs:
+      channel: ${{ steps.meta.outputs.channel }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      publish_updater: ${{ steps.meta.outputs.publish_updater }}
+      make_latest: ${{ steps.meta.outputs.make_latest }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      updater_note: ${{ steps.meta.outputs.updater_note }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect channel from tag
+        id: meta
+        run: node scripts/versioning/release-channel.mjs --tag "${{ github.ref_name }}" --github-output "$GITHUB_OUTPUT"
+
   create-release:
     name: Create Release
+    needs: resolve-channel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Create draft release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.1
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
+          name: ${{ needs.resolve-channel.outputs.release_name }}
           body: "Build en cours…"
           draft: true
-          prerelease: false
+          prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}
 
   build-windows:
     name: Build Windows Release
-    needs: create-release
+    needs: [resolve-channel, create-release]
     runs-on: windows-latest
 
     steps:
@@ -100,6 +118,8 @@ jobs:
 
       - name: Create Release Notes
         shell: bash
+        env:
+          UPDATER_NOTE: ${{ needs.resolve-channel.outputs.updater_note }}
         run: |
           TAG="${{ github.ref_name }}"
           COMMIT=$(git rev-list -n 1 "$TAG")
@@ -118,11 +138,11 @@ jobs:
             echo '```'
             echo ""
             echo "---"
-            echo "Portable : \`MultitoolV2-Portable.exe\` — MSI : \`MultitoolV2-Installer.msi\` (mises à jour auto)"
+            echo "Portable : \`MultitoolV2-Portable.exe\` — ${UPDATER_NOTE}"
           } > RELEASE_NOTES.md
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.1
         with:
           tag_name: ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
@@ -132,13 +152,13 @@ jobs:
             builds/installer/MultitoolV2-Installer.msi.sig
             builds/checksums.txt
           draft: true
-          prerelease: false
+          prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:
     name: Publish Release
-    needs: build-windows
+    needs: [resolve-channel, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -149,19 +169,30 @@ jobs:
           node-version: "22"
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.1
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ needs.resolve-channel.outputs.release_name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}
+          make_latest: ${{ needs.resolve-channel.outputs.make_latest == 'true' && 'true' || 'false' }}
 
       - name: Generate and upload latest.json
+        if: needs.resolve-channel.outputs.publish_updater == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/updater.mjs ${{ github.ref_name }}
 
       - name: Validate latest.json
+        if: needs.resolve-channel.outputs.publish_updater == 'true'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/validate-latest-json.mjs ${{ github.ref_name }}
+
+      - name: Verify prerelease did not become Latest
+        if: needs.resolve-channel.outputs.publish_updater != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/versioning/verify-release-safety.mjs --tag "${{ github.ref_name }}"
