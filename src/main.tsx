@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import AppRouter from "./app/routes";
+import { GameStatsProvider } from "@/features/game-stats/GameStatsProvider";
 import "./index.css";
 import { ThemeProvider } from "@/components/utils/theme-provider";
 import ControlMenu from "@/components/custom/control-menu";
@@ -17,8 +18,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <TooltipProvider delayDuration={0}>
           <div className="relative z-10 flex h-screen min-h-0 w-screen flex-col overflow-hidden">
             <ErrorBoundary>
-              <ControlMenu />
-              <AppRouter />
+              <GameStatsProvider>
+                <ControlMenu />
+                <AppRouter />
+              </GameStatsProvider>
               <BorderBeam
                 duration={8}
                 size={150}

@@ -1,5 +1,6 @@
+use crate::scripts::game_log::parse::parse_log_timestamp;
 use crate::scripts::gamepath::get_live_game_log_path_sync;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -12,7 +13,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 use tauri::path::PathResolver;
 use tauri::State;
-use tauri::{command, AppHandle, Manager, Runtime};
+use tauri::{command, AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_dialog::DialogExt;
 
 const BLUEPRINT_CORRELATION_WINDOW_SEC: f64 = 5.0;
@@ -92,6 +93,34 @@ pub struct ImportBlueprintsResult {
     pub read_errors: Vec<String>,
     /// Entrées supprimées car sans handle (données v1 / import incomplet).
     pub removed_without_owner: usize,
+}
+
+pub const BLUEPRINTS_IMPORT_PROGRESS_EVENT: &str = "blueprints-import-progress";
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlueprintsImportProgress {
+    pub phase: String,
+    pub files_done: u32,
+    pub files_total: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_file: Option<String>,
+    pub percent: u8,
+}
+
+fn emit_import_progress(app: &AppHandle, progress: BlueprintsImportProgress) {
+    let _ = app.emit(BLUEPRINTS_IMPORT_PROGRESS_EVENT, &progress);
+}
+
+fn import_scan_percent(files_done: u32, files_total: u32) -> u8 {
+    if files_total == 0 {
+        return 90;
+    }
+    (5 + (files_done.saturating_mul(80) / files_total)).min(90) as u8
+}
+
+fn file_basename(path: &Path) -> Option<String> {
+    path.file_name().map(|s| s.to_string_lossy().into_owned())
 }
 
 // ---------------------------------------------------------------------------
@@ -344,21 +373,6 @@ impl WatcherState {
         }
         best.cloned()
     }
-}
-
-fn parse_log_timestamp(line: &str) -> Option<f64> {
-    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"<(\d{4}-\d{2}-\d{2}T[0-9:.]+Z)>").unwrap());
-    let caps = re.captures(line)?;
-    let raw = caps.get(1)?.as_str().replace('Z', "+00:00");
-    DateTime::parse_from_rfc3339(&raw)
-        .ok()
-        .map(|dt| dt.timestamp() as f64 + f64::from(dt.timestamp_subsec_micros()) / 1_000_000.0)
-        .or_else(|| {
-            chrono::NaiveDateTime::parse_from_str(&raw, "%Y-%m-%dT%H:%M:%S%.f%z")
-                .ok()
-                .map(|dt| dt.and_utc().timestamp() as f64)
-        })
 }
 
 struct LogPatterns {
@@ -795,12 +809,21 @@ pub async fn export_gamelog_blueprints(app: AppHandle) -> Result<Option<String>,
         .map_err(|e| e.to_string())?
 }
 
-#[command]
-pub async fn import_blueprints_from_logbackups(
-    app: AppHandle,
-    include_current: Option<bool>,
+fn import_blueprints_from_logbackups_sync(
+    app: &AppHandle,
+    include_current: bool,
 ) -> Result<ImportBlueprintsResult, String> {
-    let include_current = include_current.unwrap_or(false);
+    emit_import_progress(
+        app,
+        BlueprintsImportProgress {
+            phase: "discovering_files".to_string(),
+            files_done: 0,
+            files_total: 0,
+            current_file: None,
+            percent: 2,
+        },
+    );
+
     let game_log = get_live_game_log_path_sync()?;
     let game_log_path = game_log.display().to_string();
     let logbackups = game_log.parent().unwrap().join("logbackups");
@@ -837,11 +860,35 @@ pub async fn import_blueprints_from_logbackups(
         ));
     }
 
+    let files_total = files.len() as u32;
+    emit_import_progress(
+        app,
+        BlueprintsImportProgress {
+            phase: "scanning_logs".to_string(),
+            files_done: 0,
+            files_total,
+            current_file: None,
+            percent: 5,
+        },
+    );
+
     let mut all_incoming = Vec::new();
     let mut read_errors = Vec::new();
     let mut files_failed = 0usize;
     let mut files_with_matches = 0usize;
-    for path in &files {
+    for (index, path) in files.iter().enumerate() {
+        let files_done = index as u32;
+        emit_import_progress(
+            app,
+            BlueprintsImportProgress {
+                phase: "scanning_logs".to_string(),
+                files_done,
+                files_total,
+                current_file: file_basename(path),
+                percent: import_scan_percent(files_done, files_total),
+            },
+        );
+
         match scan_file_for_blueprints(path) {
             Ok(found) => {
                 if !found.is_empty() {
@@ -858,6 +905,17 @@ pub async fn import_blueprints_from_logbackups(
                 read_errors.push(format!("{name}: {e}"));
             }
         }
+
+        emit_import_progress(
+            app,
+            BlueprintsImportProgress {
+                phase: "scanning_logs".to_string(),
+                files_done: files_done + 1,
+                files_total,
+                current_file: None,
+                percent: import_scan_percent(files_done + 1, files_total),
+            },
+        );
     }
 
     let matches_found = all_incoming.len();
@@ -866,9 +924,44 @@ pub async fn import_blueprints_from_logbackups(
         .map(|e| e.product_name.as_str())
         .collect::<HashSet<_>>()
         .len();
-    let added = append_blueprints(&app, &all_incoming)?;
-    let removed_without_owner = prune_blueprint_store_sync(&app)?;
-    let store_after = load_blueprint_store_sync(&app)?;
+
+    emit_import_progress(
+        app,
+        BlueprintsImportProgress {
+            phase: "merging".to_string(),
+            files_done: files_total,
+            files_total,
+            current_file: None,
+            percent: 92,
+        },
+    );
+
+    let added = append_blueprints(app, &all_incoming)?;
+
+    emit_import_progress(
+        app,
+        BlueprintsImportProgress {
+            phase: "saving".to_string(),
+            files_done: files_total,
+            files_total,
+            current_file: None,
+            percent: 97,
+        },
+    );
+
+    let removed_without_owner = prune_blueprint_store_sync(app)?;
+    let store_after = load_blueprint_store_sync(app)?;
+
+    emit_import_progress(
+        app,
+        BlueprintsImportProgress {
+            phase: "done".to_string(),
+            files_done: files_total,
+            files_total,
+            current_file: None,
+            percent: 100,
+        },
+    );
 
     Ok(ImportBlueprintsResult {
         imported: added,
@@ -883,6 +976,20 @@ pub async fn import_blueprints_from_logbackups(
         read_errors: read_errors.into_iter().take(5).collect(),
         removed_without_owner,
     })
+}
+
+#[command]
+pub async fn import_blueprints_from_logbackups(
+    app: AppHandle,
+    include_current: Option<bool>,
+) -> Result<ImportBlueprintsResult, String> {
+    let app_handle = app.clone();
+    let include_current = include_current.unwrap_or(false);
+    tokio::task::spawn_blocking(move || {
+        import_blueprints_from_logbackups_sync(&app_handle, include_current)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]

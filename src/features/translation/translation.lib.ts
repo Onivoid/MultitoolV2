@@ -42,6 +42,41 @@ export const TRANSLATION_CARD_WIDTH_CLASS = "w-[288px]";
 
 export const TRANSLATION_LOAD_DELAY_MS = 3000;
 
+const EXCLUSIVE_NON_LIVE = new Set(["PTU", "EPTU", "HOTFIX", "TECH-PREVIEW", "TECH_PREVIEW"]);
+
+/**
+ * Aligne les clés de version sur le backend : tout nom contenant « LIVE »
+ * (ex. « StarCitizen/LIVE », « LIVE (1) ») devient « LIVE ».
+ */
+export function canonicalVersionKey(key: string): string {
+  const upper = key.toUpperCase();
+  if (EXCLUSIVE_NON_LIVE.has(upper)) {
+    return key;
+  }
+  if (upper.includes("LIVE")) {
+    return "LIVE";
+  }
+  return key;
+}
+
+export function isLiveVersionKey(key: string): boolean {
+  return canonicalVersionKey(key) === "LIVE";
+}
+
+/** Réécrit les préférences sauvegardées vers les clés canoniques. */
+export function canonicalizeTranslationsSelected(
+  selected: TranslationsChoosen,
+): TranslationsChoosen {
+  const out: TranslationsChoosen = {};
+  for (const [key, value] of Object.entries(selected)) {
+    const canon = canonicalVersionKey(key);
+    if (!out[canon]) {
+      out[canon] = value;
+    }
+  }
+  return out;
+}
+
 /** Ordre d'affichage préféré des canaux Star Citizen. */
 export const CANONICAL_VERSION_ORDER = [
   "LIVE",

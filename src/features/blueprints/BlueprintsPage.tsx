@@ -26,6 +26,8 @@ export default function BlueprintsPage() {
         isRefreshing={vm.isRefreshing}
         isLoading={vm.isLoading}
         isImporting={vm.isImporting}
+        importProgress={vm.importProgress}
+        importStartedAt={vm.importStartedAt}
         isExporting={vm.isExporting}
         isTogglingWatch={vm.isTogglingWatch}
         onRefresh={vm.refresh}

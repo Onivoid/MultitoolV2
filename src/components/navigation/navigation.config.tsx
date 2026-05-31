@@ -26,8 +26,20 @@ export const featuresRoutes: NavRoute[] = [
   { path: "/presets-local", label: "Persos locaux" },
   { path: "/presets-remote", label: "Persos en ligne" },
   { path: "/blueprints", label: "Blueprints" },
+  { path: "/statistiques", label: "Statistiques" },
   { path: "/ships3d", label: "Vaisseaux 3D" },
 ];
+
+/** Routes comptabilisées pour les raccourcis accueil (features uniquement). */
+export const homeVisitEligibleRoutes: NavRoute[] = featuresRoutes;
+
+export const HOME_VISIT_ELIGIBLE_PATHS: ReadonlySet<string> = new Set(
+  homeVisitEligibleRoutes.map((r) => r.path),
+);
+
+export function isHomeVisitEligiblePath(pathname: string): boolean {
+  return HOME_VISIT_ELIGIBLE_PATHS.has(pathname);
+}
 
 export const newsRoutes: NavRoute[] = [{ path: "/news", label: "News SC" }];
 

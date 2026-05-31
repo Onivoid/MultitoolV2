@@ -8,6 +8,10 @@ use scripts::background_service::{
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
 };
+use scripts::game_log::{
+    get_cached_game_stats, get_game_stats, get_game_stats_scan_status, sync_game_stats,
+    GameStatsScanState,
+};
 use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
 use scripts::gamelog_watcher::{
     export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
@@ -16,16 +20,19 @@ use scripts::gamelog_watcher::{
     GamelogWatcherState,
 };
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
+use scripts::home_dashboard::{get_home_dashboard, save_home_dashboard};
 use scripts::local_characters_functions::{
     delete_character, download_character, duplicate_character, get_character_informations,
     open_characters_folder,
 };
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
+use scripts::recent_routes::{get_top_routes, record_page_visit};
 use scripts::rsi_news::fetch_rsi_news;
 use scripts::startup_manager::{
     disable_auto_startup, enable_auto_startup, is_auto_startup_enabled,
 };
+use scripts::system_metrics::get_system_metrics;
 use scripts::system_tray::setup_system_tray;
 use scripts::theme_preferences::{load_theme_selected, save_theme_selected};
 use scripts::translation_functions::{
@@ -121,6 +128,7 @@ pub fn run() {
                 }
             }
             app.manage(gamelog_watcher_state);
+            app.manage(GameStatsScanState::default());
 
             if let Err(e) = setup_system_tray(app.handle()) {
                 eprintln!("Échec de la configuration du system tray: {e}");
@@ -188,6 +196,15 @@ pub fn run() {
             stop_gamelog_watcher,
             export_gamelog_blueprints,
             import_blueprints_from_logbackups,
+            record_page_visit,
+            get_top_routes,
+            get_home_dashboard,
+            save_home_dashboard,
+            get_cached_game_stats,
+            get_game_stats_scan_status,
+            get_game_stats,
+            sync_game_stats,
+            get_system_metrics,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
