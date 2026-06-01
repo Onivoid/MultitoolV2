@@ -29,6 +29,39 @@ export function formatVehicleTypeLabel(vehicleType: string): string {
   return vehicleType.split("_").join(" ");
 }
 
+/** Montant aUEC lisible (arrondi entier). */
+export function formatAuec(amount: number): string {
+  const n = Math.max(0, Math.round(amount));
+  return `${n.toLocaleString("fr-FR")} aUEC`;
+}
+
+/** Pourcentage entier 0–100+ (peut dépasser 100 si métriques divergent). */
+export function formatPilotingSharePercent(
+  pilotingSeconds: number,
+  playtimeSeconds: number,
+): string {
+  if (playtimeSeconds <= 0) {
+    return "—";
+  }
+  const pct = Math.round((pilotingSeconds / playtimeSeconds) * 100);
+  return `${pct} %`;
+}
+
+function defaultPiloting(snapshot: GameStatsSnapshot) {
+  return snapshot.piloting ?? { totalSeconds: 0, intervalCount: 0 };
+}
+
+function defaultSpending(snapshot: GameStatsSnapshot) {
+  return (
+    snapshot.spending ?? {
+      totalSpent: 0,
+      purchaseCount: 0,
+      byDay: [],
+      byShop: [],
+    }
+  );
+}
+
 function hasMissionStats(missions: GameStatsSnapshot["missions"]): boolean {
   return missions.completed > 0 || missions.abandoned > 0 || missions.failed > 0;
 }
@@ -37,13 +70,17 @@ export function snapshotHasHomeStats(snapshot: GameStatsSnapshot | null): boolea
   if (!snapshot) {
     return false;
   }
+  const spending = defaultSpending(snapshot);
+  const piloting = defaultPiloting(snapshot);
   return (
     snapshot.playtime.sessionCount > 0 ||
     snapshot.playtime.totalSeconds > 0 ||
     hasMissionStats(snapshot.missions) ||
     snapshot.blueprints.totalUnlocked > 0 ||
     snapshot.vehicles.favorite != null ||
-    snapshot.starSystems.favorite != null
+    snapshot.starSystems.favorite != null ||
+    piloting.totalSeconds > 0 ||
+    spending.purchaseCount > 0
   );
 }
 
@@ -61,6 +98,15 @@ export function getHomeSummaryItems(
     items.push({
       label: "Temps de jeu",
       value: formatPlaytime(snapshot.playtime.totalSeconds),
+    });
+  }
+
+  const piloting = defaultPiloting(snapshot);
+  if (piloting.totalSeconds > 0) {
+    items.push({
+      label: "Temps de pilotage",
+      value: formatPlaytime(piloting.totalSeconds),
+      hint: "Durée cumulée avec un token de contrôle vaisseau actif (grant → release dans les logs).",
     });
   }
 
@@ -114,6 +160,15 @@ export function getHomeSummaryItems(
       label: "Système favori",
       value: system,
       hint: `Système où vous êtes passé le plus souvent. On compte une visite quand les logs indiquent que vous êtes passé d’un autre système (ou d’une zone inconnue) vers ce système — pas chaque mission ou action dedans. Détection via chemins de zone / inventaire (Pyro, Stanton, Nyx…). ${system} : ${visits} visite${visits > 1 ? "s" : ""}.`,
+    });
+  }
+
+  const spending = defaultSpending(snapshot);
+  if (spending.purchaseCount > 0) {
+    items.push({
+      label: "Dépenses boutique",
+      value: formatAuec(spending.totalSpent),
+      hint: "Achats en boutique réussis détectés dans les logs.",
     });
   }
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-pub const SNAPSHOT_SCHEMA_VERSION: u32 = 2;
+pub const SNAPSHOT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -60,6 +60,38 @@ pub struct GameStatsStarSystems {
     pub favorite_count: u32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct GameStatsPiloting {
+    pub total_seconds: f64,
+    pub interval_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameStatsSpendingDay {
+    pub date: String,
+    pub spent: f64,
+    pub cumulative: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameStatsSpendingShop {
+    pub shop: String,
+    pub total_spent: f64,
+    pub purchase_count: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct GameStatsSpending {
+    pub total_spent: f64,
+    pub purchase_count: u32,
+    pub by_day: Vec<GameStatsSpendingDay>,
+    pub by_shop: Vec<GameStatsSpendingShop>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameStatsSnapshot {
@@ -76,6 +108,11 @@ pub struct GameStatsSnapshot {
     pub vehicles: GameStatsVehicles,
     #[serde(default)]
     pub star_systems: GameStatsStarSystems,
+    /// Champs v3
+    #[serde(default)]
+    pub piloting: GameStatsPiloting,
+    #[serde(default)]
+    pub spending: GameStatsSpending,
 }
 
 impl Default for GameStatsSnapshot {
@@ -95,6 +132,8 @@ impl Default for GameStatsSnapshot {
             blueprints: GameStatsBlueprints::default(),
             vehicles: GameStatsVehicles::default(),
             star_systems: GameStatsStarSystems::default(),
+            piloting: GameStatsPiloting::default(),
+            spending: GameStatsSpending::default(),
         }
     }
 }

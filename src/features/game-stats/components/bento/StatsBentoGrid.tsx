@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatsKpiTile } from "@/features/game-stats/components/bento/StatsKpiTile";
-import { StatsRadarExplorerTile } from "@/features/game-stats/components/bento/StatsRadarExplorerTile";
+import { StatsLeftExplorerPanel } from "@/features/game-stats/components/bento/StatsLeftExplorerPanel";
 import { getStatsPageKpiItems } from "@/features/game-stats/gameStats.charts.lib";
 import type { GameStatsSnapshot } from "@/features/game-stats/gameStats.types";
 
@@ -16,7 +16,7 @@ export function StatsBentoGrid({ snapshot }: StatsBentoGridProps) {
       className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:grid lg:grid-cols-12 lg:grid-rows-1"
       data-no-window-drag
     >
-      <StatsRadarExplorerTile
+      <StatsLeftExplorerPanel
         snapshot={snapshot}
         className="min-h-0 flex-1 lg:col-span-8 lg:h-full"
       />
@@ -33,9 +33,9 @@ export function StatsBentoGrid({ snapshot }: StatsBentoGridProps) {
 export function StatsBentoGridSkeleton() {
   return (
     <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-12">
-      <Skeleton className="min-h-0 lg:col-span-8 lg:h-full" />
+      <Skeleton className="min-h-[280px] lg:col-span-8 lg:h-full" />
       <div className="flex flex-col gap-2 lg:col-span-4">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="h-14 shrink-0" />
         ))}
       </div>

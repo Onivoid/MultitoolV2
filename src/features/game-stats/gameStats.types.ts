@@ -40,6 +40,30 @@ export interface GameStatsStarSystems {
   favoriteCount: number;
 }
 
+export interface GameStatsPiloting {
+  totalSeconds: number;
+  intervalCount: number;
+}
+
+export interface GameStatsSpendingDay {
+  date: string;
+  spent: number;
+  cumulative: number;
+}
+
+export interface GameStatsSpendingShop {
+  shop: string;
+  totalSpent: number;
+  purchaseCount: number;
+}
+
+export interface GameStatsSpending {
+  totalSpent: number;
+  purchaseCount: number;
+  byDay: GameStatsSpendingDay[];
+  byShop: GameStatsSpendingShop[];
+}
+
 export interface GameStatsSnapshot {
   schemaVersion: number;
   computedAt: number;
@@ -49,6 +73,8 @@ export interface GameStatsSnapshot {
   blueprints: GameStatsBlueprints;
   vehicles: GameStatsVehicles;
   starSystems: GameStatsStarSystems;
+  piloting?: GameStatsPiloting;
+  spending?: GameStatsSpending;
 }
 
 export interface GameStatsResponse {

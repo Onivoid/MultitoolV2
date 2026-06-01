@@ -1,6 +1,8 @@
 pub mod blueprints;
 pub mod missions;
+pub mod piloting;
 pub mod playtime;
+pub mod spending;
 pub mod star_systems;
 pub mod vehicles;
 
@@ -40,5 +42,7 @@ pub fn default_extractors() -> Vec<Box<dyn GameLogStatExtractor>> {
         Box::new(blueprints::BlueprintsExtractor::new()),
         Box::new(vehicles::VehiclesExtractor::new()),
         Box::new(star_systems::StarSystemsExtractor::new()),
+        Box::new(piloting::PilotingExtractor::new()),
+        Box::new(spending::SpendingExtractor::new()),
     ]
 }
