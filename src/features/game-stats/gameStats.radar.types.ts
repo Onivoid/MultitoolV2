@@ -1,7 +1,11 @@
 import type { ChartConfig } from "@/components/ui/chart";
 import type { GameStatsSnapshot } from "@/features/game-stats/gameStats.types";
 
-export type RadarCategoryId = "star_systems" | "vehicles" | "missions";
+export type RadarCategoryId =
+  | "star_systems"
+  | "vehicles"
+  | "missions"
+  | "spending";
 
 export interface RadarChartDatum {
   id: string;

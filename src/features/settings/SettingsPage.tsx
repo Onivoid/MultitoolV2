@@ -2,6 +2,7 @@ import { Loader2, Power, PowerOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { GameConfigBackupSection } from "@/features/settings/components/GameConfigBackupSection";
 import { ThemeAppearanceSettings } from "@/features/settings/components/ThemeAppearanceSettings";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PageMotion from "@/shared/components/PageMotion";
@@ -154,6 +155,14 @@ export default function SettingsPage() {
               description="Thème, fond animé et voile de l'interface"
             >
               <ThemeAppearanceSettings />
+            </SettingsSection>
+
+            <SettingsSection
+              title="Sauvegarde config Star Citizen"
+              description="Profil, contrôles, personnages et presets (ZIP)"
+              footer="Les logs Game.log et logbackups ne sont pas inclus."
+            >
+              <GameConfigBackupSection />
             </SettingsSection>
 
             <SettingsSection

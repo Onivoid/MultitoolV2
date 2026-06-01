@@ -19,6 +19,9 @@ use scripts::gamelog_watcher::{
     start_gamelog_watcher, start_gamelog_watcher_internal, stop_gamelog_watcher,
     GamelogWatcherState,
 };
+use scripts::game_config_backup::{
+    export_game_config_backup, list_game_config_backup_targets,
+};
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
 use scripts::home_dashboard::{get_home_dashboard, save_home_dashboard};
 use scripts::local_characters_functions::{
@@ -205,6 +208,8 @@ pub fn run() {
             get_game_stats,
             sync_game_stats,
             get_system_metrics,
+            list_game_config_backup_targets,
+            export_game_config_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

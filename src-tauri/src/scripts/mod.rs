@@ -1,5 +1,6 @@
 pub mod background_service;
 pub mod cache_functions;
+pub mod game_config_backup;
 pub mod game_log;
 pub mod gamelog_watcher;
 pub mod gamepath;

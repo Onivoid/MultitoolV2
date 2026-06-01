@@ -49,6 +49,8 @@ export const TAURI_COMMANDS = {
   getGameStats: "get_game_stats",
   syncGameStats: "sync_game_stats",
   getSystemMetrics: "get_system_metrics",
+  listGameConfigBackupTargets: "list_game_config_backup_targets",
+  exportGameConfigBackup: "export_game_config_backup",
 } as const;
 
 export type TauriCommand = (typeof TAURI_COMMANDS)[keyof typeof TAURI_COMMANDS];
