@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::command;
 
@@ -12,11 +11,6 @@ pub async fn get_translations() -> Result<Value, String> {
         .await
         .map_err(|e| e.to_string())?;
     Ok(response)
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct TranslationLink {
-    pub link: String,
 }
 
 /// Récupère le lien de traduction pour un type de version spécifique.

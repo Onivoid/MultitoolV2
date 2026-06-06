@@ -114,7 +114,7 @@ pub fn list_game_log_files() -> Result<Vec<GameLogFile>, String> {
         try_push_file(&mut files, &mut seen, game_log, false);
     }
 
-    files.sort_by(|a, b| a.mtime_ms.cmp(&b.mtime_ms));
+    files.sort_by_key(|a| a.mtime_ms);
     Ok(files)
 }
 

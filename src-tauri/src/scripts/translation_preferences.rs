@@ -18,13 +18,6 @@ fn get_config_file_path(path: &PathResolver<impl Runtime>) -> Result<PathBuf, St
     Ok(config_file)
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct TranslationSetting {
-    pub link: Option<String>,
-    #[serde(rename = "settingsEN")]
-    pub settings_en: bool,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TranslationsSelected(serde_json::Value);
 

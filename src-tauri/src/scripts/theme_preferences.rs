@@ -77,11 +77,6 @@ pub struct ThemeSelected {
     overlay_opacity: f32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct IconSize {
-    icon_size: String,
-}
-
 /// Sauvegarde les préférences de thème dans un fichier JSON.
 #[command]
 pub fn save_theme_selected(app: tauri::AppHandle, data: ThemeSelected) -> Result<(), String> {
