@@ -105,8 +105,8 @@ Secrets requis : `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWOR
 
 Artefacts attendus sur la release :
 
-- `MultitoolV2-Installer.msi` + `.msi.sig`
-- `MultitoolV2-Portable.exe`
+- `Multitool-Installer.msi` + `.msi.sig`
+- `Multitool-Portable.exe`
 - `latest.json` — **stable uniquement** (version nu `X.Y.Z`, URLs `…/releases/download/vX.Y.Z/…`)
 
 ## Build local

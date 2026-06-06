@@ -20,7 +20,7 @@ Délai visé de première réponse : 7 jours ouvrés.
 Chaque release GitHub inclut `checksums.txt` (SHA256). Exemple PowerShell :
 
 ```powershell
-Get-FileHash .\MultitoolV2-Portable.exe -Algorithm SHA256
+Get-FileHash .\Multitool-Portable.exe -Algorithm SHA256
 ```
 
 Comparez avec la valeur publiée sur la release.

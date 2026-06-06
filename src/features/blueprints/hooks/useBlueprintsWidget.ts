@@ -7,6 +7,8 @@ import {
 } from "@/features/blueprints/blueprints.lib";
 import { blueprintsService } from "@/features/blueprints/blueprints.service";
 import type { GamelogWatcherStatus } from "@/features/blueprints/blueprints.service";
+import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
+import { resolveOwnedBlueprintIds } from "@/features/blueprints/blueprints.match.lib";
 import { useBlueprintsImport } from "@/features/blueprints/hooks/useBlueprintsImport";
 import { BLUEPRINT_WIDGET_LIST_LIMIT } from "@/features/blueprints/blueprints.widget.lib";
 import { toastError, toastSuccess } from "@/shared/lib/toastHelpers";
@@ -19,6 +21,8 @@ export function useBlueprintsWidget() {
   const [error, setError] = useState<string | null>(null);
   const [isTogglingWatch, setIsTogglingWatch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
+  const [ownedMatchedCount, setOwnedMatchedCount] = useState(0);
 
   const {
     isImporting,
@@ -50,6 +54,25 @@ export function useBlueprintsWidget() {
     setLoading(true);
     void loadData().finally(() => setLoading(false));
   }, [loadData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const catalog = await blueprintsCatalogService.listFull();
+        if (cancelled) return;
+        setCatalogTotal(catalog.length);
+        const owned = await resolveOwnedBlueprintIds(blueprints);
+        if (cancelled) return;
+        setOwnedMatchedCount(owned.size);
+      } catch {
+        if (!cancelled) setCatalogTotal(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [blueprints]);
 
   const filteredBlueprints = useMemo(() => {
     const filtered = filterBlueprints(blueprints, searchQuery);
@@ -124,6 +147,8 @@ export function useBlueprintsWidget() {
     setSearchQuery,
     filteredBlueprints,
     totalCount: blueprints.length,
+    catalogTotal,
+    ownedMatchedCount,
     toggleWatch,
     syncFromLogs,
   };

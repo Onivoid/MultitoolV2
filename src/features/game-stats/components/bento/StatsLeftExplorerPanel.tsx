@@ -14,7 +14,7 @@ const TAB_META: Record<
 > = {
   repartition: {
     title: "Répartition",
-    hint: "Graphiques radar par catégorie (systèmes, véhicules, missions, dépenses par boutique).",
+    hint: "Graphiques radar par catégorie (systèmes, véhicules, dépenses par boutique).",
     icon: <Radar className="h-3.5 w-3.5 text-primary" aria-hidden />,
   },
   spending: {

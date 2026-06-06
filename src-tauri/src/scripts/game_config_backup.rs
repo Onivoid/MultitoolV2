@@ -1,3 +1,4 @@
+use crate::scripts::gamepath::get_live_game_log_path_sync;
 use serde::Serialize;
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -5,6 +6,9 @@ use std::path::{Path, PathBuf};
 use tauri::command;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
+
+const MAX_LOGBACKUP_FILES: usize = 40;
+const MAX_LOG_FILE_BYTES: u64 = 100 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
 enum TargetKind {
@@ -179,8 +183,123 @@ fn scan_target(install_root: &Path, target: &BackupTargetDef) -> BackupTargetSta
     }
 }
 
+fn collect_optional_logs(
+    _install_root: &Path,
+    include_game_log: bool,
+    include_log_backups: bool,
+    out: &mut Vec<(PathBuf, String)>,
+) {
+    if !include_game_log && !include_log_backups {
+        return;
+    }
+
+    let game_log = get_live_game_log_path_sync().ok();
+    let log_dir = game_log
+        .as_ref()
+        .and_then(|p| Path::new(p).parent().map(|d| d.to_path_buf()));
+
+    if include_game_log {
+        if let Some(ref log_path) = game_log {
+            let path = PathBuf::from(log_path);
+            if path.is_file() {
+                if let Ok(meta) = fs::metadata(&path) {
+                    if meta.len() <= MAX_LOG_FILE_BYTES {
+                        out.push((path, "logs/Game.log".to_string()));
+                    }
+                }
+            }
+        }
+    }
+
+    if include_log_backups {
+        if let Some(dir) = log_dir {
+            let backups = dir.join("logbackups");
+            if backups.is_dir() {
+                let Ok(read) = fs::read_dir(&backups) else {
+                    return;
+                };
+                let mut entries: Vec<PathBuf> = read
+                    .flatten()
+                    .map(|e| e.path())
+                    .filter(|p| p.is_file() && p.extension().and_then(|e| e.to_str()) == Some("log"))
+                    .collect();
+                entries.sort_by(|a, b| b.cmp(a));
+                for path in entries.into_iter().take(MAX_LOGBACKUP_FILES) {
+                    if let Ok(meta) = fs::metadata(&path) {
+                        if meta.len() > MAX_LOG_FILE_BYTES {
+                            continue;
+                        }
+                    }
+                    if let Some(name) = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(str::to_string)
+                    {
+                        out.push((path, format!("logs/logbackups/{name}")));
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn scan_log_targets(
+    include_game_log: bool,
+    include_log_backups: bool,
+) -> Vec<BackupTargetStatus> {
+    let mut statuses = Vec::new();
+    if include_game_log {
+        let exists = get_live_game_log_path_sync()
+            .ok()
+            .map(PathBuf::from)
+            .filter(|p| p.is_file())
+            .map(|p| fs::metadata(&p).ok().map(|m| m.len()).unwrap_or(0))
+            .unwrap_or(0);
+        statuses.push(BackupTargetStatus {
+            key: "game_log".to_string(),
+            label: "Game.log (session en cours)".to_string(),
+            exists: exists > 0,
+            file_count: if exists > 0 { 1 } else { 0 },
+            total_bytes: exists,
+        });
+    }
+    if include_log_backups {
+        let mut count = 0u64;
+        let mut bytes = 0u64;
+        if let Ok(log_path) = get_live_game_log_path_sync() {
+            let backups = PathBuf::from(&log_path)
+                .parent()
+                .map(|d| d.join("logbackups"));
+            if let Some(dir) = backups.filter(|d| d.is_dir()) {
+                if let Ok(read) = fs::read_dir(dir) {
+                    for entry in read.flatten() {
+                        let path = entry.path();
+                        if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("log")
+                        {
+                            count += 1;
+                            if let Ok(meta) = fs::metadata(&path) {
+                                bytes += meta.len();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        statuses.push(BackupTargetStatus {
+            key: "log_backups".to_string(),
+            label: "Archives logbackups".to_string(),
+            exists: count > 0,
+            file_count: count,
+            total_bytes: bytes,
+        });
+    }
+    statuses
+}
+
 pub fn list_game_config_backup_targets_sync(
     install_path: String,
+    include_game_log: bool,
+    include_log_backups: bool,
 ) -> Result<Vec<BackupTargetStatus>, String> {
     let root = PathBuf::from(install_path.trim());
     if !root.is_dir() {
@@ -189,12 +308,16 @@ pub fn list_game_config_backup_targets_sync(
             root.display()
         ));
     }
-    Ok(TARGETS.iter().map(|t| scan_target(&root, t)).collect())
+    let mut out: Vec<BackupTargetStatus> = TARGETS.iter().map(|t| scan_target(&root, t)).collect();
+    out.extend(scan_log_targets(include_game_log, include_log_backups));
+    Ok(out)
 }
 
 pub fn export_game_config_backup_sync(
     install_path: String,
     dest_zip_path: String,
+    include_game_log: bool,
+    include_log_backups: bool,
 ) -> Result<BackupExportResult, String> {
     let root = PathBuf::from(install_path.trim());
     if !root.is_dir() {
@@ -208,6 +331,12 @@ pub fn export_game_config_backup_sync(
     for target in TARGETS {
         collect_files(&root, target, &mut files);
     }
+    collect_optional_logs(
+        &root,
+        include_game_log,
+        include_log_backups,
+        &mut files,
+    );
 
     if files.is_empty() {
         return Err("Aucun fichier de configuration trouvé à exporter.".to_string());
@@ -260,19 +389,34 @@ pub fn export_game_config_backup_sync(
 #[command]
 pub async fn list_game_config_backup_targets(
     install_path: String,
+    include_game_log: Option<bool>,
+    include_log_backups: Option<bool>,
 ) -> Result<Vec<BackupTargetStatus>, String> {
-    tokio::task::spawn_blocking(move || list_game_config_backup_targets_sync(install_path))
-        .await
-        .map_err(|e| e.to_string())?
+    let include_game_log = include_game_log.unwrap_or(true);
+    let include_log_backups = include_log_backups.unwrap_or(true);
+    tokio::task::spawn_blocking(move || {
+        list_game_config_backup_targets_sync(install_path, include_game_log, include_log_backups)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[command]
 pub async fn export_game_config_backup(
     install_path: String,
     dest_zip_path: String,
+    include_game_log: Option<bool>,
+    include_log_backups: Option<bool>,
 ) -> Result<BackupExportResult, String> {
+    let include_game_log = include_game_log.unwrap_or(true);
+    let include_log_backups = include_log_backups.unwrap_or(true);
     tokio::task::spawn_blocking(move || {
-        export_game_config_backup_sync(install_path, dest_zip_path)
+        export_game_config_backup_sync(
+            install_path,
+            dest_zip_path,
+            include_game_log,
+            include_log_backups,
+        )
     })
     .await
     .map_err(|e| e.to_string())?

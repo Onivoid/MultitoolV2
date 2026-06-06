@@ -15,12 +15,21 @@ use scripts::game_log::{
 use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
 use scripts::gamelog_watcher::{
     export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
-    load_gamelog_blueprints, load_gamelog_watcher_config, save_gamelog_watcher_config,
+    load_gamelog_blueprints, load_gamelog_watcher_config,
+    save_gamelog_blueprint_catalog_matches, save_gamelog_watcher_config,
     start_gamelog_watcher, start_gamelog_watcher_internal, stop_gamelog_watcher,
     GamelogWatcherState,
 };
 use scripts::game_config_backup::{
     export_game_config_backup, list_game_config_backup_targets,
+};
+use scripts::blueprints_catalog::{
+    blueprint_catalog_detail, blueprints_catalog_list_full, blueprints_catalog_match_products,
+    blueprints_catalog_refresh_localization, blueprints_catalog_revalidate,
+    blueprints_catalog_supplement_ids,
+};
+use scripts::blueprints_wiki_extended::{
+    blueprints_catalog_filters, blueprints_mission_detail, ingredient_locations,
 };
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
 use scripts::home_dashboard::{get_home_dashboard, save_home_dashboard};
@@ -31,7 +40,11 @@ use scripts::local_characters_functions::{
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
 use scripts::recent_routes::{get_top_routes, record_page_visit};
+use scripts::onboarding::{
+    complete_onboarding, get_onboarding_state, record_onboarding_attempt, reset_onboarding,
+};
 use scripts::rsi_news::fetch_rsi_news;
+use scripts::rsi_status::fetch_rsi_status_feed;
 use scripts::startup_manager::{
     disable_auto_startup, enable_auto_startup, is_auto_startup_enabled,
 };
@@ -190,8 +203,14 @@ pub fn run() {
             is_auto_startup_enabled,
             is_minimized_start,
             fetch_rsi_news,
+            fetch_rsi_status_feed,
+            get_onboarding_state,
+            record_onboarding_attempt,
+            complete_onboarding,
+            reset_onboarding,
             get_live_game_log_path,
             load_gamelog_blueprints,
+            save_gamelog_blueprint_catalog_matches,
             load_gamelog_watcher_config,
             save_gamelog_watcher_config,
             get_gamelog_watcher_status,
@@ -210,6 +229,15 @@ pub fn run() {
             get_system_metrics,
             list_game_config_backup_targets,
             export_game_config_backup,
+            blueprints_catalog_list_full,
+            blueprint_catalog_detail,
+            blueprints_catalog_refresh_localization,
+            blueprints_catalog_revalidate,
+            blueprints_catalog_match_products,
+            blueprints_catalog_supplement_ids,
+            blueprints_catalog_filters,
+            blueprints_mission_detail,
+            ingredient_locations,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

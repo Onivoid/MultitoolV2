@@ -182,30 +182,6 @@ function buildSpendingData(snapshot: GameStatsSnapshot): RadarChartDatum[] {
   );
 }
 
-function buildMissionsData(snapshot: GameStatsSnapshot): RadarChartDatum[] {
-  const { completed, abandoned, failed } = snapshot.missions;
-  return toRadarData([
-    {
-      id: "completed",
-      label: "Terminées",
-      value: completed,
-      formattedValue: String(completed),
-    },
-    {
-      id: "abandoned",
-      label: "Abandonnées",
-      value: abandoned,
-      formattedValue: String(abandoned),
-    },
-    {
-      id: "failed",
-      label: "Échouées",
-      value: failed,
-      formattedValue: String(failed),
-    },
-  ]);
-}
-
 const RADAR_CATEGORIES: RadarCategoryDefinition[] = [
   {
     id: "star_systems",
@@ -225,14 +201,6 @@ const RADAR_CATEGORIES: RadarCategoryDefinition[] = [
         snapshot,
         options?.vehicleMinSessions ?? VEHICLE_MIN_SESSIONS_DEFAULT,
       ),
-  },
-  {
-    id: "missions",
-    label: "Missions",
-    tileHint:
-      "Répartition des fins de mission détectées dans les logs : terminées, abandonnées ou échouées (CompletionType).",
-    chartColor: "hsl(var(--chart-3))",
-    buildData: buildMissionsData,
   },
   {
     id: "spending",
@@ -311,26 +279,11 @@ export function getStatsPageKpiItems(
     });
   }
 
-  if (snapshot.playtime.sessionCount > 0) {
-    items.push({
-      label: "Sessions",
-      value: String(snapshot.playtime.sessionCount),
-    });
-  }
-
   const { missions } = snapshot;
-  if (
-    missions.completed > 0 ||
-    missions.abandoned > 0 ||
-    missions.failed > 0
-  ) {
+  if (missions.completed > 0 || missions.failed > 0) {
     items.push({
       label: "Missions terminées",
       value: String(missions.completed),
-    });
-    items.push({
-      label: "Missions abandonnées",
-      value: String(missions.abandoned),
     });
     items.push({
       label: "Missions échouées",
@@ -415,4 +368,4 @@ export function getStatsPageKpiItems(
 }
 
 // Re-export for tests
-export { buildStarSystemsData, buildMissionsData };
+export { buildStarSystemsData };

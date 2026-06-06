@@ -138,12 +138,129 @@ pub fn install_path_indicates_live(install_path: &str) -> bool {
     upper.contains("\\LIVE\\") || upper.ends_with("\\LIVE")
 }
 
+fn read_build_manifest_info(
+    install_path: &str,
+) -> (Option<String>, Option<String>, Option<String>) {
+    let manifest_path = Path::new(install_path).join("build_manifest.id");
+    let Ok(contents) = fs::read_to_string(manifest_path) else {
+        return (None, None, None);
+    };
+
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) else {
+        return (None, None, None);
+    };
+
+    let data = json.get("Data").unwrap_or(&json);
+    let clean = |value: Option<&serde_json::Value>| {
+        value
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|v| !v.is_empty() && !v.eq_ignore_ascii_case("none"))
+            .map(ToOwned::to_owned)
+    };
+
+    let build_number =
+        clean(data.get("RequestedP4ChangeNum")).or_else(|| clean(data.get("BuildId")));
+    let game_version = clean(data.get("Version"));
+    let branch = clean(data.get("Branch"));
+
+    (build_number, game_version, branch)
+}
+
+fn get_launcher_release_version(log_lines: &[String], channel: &str) -> Option<String> {
+    let escaped_channel = regex::escape(channel);
+    let version_pattern = r"([0-9]+(?:\.[0-9]+)+(?:[-.][A-Za-z0-9]+)*)";
+    let patterns = [
+        format!(r"(?i)\bSC\s+{escaped_channel}\s+{version_pattern}"),
+        format!(r"(?i)\bStar Citizen\s+{escaped_channel}\s+{version_pattern}"),
+    ];
+    let regexes: Vec<Regex> = patterns
+        .iter()
+        .filter_map(|pattern| Regex::new(pattern).ok())
+        .collect();
+
+    for line in log_lines.iter().rev() {
+        for re in &regexes {
+            if let Some(cap) = re.captures(line) {
+                if let Some(version) = cap.get(1) {
+                    let version = version.as_str().trim();
+                    if !version.is_empty() {
+                        return Some(version.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// État de mise à jour du jeu (patch RSI) pour un canal installé.
+#[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum GameUpdateStatus {
+    UpToDate,
+    Outdated,
+    Unknown,
+}
+
+fn normalize_sc_version_token(value: &str) -> String {
+    let mut normalized = value.trim().to_lowercase().replace('_', "-");
+    for suffix in ["-live", "-ptu", "-eptu", "-hotfix"] {
+        if let Some(stripped) = normalized.strip_suffix(suffix) {
+            normalized = stripped.to_string();
+        }
+    }
+    normalized
+}
+
+fn sc_versions_match(installed: &str, latest: &str) -> bool {
+    let a = normalize_sc_version_token(installed);
+    let b = normalize_sc_version_token(latest);
+    a == b || a.starts_with(&format!("{b}.")) || b.starts_with(&format!("{a}."))
+}
+
+/// Compare la version installée (`build_manifest.id`) à la dernière vue dans les logs RSI.
+fn compute_game_update_status(
+    release_version: &Option<String>,
+    game_version: &Option<String>,
+) -> GameUpdateStatus {
+    let Some(latest) = release_version
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    else {
+        return GameUpdateStatus::Unknown;
+    };
+
+    let Some(installed) = game_version
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    else {
+        return GameUpdateStatus::Unknown;
+    };
+
+    if sc_versions_match(installed, latest) {
+        GameUpdateStatus::UpToDate
+    } else {
+        GameUpdateStatus::Outdated
+    }
+}
+
 /// Informations sur une version installée de Star Citizen.
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VersionInfo {
     pub path: String,
     pub translated: bool,
+    /// `true` si le patch installé correspond à la dernière version lue dans le launcher RSI.
     pub up_to_date: bool,
+    pub game_update_status: GameUpdateStatus,
+    pub release_version: Option<String>,
+    pub build_number: Option<String>,
+    pub game_version: Option<String>,
+    pub branch: Option<String>,
 }
 
 /// Collection de toutes les versions de Star Citizen détectées.
@@ -156,7 +273,7 @@ pub struct VersionPaths {
 /// Public pour usage depuis d'autres commandes sync (ex. local_characters).
 pub fn get_star_citizen_versions_sync() -> VersionPaths {
     let log_lines = get_launcher_log_list();
-    let sc_install_paths = get_game_install_path(log_lines, true);
+    let sc_install_paths = get_game_install_path(log_lines.clone(), true);
 
     let mut versions = HashMap::new();
     for path in &sc_install_paths {
@@ -169,16 +286,25 @@ pub fn get_star_citizen_versions_sync() -> VersionPaths {
         }
 
         // Fusionne les alias (ex. clé « StarCitizen/LIVE ») vers la clé canonique LIVE.
+        let (build_number, game_version, branch) = read_build_manifest_info(&normalized_path);
+        let release_version = get_launcher_release_version(&log_lines, &version);
+        let game_update_status =
+            compute_game_update_status(&release_version, &game_version);
+        let up_to_date = game_update_status == GameUpdateStatus::UpToDate;
+        let info = VersionInfo {
+            path: normalized_path.clone(),
+            translated: false,
+            up_to_date,
+            game_update_status,
+            release_version,
+            build_number,
+            game_version,
+            branch,
+        };
+
         match versions.get(&version) {
             None => {
-                versions.insert(
-                    version.clone(),
-                    VersionInfo {
-                        path: normalized_path,
-                        translated: false,
-                        up_to_date: false,
-                    },
-                );
+                versions.insert(version.clone(), info);
             }
             Some(existing) => {
                 let prefer_new = version == "LIVE"
@@ -186,14 +312,7 @@ pub fn get_star_citizen_versions_sync() -> VersionPaths {
                         || normalized_path.to_uppercase().ends_with("\\LIVE"))
                     && !existing.path.to_uppercase().ends_with("\\LIVE");
                 if prefer_new {
-                    versions.insert(
-                        version,
-                        VersionInfo {
-                            path: normalized_path,
-                            translated: false,
-                            up_to_date: false,
-                        },
-                    );
+                    versions.insert(version, info);
                 }
             }
         }
@@ -332,7 +451,34 @@ mod tests {
             path: path.to_string(),
             translated: false,
             up_to_date: false,
+            game_update_status: GameUpdateStatus::Unknown,
+            release_version: None,
+            build_number: None,
+            game_version: None,
+            branch: None,
         }
+    }
+
+    #[test]
+    fn game_update_status_matches_normalized_versions() {
+        assert_eq!(
+            compute_game_update_status(
+                &Some("4.0.1".to_string()),
+                &Some("4.0.1-LIVE".to_string()),
+            ),
+            GameUpdateStatus::UpToDate
+        );
+        assert_eq!(
+            compute_game_update_status(
+                &Some("4.0.2".to_string()),
+                &Some("4.0.1".to_string()),
+            ),
+            GameUpdateStatus::Outdated
+        );
+        assert_eq!(
+            compute_game_update_status(&None, &Some("4.0.1".to_string())),
+            GameUpdateStatus::Unknown
+        );
     }
 
     #[test]

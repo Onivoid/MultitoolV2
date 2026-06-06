@@ -1,10 +1,16 @@
 pub mod background_service;
+pub mod blueprint_family;
+pub mod blueprints_catalog;
+pub mod blueprints_item_profile;
+pub mod blueprints_wiki_extended;
 pub mod cache_functions;
 pub mod game_config_backup;
 pub mod game_log;
 pub mod gamelog_watcher;
 pub mod gamepath;
 pub mod home_dashboard;
+pub mod onboarding;
+pub mod rsi_status;
 pub mod local_characters_functions;
 pub mod patchnote;
 pub mod presets_list_functions;

@@ -4,7 +4,10 @@ export type HomeWidgetType =
   | "translation"
   | "blueprints"
   | "cache"
-  | "system_performance";
+  | "system_performance"
+  | "news"
+  | "rsi_status"
+  | "sc_versions";
 
 export interface HomeWidgetInstance {
   id: string;

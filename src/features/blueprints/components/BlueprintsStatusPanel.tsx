@@ -1,6 +1,7 @@
-import { FileDown, Loader2, Play, RefreshCw, Square, FolderSync } from "lucide-react";
+import { FileDown, Hammer, Loader2, Play, RefreshCw, Square, FolderSync } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BP_ACTION_BTN } from "@/features/blueprints/blueprints.ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BlueprintsImportProgressDisplay } from "@/features/blueprints/components/BlueprintsImportProgressDisplay";
 import type { GamelogWatcherStatus } from "@/features/blueprints/blueprints.service";
@@ -47,9 +48,10 @@ function ActionButton({
       variant={variant}
       size="sm"
       className={cn(
-        "h-9 shrink-0 gap-1.5 px-3 text-xs font-medium shadow-none sm:text-sm",
-        variant === "outline" &&
-          "border-primary/20 bg-primary/10 text-foreground hover:bg-primary/20",
+        BP_ACTION_BTN,
+        variant === "outline" && "text-foreground hover:bg-primary/20",
+        variant === "destructive" && "border-destructive/40 bg-destructive/10 hover:bg-destructive/20",
+        variant === "default" && "border-primary/30",
         className,
       )}
       onClick={onClick}
@@ -89,6 +91,13 @@ export function BlueprintsStatusPanel({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className="gap-1.5 px-2.5 py-1 text-xs font-medium"
+            >
+              <Hammer className="h-3.5 w-3.5 text-primary" />
+              Journal
+            </Badge>
             <Badge
               variant={watching ? "default" : "secondary"}
               className="gap-1.5 px-2.5 py-1 text-xs font-medium"

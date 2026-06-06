@@ -46,4 +46,14 @@ export const blueprintsService = {
 
   exportStore: () =>
     invokeCommand<string | null>(TAURI_COMMANDS.exportGamelogBlueprints),
+
+  /** Persiste productName → blueprintId dans gamelog_blueprints.json. */
+  saveCatalogMatches: (
+    matches: Record<string, string>,
+    overwrite = false,
+  ) =>
+    invokeCommand<number>(TAURI_COMMANDS.saveGamelogBlueprintCatalogMatches, {
+      matches,
+      overwrite,
+    }),
 };

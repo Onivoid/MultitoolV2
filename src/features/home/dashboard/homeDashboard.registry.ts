@@ -1,5 +1,15 @@
 import type { ComponentType } from "react";
-import { Activity, BarChart3, HardDrive, Languages, Package, Sparkles } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  HardDrive,
+  Languages,
+  Newspaper,
+  Package,
+  Server,
+  Sparkles,
+  Gamepad2,
+} from "lucide-react";
 import type { HomeWidgetType } from "@/features/home/dashboard/homeDashboard.types";
 import { GameStatsWidgetContent } from "@/features/home/dashboard/widgets/GameStatsWidgetContent";
 import { TopRoutesWidgetContent } from "@/features/home/dashboard/widgets/TopRoutesWidgetContent";
@@ -7,6 +17,9 @@ import { BlueprintsWidgetContent } from "@/features/home/dashboard/widgets/Bluep
 import { TranslationWidgetContent } from "@/features/home/dashboard/widgets/TranslationWidgetContent";
 import { CacheWidgetContent } from "@/features/home/dashboard/widgets/CacheWidgetContent";
 import { PerformanceWidgetContent } from "@/features/home/dashboard/widgets/PerformanceWidgetContent";
+import { NewsWidgetContent } from "@/features/home/dashboard/widgets/NewsWidgetContent";
+import { RsiStatusWidgetContent } from "@/features/home/dashboard/widgets/RsiStatusWidgetContent";
+import { ScVersionsWidgetContent } from "@/features/home/dashboard/widgets/ScVersionsWidgetContent";
 
 export interface HomeWidgetDefinition {
   type: HomeWidgetType;
@@ -64,6 +77,28 @@ export const HOME_WIDGET_REGISTRY: HomeWidgetDefinition[] = [
     description: "Utilisation CPU, GPU et mémoire en temps réel.",
     icon: Activity,
     Content: PerformanceWidgetContent,
+  },
+  {
+    type: "news",
+    label: "News Star Citizen",
+    description: "Dernières actualités RSI.",
+    icon: Newspaper,
+    Content: NewsWidgetContent,
+    headerRoute: "/news",
+  },
+  {
+    type: "rsi_status",
+    label: "Statut RSI",
+    description: "État des serveurs et services Star Citizen.",
+    icon: Server,
+    Content: RsiStatusWidgetContent,
+  },
+  {
+    type: "sc_versions",
+    label: "Versions SC",
+    description: "État des mises à jour jeu par canal (RSI Launcher).",
+    icon: Gamepad2,
+    Content: ScVersionsWidgetContent,
   },
 ];
 

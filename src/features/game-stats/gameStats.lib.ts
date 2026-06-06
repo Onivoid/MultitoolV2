@@ -32,7 +32,23 @@ export function formatVehicleTypeLabel(vehicleType: string): string {
 /** Montant aUEC lisible (arrondi entier). */
 export function formatAuec(amount: number): string {
   const n = Math.max(0, Math.round(amount));
-  return `${n.toLocaleString("fr-FR")} aUEC`;
+  return `${n.toLocaleString("fr-FR")}\u00a0aUEC`;
+}
+
+/** Axe graphique / montants compacts avec séparateurs FR. */
+export function formatAuecCompact(amount: number): string {
+  const n = Math.max(0, Math.round(amount));
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    const rounded = Math.round(m * 10) / 10;
+    return `${rounded.toLocaleString("fr-FR")}\u00a0M`;
+  }
+  if (n >= 1_000) {
+    const k = n / 1_000;
+    const rounded = Math.round(k * 10) / 10;
+    return `${rounded.toLocaleString("fr-FR")}\u00a0k`;
+  }
+  return n.toLocaleString("fr-FR");
 }
 
 /** Pourcentage entier 0–100+ (peut dépasser 100 si métriques divergent). */
@@ -110,24 +126,11 @@ export function getHomeSummaryItems(
     });
   }
 
-  if (snapshot.playtime.sessionCount > 0) {
-    items.push({
-      label: "Sessions",
-      value: String(snapshot.playtime.sessionCount),
-    });
-  }
-
   if (hasMissionStats(snapshot.missions)) {
     items.push({
       label: "Missions terminées",
       value: String(snapshot.missions.completed),
     });
-    if (snapshot.missions.abandoned > 0) {
-      items.push({
-        label: "Missions abandonnées",
-        value: String(snapshot.missions.abandoned),
-      });
-    }
     if (snapshot.missions.failed > 0) {
       items.push({
         label: "Missions échouées",

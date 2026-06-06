@@ -26,6 +26,8 @@ export function BlueprintsWidgetContent() {
     setSearchQuery,
     filteredBlueprints,
     totalCount,
+    catalogTotal,
+    ownedMatchedCount,
     toggleWatch,
     syncFromLogs,
   } = useBlueprintsWidget();
@@ -59,11 +61,17 @@ export function BlueprintsWidgetContent() {
           )}
           aria-hidden
         />
-        <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+        <span className="text-ui-secondary min-w-0 flex-1 truncate text-muted-foreground">
           {watching ? "Surveillance active" : "Surveillance arrêtée"}
           <span className="text-foreground">
             {" "}
-            · {totalCount} schéma{totalCount !== 1 ? "s" : ""}
+            · {totalCount} en journal
+            {catalogTotal != null && (
+              <>
+                {" "}
+                · {ownedMatchedCount}/{catalogTotal} encyclopédie
+              </>
+            )}
           </span>
         </span>
       </div>
@@ -104,19 +112,30 @@ export function BlueprintsWidgetContent() {
           className="max-h-[140px] overflow-y-auto border-b border-primary/6"
           data-no-window-drag
         >
-          {filteredBlueprints.map((bp) => (
-            <li
-              key={getBlueprintKey(bp)}
-              className="border-b border-primary/4 px-3 py-2 last:border-b-0"
-            >
-              <p className="truncate text-xs font-medium leading-snug">
-                {truncateProductName(bp.productName)}
-              </p>
-              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                {formatBlueprintOwner(bp.owner)} · {formatBlueprintDateShort(bp.ts)}
-              </p>
-            </li>
-          ))}
+          {filteredBlueprints.map((bp) => {
+            const catalogId = bp.catalogBlueprintId?.trim().toLowerCase();
+            const to = catalogId
+              ? `/blueprints?blueprint=${encodeURIComponent(catalogId)}`
+              : "/blueprints";
+            return (
+              <li
+                key={getBlueprintKey(bp)}
+                className="border-b border-primary/4 px-3 py-2 last:border-b-0"
+              >
+                <Link
+                  to={to}
+                  className="block rounded-sm transition-colors hover:bg-primary/5"
+                >
+                  <p className="truncate text-xs font-medium leading-snug">
+                    {truncateProductName(bp.productName)}
+                  </p>
+                  <p className="text-ui-caption mt-0.5 truncate text-muted-foreground">
+                    {formatBlueprintOwner(bp.owner)} · {formatBlueprintDateShort(bp.ts)}
+                  </p>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -128,7 +147,7 @@ export function BlueprintsWidgetContent() {
           type="button"
           variant={watching ? "outline" : "default"}
           size="sm"
-          className="h-7 min-w-0 flex-1 gap-1 px-2 text-[11px]"
+          className="text-ui-secondary h-7 min-w-0 flex-1 gap-1 px-2"
           disabled={busy}
           onClick={() => void toggleWatch()}
         >
@@ -143,7 +162,7 @@ export function BlueprintsWidgetContent() {
           type="button"
           variant="secondary"
           size="sm"
-          className="h-7 min-w-0 flex-1 gap-1 px-2 text-[11px]"
+          className="text-ui-secondary h-7 min-w-0 flex-1 gap-1 px-2"
           disabled={busy}
           onClick={() => void syncFromLogs()}
         >
@@ -153,7 +172,7 @@ export function BlueprintsWidgetContent() {
       </footer>
 
       {showList && searchQuery.trim() === "" && filteredBlueprints.length < totalCount && (
-        <p className="px-3 pb-2 text-center text-[10px] text-muted-foreground">
+        <p className="text-ui-caption px-3 pb-2 text-center text-muted-foreground">
           <Link to="/blueprints" className="text-primary hover:underline">
             Voir les {totalCount} schémas
           </Link>

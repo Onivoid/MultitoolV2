@@ -5,6 +5,8 @@ export interface BlueprintEntry {
   missionGuid?: string | null;
   missionDebugName?: string | null;
   missionTrigger?: string | null;
+  /** ID catalogue (`bp_craft_*`), rempli après matching — absent du Game.log. */
+  catalogBlueprintId?: string | null;
 }
 
 export type BlueprintSortKey =

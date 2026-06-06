@@ -26,8 +26,8 @@ function MetricRow({
   return (
     <div className={cn("px-3 py-2", className)} data-no-window-drag>
       <div className="mb-1 flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-medium text-foreground">{label}</span>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        <span className="text-ui-secondary font-medium text-foreground">{label}</span>
+        <span className="text-ui-secondary shrink-0 tabular-nums text-muted-foreground">
           {detail}
         </span>
       </div>
@@ -95,7 +95,7 @@ export function PerformanceWidgetContent() {
         />
       ) : (
         <div
-          className="border-t border-primary/4 px-3 py-2 text-[11px] text-muted-foreground"
+          className="text-ui-secondary border-t border-primary/4 px-3 py-2 text-muted-foreground"
           data-no-window-drag
         >
           GPU : indisponible sur cette machine
@@ -109,7 +109,7 @@ export function PerformanceWidgetContent() {
       />
       {gpu && (
         <p
-          className="truncate border-t border-primary/4 px-3 py-1.5 text-[10px] text-muted-foreground"
+          className="text-ui-caption truncate border-t border-primary/4 px-3 py-1.5 text-muted-foreground"
           title={gpu.name}
         >
           {gpu.name}

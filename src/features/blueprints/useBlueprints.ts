@@ -47,38 +47,42 @@ export function useBlueprints() {
     [blueprints, searchQuery, ownerFilter, sortKey],
   );
 
-  const loadData = useCallback(
-    async (silent = false) => {
-      try {
-        const [store, watcherStatus] = await Promise.all([
-          blueprintsService.loadStore(),
-          blueprintsService.getWatcherStatus(),
-        ]);
-        setBlueprints(
-          (store.blueprints ?? []).map((bp) => ({
-            ...bp,
-            owner: bp.owner ?? "",
-          })),
+  const loadData = useCallback(async (silent = false) => {
+    try {
+      const [store, watcherStatus] = await Promise.all([
+        blueprintsService.loadStore(),
+        blueprintsService.getWatcherStatus(),
+      ]);
+      setBlueprints(
+        (store.blueprints ?? []).map((bp) => ({
+          ...bp,
+          owner: bp.owner ?? "",
+        })),
+      );
+      setStatus(watcherStatus);
+      if (!silent) {
+        toastSuccess(
+          toast,
+          "Liste mise à jour",
+          `${store.blueprints?.length ?? 0} blueprint(s)`,
         );
-        setStatus(watcherStatus);
-        if (!silent) {
-          toastSuccess(
-            toast,
-            "Liste mise à jour",
-            `${store.blueprints?.length ?? 0} blueprint(s)`,
-          );
-        }
-      } catch (error) {
-        logger.error("Erreur chargement blueprints:", error);
-        toastError(toast, "Erreur", "Impossible de charger les blueprints");
       }
-    },
-    [toast],
-  );
+    } catch (error) {
+      logger.error("Erreur chargement blueprints:", error);
+      toastError(toast, "Erreur", "Impossible de charger les blueprints");
+    }
+    // toast volontairement hors deps pour éviter une boucle de rechargement
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
     setIsLoading(true);
-    loadData(true).finally(() => setIsLoading(false));
+    void loadData(true).finally(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
   const refresh = async () => {
@@ -86,6 +90,8 @@ export function useBlueprints() {
     await loadData(false);
     setIsRefreshing(false);
   };
+
+  const reloadStoreSilent = useCallback(() => loadData(true), [loadData]);
 
   const startWatch = async () => {
     setIsTogglingWatch(true);
@@ -190,6 +196,7 @@ export function useBlueprints() {
     uniqueOwners,
     filteredBlueprints,
     refresh,
+    reloadStoreSilent,
     startWatch,
     stopWatch,
     importHistory,

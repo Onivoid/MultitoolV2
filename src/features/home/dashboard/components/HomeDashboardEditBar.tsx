@@ -88,7 +88,7 @@ export function HomeDashboardEditBar({
       )}
 
       {editMode && available.length === 0 && (
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-ui-secondary text-muted-foreground">
           Tous les widgets sont déjà affichés.
         </span>
       )}

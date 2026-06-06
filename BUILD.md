@@ -53,8 +53,8 @@ $env:TAURI_ENV_DISTRIBUTION = "github"
 
 Artefacts dans `builds/` :
 
-- `builds/installer/MultitoolV2-Installer.msi` (+ `.msi.sig` si signing)
-- `builds/portable/MultitoolV2-Portable.exe`
+- `builds/installer/Multitool-Installer.msi` (+ `.msi.sig` si signing)
+- `builds/portable/Multitool-Portable.exe`
 - `builds/checksums.txt`
 
 Build Tauri direct (sans script) :

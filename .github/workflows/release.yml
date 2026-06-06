@@ -92,10 +92,10 @@ jobs:
 
       - name: Verify Build Artifacts
         run: |
-          if (-not (Test-Path "builds/portable/MultitoolV2-Portable.exe")) { exit 1 }
-          if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi")) { exit 1 }
-          if (-not (Test-Path "builds/installer/MultitoolV2-Installer.msi.sig")) {
-            Write-Host "MultitoolV2-Installer.msi.sig manquant (createUpdaterArtifacts + TAURI_SIGNING_PRIVATE_KEY)" -ForegroundColor Red
+          if (-not (Test-Path "builds/portable/Multitool-Portable.exe")) { exit 1 }
+          if (-not (Test-Path "builds/installer/Multitool-Installer.msi")) { exit 1 }
+          if (-not (Test-Path "builds/installer/Multitool-Installer.msi.sig")) {
+            Write-Host "Multitool-Installer.msi.sig manquant (createUpdaterArtifacts + TAURI_SIGNING_PRIVATE_KEY)" -ForegroundColor Red
             exit 1
           }
           if (-not (Test-Path "builds/checksums.txt")) { exit 1 }
@@ -122,7 +122,7 @@ jobs:
             echo '```'
             echo ""
             echo "---"
-            echo "Portable : \`MultitoolV2-Portable.exe\` — ${UPDATER_NOTE}"
+            echo "Portable : \`Multitool-Portable.exe\` — ${UPDATER_NOTE}"
           } > RELEASE_NOTES.md
 
       - name: Upload assets to draft release
@@ -132,9 +132,9 @@ jobs:
           name: ${{ needs.resolve-channel.outputs.release_name }}
           body_path: RELEASE_NOTES.md
           files: |
-            builds/portable/MultitoolV2-Portable.exe
-            builds/installer/MultitoolV2-Installer.msi
-            builds/installer/MultitoolV2-Installer.msi.sig
+            builds/portable/Multitool-Portable.exe
+            builds/installer/Multitool-Installer.msi
+            builds/installer/Multitool-Installer.msi.sig
             builds/checksums.txt
           draft: true
           prerelease: ${{ needs.resolve-channel.outputs.prerelease == 'true' }}

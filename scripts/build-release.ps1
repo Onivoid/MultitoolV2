@@ -291,8 +291,8 @@ if ($builds.Count -gt 0) {
     
     # 1. EXE Portable
     if (Test-Path $exePath) {
-        Copy-Item $exePath "$portableDir/MultitoolV2-Portable.exe" -Force
-        Write-Host "   Portable: MultitoolV2-Portable.exe" -ForegroundColor Green
+        Copy-Item $exePath "$portableDir/Multitool-Portable.exe" -Force
+        Write-Host "   Portable: Multitool-Portable.exe" -ForegroundColor Green
     }
     
     # 2. MSI Installer(s)
@@ -305,13 +305,13 @@ if ($builds.Count -gt 0) {
             Write-Host "   Analyse: $($msiFile.Name)" -ForegroundColor DarkGray
             
             # Copier le premier MSI pour standard si demandé
-            if ($builds -contains "standard" -and -not (Test-Path "$installerDir/MultitoolV2-Installer.msi")) {
-                Copy-Item $msiFile.FullName "$installerDir/MultitoolV2-Installer.msi" -Force
-                Write-Host "   Installer MSI: MultitoolV2-Installer.msi" -ForegroundColor Green
+            if ($builds -contains "standard" -and -not (Test-Path "$installerDir/Multitool-Installer.msi")) {
+                Copy-Item $msiFile.FullName "$installerDir/Multitool-Installer.msi" -Force
+                Write-Host "   Installer MSI: Multitool-Installer.msi" -ForegroundColor Green
                 $sigSource = Join-Path $msiFile.DirectoryName ($msiFile.Name + ".sig")
                 if (Test-Path $sigSource) {
-                    Copy-Item $sigSource "$installerDir/MultitoolV2-Installer.msi.sig" -Force
-                    Write-Host "   Installer signature: MultitoolV2-Installer.msi.sig" -ForegroundColor Green
+                    Copy-Item $sigSource "$installerDir/Multitool-Installer.msi.sig" -Force
+                    Write-Host "   Installer signature: Multitool-Installer.msi.sig" -ForegroundColor Green
                 } else {
                     Write-Host "   ATTENTION: .msi.sig introuvable ($sigSource) - updater desactive" -ForegroundColor Yellow
                 }
@@ -332,9 +332,9 @@ if ($builds.Count -gt 0) {
     Write-Host "Structure des builds:" -ForegroundColor Cyan
     Write-Host "builds/" -ForegroundColor White
     Write-Host "  +-- portable/" -ForegroundColor White
-    Write-Host "      +-- MultitoolV2-Portable.exe" -ForegroundColor White
+    Write-Host "      +-- Multitool-Portable.exe" -ForegroundColor White
     Write-Host "  +-- installer/" -ForegroundColor White
-    Write-Host "      +-- MultitoolV2-Installer.msi" -ForegroundColor White
+    Write-Host "      +-- Multitool-Installer.msi" -ForegroundColor White
     Write-Host "  +-- checksums.txt" -ForegroundColor White
     
     Write-Host ""

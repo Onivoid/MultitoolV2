@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MultitoolV2-Portable",
+  "productName": "Multitool-Portable",
   "identifier": "com.multitools.app.portable",
   "build": {
     "beforeDevCommand": "pnpm dev",

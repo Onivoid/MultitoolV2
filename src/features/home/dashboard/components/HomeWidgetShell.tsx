@@ -223,7 +223,7 @@ function WidgetHeaderLink({ to }: { to: string }) {
   return (
     <Link
       to={to}
-      className="flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-primary hover:underline"
+      className="text-ui-secondary flex shrink-0 items-center gap-0.5 font-medium text-primary hover:underline"
     >
       Voir tout
       <ChevronRight className="h-3 w-3" aria-hidden />

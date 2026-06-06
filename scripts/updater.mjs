@@ -160,7 +160,7 @@ async function main() {
 
   if (Object.keys(platforms).length === 0) {
     console.error(
-      "No updater platforms found. Upload MultitoolV2-Installer.msi and .msi.sig first.",
+      "No updater platforms found. Upload Multitool-Installer.msi and .msi.sig first.",
     );
     process.exit(1);
   }

@@ -1,11 +1,18 @@
 import { useLocation } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Newspaper, Settings } from "lucide-react";
 import { IconHome } from "@tabler/icons-react";
-import { Dock, DockDropdownItem, DockIcon, DockItem } from "@/components/dock";
 import {
-  featuresRoutes,
+  Dock,
+  DockDivider,
+  DockDropdownGroup,
+  DockDropdownItem,
+  DockIcon,
+  DockItem,
+} from "@/components/dock";
+import {
+  featuresRouteGroups,
   infoRoutes,
-  newsRoutes,
+  newsRoute,
 } from "@/components/navigation/navigation.config";
 
 export function AppDock() {
@@ -17,24 +24,54 @@ export function AppDock() {
       bottomOffset="1.5rem"
       navClassName="!left-1/2 w-auto -translate-x-1/2"
     >
-      <DockIcon href="/" icon={<IconHome size={20} className="text-foreground" />} />
-      <DockItem label="Features" id="features">
-        {featuresRoutes.map((route) => (
-          <DockDropdownItem key={route.path} href={route.path} label={route.label} />
+      <DockIcon
+        href="/"
+        ariaLabel="Accueil"
+        icon={<IconHome size={20} className="text-foreground" />}
+      />
+
+      <DockDivider />
+
+      <DockItem label="Fonctionnalités" id="fonctionnalites">
+        {featuresRouteGroups.map((group) => (
+          <DockDropdownGroup key={group.label} label={group.label}>
+            {group.routes.map((route) => (
+              <DockDropdownItem
+                key={route.path}
+                href={route.path}
+                label={route.label}
+                description={route.description}
+                icon={route.icon}
+              />
+            ))}
+          </DockDropdownGroup>
         ))}
       </DockItem>
-      <DockItem label="News" id="news">
-        {newsRoutes.map((route) => (
-          <DockDropdownItem key={route.path} href={route.path} label={route.label} />
-        ))}
-      </DockItem>
+
+      <DockDivider />
+
+      <DockIcon
+        href={newsRoute.path}
+        ariaLabel={newsRoute.label}
+        icon={<Newspaper size={20} className="text-foreground" />}
+      />
       <DockItem label="Informations" id="informations">
         {infoRoutes.map((route) => (
-          <DockDropdownItem key={route.path} href={route.path} label={route.label} />
+          <DockDropdownItem
+            key={route.path}
+            href={route.path}
+            label={route.label}
+            description={route.description}
+            icon={route.icon}
+          />
         ))}
       </DockItem>
+
+      <DockDivider />
+
       <DockIcon
         href="/settings"
+        ariaLabel="Paramètres"
         icon={<Settings size={20} className="text-foreground" />}
       />
     </Dock>

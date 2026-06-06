@@ -71,8 +71,8 @@ Les réglages sont persistés et s'appliquent immédiatement sur toutes les page
 
 | Fichier                         | Usage                                                    |
 | ------------------------------- | -------------------------------------------------------- |
-| **`MultitoolV2-Portable.exe`**  | Lance directement, sans installation                     |
-| **`MultitoolV2-Installer.msi`** | Installation Windows + mises à jour auto (Tauri updater) |
+| **`Multitool-Portable.exe`**  | Lance directement, sans installation                     |
+| **`Multitool-Installer.msi`** | Installation Windows + mises à jour auto (Tauri updater) |
 
 > Windows peut afficher un avertissement SmartScreen : l'app n'est pas signée. Voir [SECURITY.md](SECURITY.md) pour vérifier les checksums ou rebuilder vous-même.
 

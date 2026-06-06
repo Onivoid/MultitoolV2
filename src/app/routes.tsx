@@ -14,6 +14,7 @@ import Ships3DPage from "@/features/ships3d/Ships3DPage";
 import BlueprintsPage from "@/features/blueprints/BlueprintsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import StatisticsPage from "@/features/game-stats/StatisticsPage";
+import { OnboardingGate } from "@/features/onboarding/OnboardingGate";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -27,26 +28,28 @@ const ScrollToTop = () => {
 
 const AppRouter = () => (
   <Router>
-    <AppShell>
-      <ScrollToTop />
-      <RouteVisitTracker />
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/traduction" element={<TranslationPage />} />
-          <Route path="/cache" element={<CachePage />} />
-          <Route path="/presets-local" element={<LocalCharactersPage />} />
-          <Route path="/presets-remote" element={<CharactersRemotePage />} />
-          <Route path="/updates" element={<UpdatePage />} />
-          <Route path="/patchnotes" element={<PatchNotesPage />} />
-          <Route path="/news" element={<NewsPage />} />
-          <Route path="/ships3d" element={<Ships3DPage />} />
-          <Route path="/blueprints" element={<BlueprintsPage />} />
-          <Route path="/statistiques" element={<StatisticsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
-      </div>
-    </AppShell>
+    <OnboardingGate>
+      <AppShell>
+        <ScrollToTop />
+        <RouteVisitTracker />
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/traduction" element={<TranslationPage />} />
+            <Route path="/cache" element={<CachePage />} />
+            <Route path="/presets-local" element={<LocalCharactersPage />} />
+            <Route path="/presets-remote" element={<CharactersRemotePage />} />
+            <Route path="/updates" element={<UpdatePage />} />
+            <Route path="/patchnotes" element={<PatchNotesPage />} />
+            <Route path="/news" element={<NewsPage />} />
+            <Route path="/ships3d" element={<Ships3DPage />} />
+            <Route path="/blueprints" element={<BlueprintsPage />} />
+            <Route path="/statistiques" element={<StatisticsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </div>
+      </AppShell>
+    </OnboardingGate>
   </Router>
 );
 

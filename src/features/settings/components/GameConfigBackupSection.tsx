@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { SettingRow } from "@/shared/components/v3/SettingRow";
 import {
   gameConfigBackupService,
@@ -46,8 +47,12 @@ export function GameConfigBackupSection() {
   const [loadingChannels, setLoadingChannels] = useState(true);
   const [loadingTargets, setLoadingTargets] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [includeGameLog, setIncludeGameLog] = useState(true);
+  const [includeLogBackups, setIncludeLogBackups] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const backupOptions = { includeGameLog, includeLogBackups };
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +100,7 @@ export function GameConfigBackupSection() {
     setLoadingTargets(true);
     setError(null);
     try {
-      const list = await gameConfigBackupService.listTargets(path);
+      const list = await gameConfigBackupService.listTargets(path, backupOptions);
       setTargets(list);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -103,7 +108,7 @@ export function GameConfigBackupSection() {
     } finally {
       setLoadingTargets(false);
     }
-  }, []);
+  }, [includeGameLog, includeLogBackups]);
 
   useEffect(() => {
     void refreshTargets(selectedPath);
@@ -131,7 +136,11 @@ export function GameConfigBackupSection() {
     setStatusMessage(null);
     setError(null);
     try {
-      const result = await gameConfigBackupService.exportZip(selectedPath, dest);
+      const result = await gameConfigBackupService.exportZip(
+        selectedPath,
+        dest,
+        backupOptions,
+      );
       setStatusMessage(
         `Export terminé : ${result.filesPacked} fichier${result.filesPacked !== 1 ? "s" : ""} (${formatBytes(result.bytesPacked)}).` +
           (result.skipped.length > 0
@@ -170,6 +179,36 @@ export function GameConfigBackupSection() {
           </Select>
         )}
       </SettingRow>
+
+      <SettingRow
+        title="Inclure Game.log"
+        description="Journal de session en cours"
+        htmlFor="backup-game-log"
+      >
+        <Switch
+          id="backup-game-log"
+          checked={includeGameLog}
+          onCheckedChange={setIncludeGameLog}
+        />
+      </SettingRow>
+
+      <SettingRow
+        title="Inclure logbackups"
+        description="Archives de logs RSI (max. 40 fichiers)"
+        htmlFor="backup-log-backups"
+      >
+        <Switch
+          id="backup-log-backups"
+          checked={includeLogBackups}
+          onCheckedChange={setIncludeLogBackups}
+        />
+      </SettingRow>
+
+      {totalBytes > 50 * 1024 * 1024 && (
+        <p className="px-4 text-ui-caption text-amber-300/90">
+          Archive volumineuse ({formatBytes(totalBytes)}) — l&apos;export peut prendre un moment.
+        </p>
+      )}
 
       <SettingRow
         title="Contenu détecté"

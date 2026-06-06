@@ -63,7 +63,12 @@ export function StatsRadarExplorerBody({ snapshot }: StatsRadarExplorerBodyProps
       onValueChange={(v) => setCategoryId(v as RadarCategoryId)}
       className="flex min-h-0 flex-1 flex-col gap-2"
     >
-      <TabsList className="grid h-9 w-full shrink-0 grid-cols-4 bg-primary/5">
+      <TabsList
+        className="grid h-9 w-full shrink-0 bg-primary/5"
+        style={{
+          gridTemplateColumns: `repeat(${RADAR_CATEGORY_LIST.length}, minmax(0, 1fr))`,
+        }}
+      >
         {RADAR_CATEGORY_LIST.map((cat) => (
           <TabsTrigger
             key={cat.id}

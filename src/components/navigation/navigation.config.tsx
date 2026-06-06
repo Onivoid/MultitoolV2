@@ -1,4 +1,17 @@
 import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  Box,
+  Cloud,
+  Download,
+  HardDrive,
+  Languages,
+  Newspaper,
+  Package,
+  ScrollText,
+  Users,
+} from "lucide-react";
 import {
   IconBrandDiscord,
   IconBrandGithub,
@@ -10,6 +23,13 @@ import {
 export interface NavRoute {
   path: string;
   label: string;
+  icon?: LucideIcon;
+  description?: string;
+}
+
+export interface NavRouteGroup {
+  label: string;
+  routes: NavRoute[];
 }
 
 export interface ExternalLink {
@@ -20,17 +40,70 @@ export interface ExternalLink {
   group: "social" | "service";
 }
 
-export const featuresRoutes: NavRoute[] = [
-  { path: "/traduction", label: "Traduction" },
-  { path: "/cache", label: "Cache" },
-  { path: "/presets-local", label: "Persos locaux" },
-  { path: "/presets-remote", label: "Persos en ligne" },
-  { path: "/blueprints", label: "Blueprints" },
-  { path: "/statistiques", label: "Statistiques" },
-  { path: "/ships3d", label: "Vaisseaux 3D" },
+export const featuresRouteGroups: NavRouteGroup[] = [
+  {
+    label: "Jeu",
+    routes: [
+      {
+        path: "/traduction",
+        label: "Traduction",
+        icon: Languages,
+        description: "Traductions SCEFRA et Circuspes",
+      },
+      {
+        path: "/cache",
+        label: "Cache",
+        icon: HardDrive,
+        description: "Dossiers cache du jeu",
+      },
+    ],
+  },
+  {
+    label: "Personnages",
+    routes: [
+      {
+        path: "/presets-local",
+        label: "Persos locaux",
+        icon: Users,
+        description: "Personnages sur ce PC",
+      },
+      {
+        path: "/presets-remote",
+        label: "Persos en ligne",
+        icon: Cloud,
+        description: "SC Characters cloud",
+      },
+    ],
+  },
+  {
+    label: "Outils",
+    routes: [
+      {
+        path: "/blueprints",
+        label: "Blueprints",
+        icon: Package,
+        description: "Catalogue et journal Game.log",
+      },
+      {
+        path: "/statistiques",
+        label: "Statistiques",
+        icon: BarChart3,
+        description: "Stats extraites des logs",
+      },
+      {
+        path: "/ships3d",
+        label: "Vaisseaux 3D",
+        icon: Box,
+        description: "Vue 3D des vaisseaux",
+      },
+    ],
+  },
 ];
 
-/** Routes comptabilisées pour les raccourcis accueil (features uniquement). */
+export const featuresRoutes: NavRoute[] = featuresRouteGroups.flatMap(
+  (group) => group.routes,
+);
+
 export const homeVisitEligibleRoutes: NavRoute[] = featuresRoutes;
 
 export const HOME_VISIT_ELIGIBLE_PATHS: ReadonlySet<string> = new Set(
@@ -41,14 +114,30 @@ export function isHomeVisitEligiblePath(pathname: string): boolean {
   return HOME_VISIT_ELIGIBLE_PATHS.has(pathname);
 }
 
-export const newsRoutes: NavRoute[] = [{ path: "/news", label: "News SC" }];
+export const newsRoute: NavRoute = {
+  path: "/news",
+  label: "News SC",
+  icon: Newspaper,
+  description: "Actualités Star Citizen",
+};
+
+export const newsRoutes: NavRoute[] = [newsRoute];
 
 export const infoRoutes: NavRoute[] = [
-  { path: "/patchnotes", label: "Patchnotes" },
-  { path: "/updates", label: "Mises à jour" },
+  {
+    path: "/patchnotes",
+    label: "Patchnotes",
+    icon: ScrollText,
+    description: "Notes de version Multitool",
+  },
+  {
+    path: "/updates",
+    label: "Mises à jour",
+    icon: Download,
+    description: "Historique des releases",
+  },
 ];
 
-/** Toutes les routes du dock (Features, News, Informations). */
 export const allDockRoutes: NavRoute[] = [
   ...featuresRoutes,
   ...newsRoutes,
@@ -60,7 +149,6 @@ const routeTitleByPath: Record<string, string> = {
   "/settings": "Paramètres",
 };
 
-/** Libellé affiché en barre de titre (aligné sur le dock). */
 export function getRouteTitle(pathname: string): string | null {
   if (pathname === "/") return null;
   const segment = pathname.split("/").filter(Boolean)[0];

@@ -18,7 +18,7 @@ use tauri_plugin_dialog::DialogExt;
 
 const BLUEPRINT_CORRELATION_WINDOW_SEC: f64 = 5.0;
 const TAIL_POLL_INTERVAL: Duration = Duration::from_millis(200);
-const SCHEMA_VERSION: u32 = 2;
+const SCHEMA_VERSION: u32 = 3;
 /// Nombre max de lignes parcourues pour trouver le handle au login.
 const OWNER_SCAN_MAX_LINES: usize = 500;
 
@@ -40,6 +40,9 @@ pub struct BlueprintEntry {
     pub mission_debug_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mission_trigger: Option<String>,
+    /// Résolu via le catalogue (ex. `bp_craft_kbar_ballisticcannon_s2`) — absent du Game.log.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub catalog_blueprint_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -211,15 +214,62 @@ pub fn merge_blueprint_entries(
                 by_key.insert(key, entry.clone());
                 added += 1;
             }
-            Some(current) if entry.ts < current.ts => {
-                by_key.insert(key, entry.clone());
+            Some(current) => {
+                by_key.insert(key, merge_blueprint_entry_pair(current, entry));
             }
-            _ => {}
         }
     }
     let mut merged: Vec<BlueprintEntry> = by_key.into_values().collect();
     merged.sort_by(|a, b| b.ts.partial_cmp(&a.ts).unwrap_or(std::cmp::Ordering::Equal));
     (merged, added)
+}
+
+/// Garde l’entrée la plus ancienne (ts) et fusionne `catalog_blueprint_id` si présent sur l’autre.
+fn merge_blueprint_entry_pair(current: &BlueprintEntry, incoming: &BlueprintEntry) -> BlueprintEntry {
+    let (primary, secondary) = if incoming.ts < current.ts {
+        (incoming, current)
+    } else {
+        (current, incoming)
+    };
+    let mut merged = primary.clone();
+    if merged.catalog_blueprint_id.is_none() {
+        merged.catalog_blueprint_id = secondary.catalog_blueprint_id.clone();
+    }
+    merged
+}
+
+/// Écrit les `blueprint_id` catalogue sur les entrées journal (clé = `product_name` exact du log).
+pub fn apply_catalog_matches_to_store(
+    app: &AppHandle,
+    matches: &HashMap<String, String>,
+    overwrite: bool,
+) -> Result<usize, String> {
+    if matches.is_empty() {
+        return Ok(0);
+    }
+    let mut store = load_blueprint_store_sync(app)?;
+    let mut updated = 0usize;
+    for entry in &mut store.blueprints {
+        let name = entry.product_name.trim();
+        if name.is_empty() {
+            continue;
+        }
+        let Some(id) = matches.get(name) else {
+            continue;
+        };
+        if !overwrite && entry.catalog_blueprint_id.is_some() {
+            continue;
+        }
+        if entry.catalog_blueprint_id.as_deref() != Some(id.as_str()) {
+            entry.catalog_blueprint_id = Some(id.clone());
+            updated += 1;
+        }
+    }
+    if updated > 0 {
+        store.schema_version = SCHEMA_VERSION;
+        save_blueprint_store_sync(app, &store)?;
+    }
+    Ok(updated)
 }
 
 pub fn append_blueprints(app: &AppHandle, incoming: &[BlueprintEntry]) -> Result<usize, String> {
@@ -491,6 +541,7 @@ fn process_line(line: &str, state: &mut WatcherState) -> Option<BlueprintEntry> 
             mission_guid: corr.as_ref().map(|c| c.guid.clone()),
             mission_debug_name: corr.as_ref().map(|c| c.debug_name.clone()),
             mission_trigger: corr.as_ref().map(|c| c.trigger.clone()),
+            catalog_blueprint_id: None,
         });
     }
 
@@ -523,6 +574,7 @@ fn scan_file_for_blueprints(path: &Path) -> Result<Vec<BlueprintEntry>, String> 
                 mission_guid: None,
                 mission_debug_name: None,
                 mission_trigger: None,
+                catalog_blueprint_id: None,
             });
         }
     }
@@ -728,6 +780,15 @@ pub fn stop_gamelog_watcher_internal(
 #[command]
 pub fn load_gamelog_blueprints(app: AppHandle) -> Result<BlueprintStoreFile, String> {
     load_blueprint_store_sync(&app)
+}
+
+#[command]
+pub fn save_gamelog_blueprint_catalog_matches(
+    app: AppHandle,
+    matches: HashMap<String, String>,
+    overwrite: Option<bool>,
+) -> Result<usize, String> {
+    apply_catalog_matches_to_store(&app, &matches, overwrite.unwrap_or(false))
 }
 
 #[command]
@@ -1024,6 +1085,7 @@ mod tests {
                 mission_guid: None,
                 mission_debug_name: None,
                 mission_trigger: None,
+                catalog_blueprint_id: None,
             },
             BlueprintEntry {
                 owner: "".to_string(),
@@ -1032,6 +1094,7 @@ mod tests {
                 mission_guid: None,
                 mission_debug_name: None,
                 mission_trigger: None,
+                catalog_blueprint_id: None,
             },
             BlueprintEntry {
                 owner: "   ".to_string(),
@@ -1040,12 +1103,41 @@ mod tests {
                 mission_guid: None,
                 mission_debug_name: None,
                 mission_trigger: None,
+                catalog_blueprint_id: None,
             },
         ];
         let (kept, removed) = prune_blueprints_without_owner(&entries);
         assert_eq!(kept.len(), 1);
         assert_eq!(removed, 2);
         assert_eq!(kept[0].product_name, "A");
+    }
+
+    #[test]
+    fn merge_blueprint_entry_pair_keeps_catalog_id_from_other_entry() {
+        let current = BlueprintEntry {
+            owner: "A".to_string(),
+            product_name: "Item".to_string(),
+            ts: 50.0,
+            mission_guid: None,
+            mission_debug_name: None,
+            mission_trigger: None,
+            catalog_blueprint_id: Some("bp_craft_item".to_string()),
+        };
+        let incoming = BlueprintEntry {
+            owner: "A".to_string(),
+            product_name: "Item".to_string(),
+            ts: 10.0,
+            mission_guid: None,
+            mission_debug_name: None,
+            mission_trigger: None,
+            catalog_blueprint_id: None,
+        };
+        let merged = merge_blueprint_entry_pair(&current, &incoming);
+        assert_eq!(merged.ts, 10.0);
+        assert_eq!(
+            merged.catalog_blueprint_id.as_deref(),
+            Some("bp_craft_item")
+        );
     }
 
     #[test]
@@ -1057,6 +1149,7 @@ mod tests {
             mission_guid: None,
             mission_debug_name: None,
             mission_trigger: None,
+            catalog_blueprint_id: Some("bp_craft_alpha".to_string()),
         }];
         let incoming = vec![BlueprintEntry {
             owner: "Beta".to_string(),
@@ -1065,6 +1158,7 @@ mod tests {
             mission_guid: None,
             mission_debug_name: None,
             mission_trigger: None,
+            catalog_blueprint_id: None,
         }];
         let (merged, added) = merge_blueprint_entries(&existing, &incoming);
         assert_eq!(merged.len(), 2);

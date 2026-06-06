@@ -44,7 +44,7 @@ export function GameStatsWidgetContent() {
         <>
           <StatSummaryList items={items} />
           {snapshot?.period.label && (
-            <p className="border-t border-primary/6 px-3 pb-2 pt-1 text-[11px] text-muted-foreground">
+            <p className="text-ui-secondary border-t border-primary/6 px-3 pb-2 pt-1 text-muted-foreground">
               {formatStatsPeriod(snapshot)}
             </p>
           )}

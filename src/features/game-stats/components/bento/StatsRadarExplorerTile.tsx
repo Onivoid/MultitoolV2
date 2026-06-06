@@ -17,7 +17,7 @@ export function StatsRadarExplorerTile({
     <StatsBentoTile
       title="Répartition"
       icon={<Radar className="h-3.5 w-3.5 text-primary" aria-hidden />}
-      hint="Graphiques radar par catégorie."
+      hint="Systèmes, véhicules et dépenses par boutique."
       className={className}
       bodyClassName="flex min-h-0 flex-1 flex-col px-2 pb-1 pt-2"
     >

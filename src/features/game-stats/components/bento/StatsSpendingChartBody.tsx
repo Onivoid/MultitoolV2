@@ -19,7 +19,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { formatAuec } from "@/features/game-stats/gameStats.lib";
+import { formatAuec, formatAuecCompact } from "@/features/game-stats/gameStats.lib";
 import {
   buildSpendingPeriodOptions,
   sliceSpendingForPeriod,
@@ -46,13 +46,7 @@ function formatAxisDate(isoDate: string): string {
 }
 
 function formatYAxisTick(v: number): string {
-  if (v >= 1_000_000) {
-    return `${(v / 1_000_000).toFixed(1)}M`;
-  }
-  if (v >= 1_000) {
-    return `${(v / 1_000).toFixed(0)}k`;
-  }
-  return String(v);
+  return formatAuecCompact(v);
 }
 
 export interface StatsSpendingChartBodyProps {
@@ -146,8 +140,8 @@ export function StatsSpendingChartBody({
             tickLine={false}
             axisLine={false}
             tickMargin={4}
-            fontSize={10}
-            width={52}
+            fontSize={11}
+            width={72}
             tickFormatter={formatYAxisTick}
           />
           <ChartTooltip

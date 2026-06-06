@@ -9,7 +9,6 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { ErrorBoundary } from "@/components/custom/ErrorBoundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppBackground } from "@/components/custom/AppBackground";
-
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <>
     <AppBackground />

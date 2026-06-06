@@ -10,10 +10,41 @@ import {
 } from "motion/react";
 import { Link } from "react-router-dom";
 import React, { useState, useRef, createContext, useContext, useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
 import { X, Menu } from "lucide-react";
 
 function dockPillClass(active: boolean) {
   return cn("dock-item-pill", active ? "dock-item-pill-active" : "dock-item-pill-idle");
+}
+
+function getComponentDisplayName(type: unknown): string | undefined {
+  return (type as { displayName?: string })?.displayName;
+}
+
+function collectDockDropdownItems(
+  children: React.ReactNode,
+): React.ReactElement<DockDropdownItemProps>[] {
+  const items: React.ReactElement<DockDropdownItemProps>[] = [];
+
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+
+    const displayName = getComponentDisplayName(child.type);
+    if (displayName === "DockDropdownItem") {
+      items.push(child as React.ReactElement<DockDropdownItemProps>);
+      return;
+    }
+
+    if (displayName === "DockDropdownGroup") {
+      items.push(
+        ...collectDockDropdownItems(
+          (child as React.ReactElement<DockDropdownGroupProps>).props.children,
+        ),
+      );
+    }
+  });
+
+  return items;
 }
 
 // Context to manage dock state
@@ -135,17 +166,20 @@ export const Dock = ({
                 })}
 
                 {/* Navigation Items */}
-                <div className="relative z-10 flex items-center gap-[3px]">
+                <div className="relative z-10 flex items-center gap-1 px-1">
                   {React.Children.map(children, (child) => {
-                    if (React.isValidElement(child)) {
-                      return React.cloneElement(
-                        child as React.ReactElement<
-                          DockItemProps | DockIconProps | DockLinkProps
-                        >,
-                        { renderType: "trigger" },
-                      );
+                    if (!React.isValidElement(child)) return null;
+
+                    if (getComponentDisplayName(child.type) === "DockDivider") {
+                      return <DockDivider key={`divider-${child.key ?? ""}`} />;
                     }
-                    return null;
+
+                    return React.cloneElement(
+                      child as React.ReactElement<
+                        DockItemProps | DockIconProps | DockLinkProps
+                      >,
+                      { renderType: "trigger" },
+                    );
                   })}
                 </div>
               </m.div>
@@ -168,8 +202,22 @@ export const Dock = ({
                       {React.Children.map(children, (child) => {
                         if (!React.isValidElement(child)) return null;
 
-                        // Handle DockLink (Top level links)
-                        if ((child.type as any).displayName === "DockLink") {
+                        if ((child.type as { displayName?: string }).displayName === "DockIcon") {
+                          const props = child.props as DockIconProps;
+                          if (!props.href) return null;
+                          return (
+                            <Link
+                              to={props.href}
+                              className="text-ui-body flex items-center gap-3 font-medium text-foreground"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              {props.icon}
+                              {props.ariaLabel ?? props.href}
+                            </Link>
+                          );
+                        }
+
+                        if ((child.type as { displayName?: string }).displayName === "DockLink") {
                           const props = child.props as DockLinkProps;
                           return (
                             <Link
@@ -183,41 +231,71 @@ export const Dock = ({
                         }
 
                         // Handle DockItem (Sections with dropdowns)
-                        if ((child.type as any).displayName === "DockItem") {
+                        if (getComponentDisplayName(child.type) === "DockDivider") {
+                          return (
+                            <div
+                              key={`mobile-divider-${child.key ?? ""}`}
+                              className="my-1 h-px bg-primary/15"
+                              role="separator"
+                            />
+                          );
+                        }
+
+                        if (getComponentDisplayName(child.type) === "DockItem") {
                           const props = child.props as DockItemProps;
                           return (
-                            <div className="flex flex-col gap-4">
+                            <div key={props.id ?? props.label} className="flex flex-col gap-4">
                               <span className="text-neutral-500 dark:text-neutral-400 text-lg">
                                 {props.label}
                               </span>
                               <div className="flex flex-col gap-4 pl-4 border-l border-neutral-200 dark:border-neutral-800">
                                 {React.Children.map(props.children, (subChild) => {
+                                  if (!React.isValidElement(subChild)) return null;
+
                                   if (
-                                    React.isValidElement(subChild) &&
-                                    (subChild.type as any).displayName ===
-                                      "DockDropdownItem"
+                                    getComponentDisplayName(subChild.type) ===
+                                    "DockDropdownGroup"
                                   ) {
-                                    const subProps =
-                                      subChild.props as DockDropdownItemProps;
+                                    const groupProps =
+                                      subChild.props as DockDropdownGroupProps;
                                     return (
-                                      <Link
-                                        to={subProps.href}
-                                        className="text-black dark:text-white text-xl font-medium flex items-center gap-3"
-                                        onClick={() => setIsMobileMenuOpen(false)}
+                                      <div
+                                        key={groupProps.label}
+                                        className="flex flex-col gap-3"
                                       >
-                                        {subProps.image && (
-                                          <img
-                                            src={subProps.image}
-                                            alt=""
-                                            width={32}
-                                            height={32}
-                                            className="rounded-lg object-cover"
-                                          />
+                                        <span className="text-ui-caption font-medium text-foreground/55">
+                                          {groupProps.label}
+                                        </span>
+                                        {React.Children.map(
+                                          groupProps.children,
+                                          (item) => {
+                                            if (
+                                              !React.isValidElement(item) ||
+                                              getComponentDisplayName(item.type) !==
+                                                "DockDropdownItem"
+                                            ) {
+                                              return null;
+                                            }
+                                            return renderMobileDropdownLink(
+                                              item.props as DockDropdownItemProps,
+                                              () => setIsMobileMenuOpen(false),
+                                            );
+                                          },
                                         )}
-                                        {subProps.label}
-                                      </Link>
+                                      </div>
                                     );
                                   }
+
+                                  if (
+                                    getComponentDisplayName(subChild.type) ===
+                                    "DockDropdownItem"
+                                  ) {
+                                    return renderMobileDropdownLink(
+                                      subChild.props as DockDropdownItemProps,
+                                      () => setIsMobileMenuOpen(false),
+                                    );
+                                  }
+
                                   return null;
                                 })}
                               </div>
@@ -271,17 +349,9 @@ export const DockItem = ({
   const itemId = id || label.toLowerCase().replace(/\s+/g, "-");
   const isOpen = openDropdowns[itemId] || false;
 
-  const isAnyChildActive = React.Children.toArray(children).some((child) => {
-    if (
-      React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
-      child.props.href &&
-      activePage
-    ) {
-      return activePage === child.props.href;
-    }
-    return false;
-  });
+  const isAnyChildActive = collectDockDropdownItems(children).some(
+    (child) => child.props.href && activePage === child.props.href,
+  );
 
   if (renderType === "content") {
     return (
@@ -302,8 +372,8 @@ export const DockItem = ({
         onMouseEnter={() => handleDropdownEnter(itemId)}
         onMouseLeave={() => handleDropdownLeave(itemId)}
       >
-        <div className="relative z-10 flex w-full min-w-[400px] items-start justify-between px-[15px] pb-[30px] pt-[15px]">
-          <div className="gap-[12.5px] flex flex-col">{children}</div>
+        <div className="relative z-10 flex w-full min-w-[min(100%,28rem)] items-start justify-between px-4 pb-6 pt-4">
+          <div className="flex min-w-[15rem] flex-col">{children}</div>
           <DockItemImagePreview>{children}</DockItemImagePreview>
         </div>
       </m.div>
@@ -313,7 +383,7 @@ export const DockItem = ({
   return (
     <m.div
       className={cn(
-        "flex h-[42px] cursor-pointer items-center gap-1 rounded-full px-[18px] text-[14px] leading-[10px] text-foreground",
+        "text-ui-body flex h-[42px] cursor-pointer items-center gap-1 rounded-full px-[18px] leading-snug text-foreground",
         dockPillClass(isOpen || isAnyChildActive),
         (isOpen || isAnyChildActive) && "font-medium",
         className,
@@ -321,6 +391,9 @@ export const DockItem = ({
       onMouseEnter={() => handleDropdownEnter(itemId)}
       onMouseLeave={() => handleDropdownLeave(itemId)}
       transition={{ duration: 0.2 }}
+      role="button"
+      aria-expanded={isOpen}
+      aria-haspopup="true"
     >
       {label}
       <m.svg
@@ -347,25 +420,15 @@ DockItem.displayName = "DockItem";
 const DockItemImagePreview = ({ children }: { children: React.ReactNode }) => {
   const { hoveredLink, activePage } = useDock();
 
-  const activeChild = React.Children.toArray(children).find((child) => {
-    if (
-      React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
-      child.props.href &&
-      activePage
-    ) {
-      return activePage === child.props.href;
-    }
-    return false;
-  }) as React.ReactElement<DockDropdownItemProps> | undefined;
+  const dropdownItems = collectDockDropdownItems(children);
 
-  const hoveredChild = React.Children.toArray(children).find((child) => {
-    return (
-      React.isValidElement<DockDropdownItemProps>(child) &&
-      (child.type as { displayName?: string }).displayName === "DockDropdownItem" &&
-      child.props.href === hoveredLink
-    );
-  }) as React.ReactElement<DockDropdownItemProps> | undefined;
+  const activeChild = dropdownItems.find(
+    (child) => child.props.href && activePage === child.props.href,
+  );
+
+  const hoveredChild = dropdownItems.find(
+    (child) => child.props.href === hoveredLink,
+  );
 
   const displayImage = hoveredChild?.props.image || activeChild?.props.image;
   const shouldShowImage = hoveredLink || activeChild;
@@ -396,41 +459,125 @@ const DockItemImagePreview = ({ children }: { children: React.ReactNode }) => {
 interface DockDropdownItemProps {
   href: string;
   label: string;
+  description?: string;
+  icon?: LucideIcon;
   image?: string;
   className?: string;
 }
 
-export const DockDropdownItem = ({ href, label, className }: DockDropdownItemProps) => {
+export const DockDropdownItem = ({
+  href,
+  label,
+  description,
+  icon: Icon,
+  className,
+}: DockDropdownItemProps) => {
   const { hoveredLink, setHoveredLink, activePage } = useDock();
 
   const isMenuItemActive = activePage === href;
   const isHovered = hoveredLink === href;
+  const active = isMenuItemActive || isHovered;
 
   return (
-    <m.div whileHover={{ x: 5 }} transition={{ duration: 0.1 }}>
+    <m.div whileHover={{ x: 4 }} transition={{ duration: 0.1 }}>
       <Link
         to={href}
         onMouseEnter={() => setHoveredLink(href)}
         className={cn(
-          "block text-[14px] leading-[10px] transition-colors",
-          isMenuItemActive || isHovered
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
+          "flex min-h-10 items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+          active
+            ? "bg-primary/15 font-medium text-foreground ring-1 ring-primary/25"
+            : "text-foreground/90 hover:bg-primary/8 hover:text-foreground",
           className,
         )}
       >
-        {label}
+        {Icon && (
+          <Icon
+            className={cn(
+              "mt-0.5 size-[18px] shrink-0 stroke-[2.25]",
+              active ? "text-foreground" : "text-foreground/95",
+            )}
+            aria-hidden
+          />
+        )}
+        <span className="min-w-0">
+          <span className="text-ui-body block font-medium leading-snug">{label}</span>
+          {description && (
+            <span className="text-ui-secondary mt-0.5 block leading-snug text-foreground/75">
+              {description}
+            </span>
+          )}
+        </span>
       </Link>
     </m.div>
   );
 };
 DockDropdownItem.displayName = "DockDropdownItem";
 
+interface DockDropdownGroupProps {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function DockDropdownGroup({
+  label,
+  children,
+  className,
+}: DockDropdownGroupProps) {
+  return (
+    <div className={cn("dock-dropdown-group flex flex-col gap-0.5", className)}>
+      <span className="dock-dropdown-group-label">{label}</span>
+      {children}
+    </div>
+  );
+}
+DockDropdownGroup.displayName = "DockDropdownGroup";
+
+export function DockDivider() {
+  return (
+    <div
+      className="dock-bar-divider mx-1 shrink-0 self-center"
+      role="separator"
+      aria-orientation="vertical"
+    />
+  );
+}
+DockDivider.displayName = "DockDivider";
+
+function renderMobileDropdownLink(
+  subProps: DockDropdownItemProps,
+  onNavigate: () => void,
+) {
+  const Icon = subProps.icon;
+  return (
+    <Link
+      key={subProps.href}
+      to={subProps.href}
+      className="flex min-h-10 items-start gap-3 rounded-lg px-1 py-1.5 text-foreground transition-colors hover:bg-primary/10"
+      onClick={onNavigate}
+    >
+      {Icon && (
+        <Icon className="mt-0.5 size-[18px] shrink-0 text-foreground stroke-[2.25]" />
+      )}
+      <span className="min-w-0">
+        <span className="text-ui-body block font-medium">{subProps.label}</span>
+        {subProps.description && (
+          <span className="text-ui-secondary block text-foreground/75">
+            {subProps.description}
+          </span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
 interface DockIconProps {
   icon: React.ReactNode;
   href?: string;
   onClick?: () => void;
   isActive?: boolean;
+  ariaLabel?: string;
   renderType?: "content" | "trigger";
   className?: string;
 }
@@ -440,6 +587,7 @@ export const DockIcon = ({
   href,
   onClick,
   isActive: isActiveProp,
+  ariaLabel,
   renderType,
   className,
 }: DockIconProps) => {
@@ -459,6 +607,7 @@ export const DockIcon = ({
       transition={{ duration: 0.2 }}
       onClick={onClick}
       role={onClick ? "button" : undefined}
+      aria-label={ariaLabel}
     >
       {icon}
     </m.div>
@@ -469,7 +618,11 @@ export const DockIcon = ({
   }
 
   if (href) {
-    return <Link to={href}>{inner}</Link>;
+    return (
+      <Link to={href} aria-label={ariaLabel}>
+        {inner}
+      </Link>
+    );
   }
 
   return inner;
@@ -520,7 +673,7 @@ export const DockLink = ({
   );
 
   const baseClassName = cn(
-    "flex h-[42px] items-center gap-1 rounded-full px-[18px] text-[14px] leading-[10px] text-foreground transition-colors duration-200",
+    "text-ui-body flex h-[42px] items-center gap-1 rounded-full px-[18px] leading-snug text-foreground transition-colors duration-200",
     isActive && "font-medium",
     className,
   );

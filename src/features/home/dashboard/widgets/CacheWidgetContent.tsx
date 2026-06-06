@@ -39,7 +39,7 @@ export function CacheWidgetContent() {
   return (
     <>
       <div
-        className="border-b border-primary/6 px-3 py-2 text-[11px] text-muted-foreground"
+        className="text-ui-secondary border-b border-primary/6 px-3 py-2 text-muted-foreground"
         data-no-window-drag
       >
         {showList ? (
@@ -87,7 +87,7 @@ export function CacheWidgetContent() {
               <HardDrive className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium leading-snug">{folder.name}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{folder.weight}</p>
+                <p className="text-ui-caption truncate text-muted-foreground">{folder.weight}</p>
               </div>
               <Button
                 type="button"
@@ -114,7 +114,7 @@ export function CacheWidgetContent() {
           type="button"
           variant="outline"
           size="sm"
-          className="h-7 min-w-0 flex-1 gap-1 px-2 text-[11px]"
+          className="text-ui-secondary h-7 min-w-0 flex-1 gap-1 px-2"
           disabled={busy}
           onClick={() => void openFolder()}
         >
@@ -125,7 +125,7 @@ export function CacheWidgetContent() {
           type="button"
           variant="destructive"
           size="sm"
-          className="h-7 min-w-0 flex-1 gap-1 px-2 text-[11px]"
+          className="text-ui-secondary h-7 min-w-0 flex-1 gap-1 px-2"
           disabled={busy || totalCount === 0}
           onClick={() => void clearAll()}
         >
@@ -137,7 +137,7 @@ export function CacheWidgetContent() {
       {showList &&
         searchQuery.trim() === "" &&
         totalCount > CACHE_WIDGET_LIST_LIMIT && (
-          <p className="px-3 pb-2 text-center text-[10px] text-muted-foreground">
+          <p className="text-ui-caption px-3 pb-2 text-center text-muted-foreground">
             <Link to="/cache" className="text-primary hover:underline">
               Voir les {totalCount} dossiers
             </Link>

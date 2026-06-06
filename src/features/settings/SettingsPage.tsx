@@ -3,6 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { GameConfigBackupSection } from "@/features/settings/components/GameConfigBackupSection";
+import { OnboardingResetSection } from "@/features/settings/components/OnboardingResetSection";
 import { ThemeAppearanceSettings } from "@/features/settings/components/ThemeAppearanceSettings";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import PageMotion from "@/shared/components/PageMotion";
@@ -64,7 +65,7 @@ function ExternalLinkBlock({ link }: { link: ExternalLink }) {
           <span className="text-foreground/90 [&>svg]:h-5 [&>svg]:w-5">
             {link.icon}
           </span>
-          <span className="max-w-full truncate text-[11px] leading-tight text-muted-foreground">
+          <span className="text-ui-caption max-w-full truncate leading-tight text-muted-foreground">
             {link.label}
           </span>
         </button>
@@ -158,9 +159,9 @@ export default function SettingsPage() {
             </SettingsSection>
 
             <SettingsSection
-              title="Sauvegarde config Star Citizen"
-              description="Profil, contrôles, personnages et presets (ZIP)"
-              footer="Les logs Game.log et logbackups ne sont pas inclus."
+              title="Export sauvegarde Star Citizen"
+              description="Backup ponctuel : profil, contrôles, personnages, presets et logs optionnels (ZIP)"
+              footer="L'export est manuel — aucune sauvegarde automatique."
             >
               <GameConfigBackupSection />
             </SettingsSection>
@@ -193,6 +194,13 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-col gap-4">
+            <SettingsSection
+              title="Introduction"
+              description="Guide de premier lancement"
+            >
+              <OnboardingResetSection />
+            </SettingsSection>
+
             <SettingsSection
               title="Système"
               description="Comportement au démarrage de Windows"
