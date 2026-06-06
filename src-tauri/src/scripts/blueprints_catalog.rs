@@ -11,7 +11,7 @@ pub(crate) const WIKI_API_BASE: &str = "https://api.star-citizen.wiki";
 /// Official CIG global.ini files hosted by PolyTool (auto-synced from game data).
 /// We pull from here instead of the user's local install so that translation
 /// coverage is identical for all users regardless of which FR pack they have
-/// installed (StarTrad, Circuspes, vanilla, none, etc.).
+/// installed (vanilla, none, etc.).
 const POLYTOOL_GLOBAL_FR_URL: &str =
     "https://raw.githubusercontent.com/GerbyTV/PolyToolSC/main/global.ini";
 const POLYTOOL_GLOBAL_EN_URL: &str =
@@ -1356,7 +1356,7 @@ fn ensure_loc_cache() -> Result<(), String> {
     let mut fr_map = load_polytool_global("fr");
     let mut en_map = load_polytool_global("en");
 
-    // 2) Fusion avec l'install locale : le FR du jeu (vanilla, StarTrad, Circuspes…)
+    // 2) Fusion avec l'install locale : le FR du jeu (vanilla, etc.)
     //    écrase PolyTool pour que le journal FR matche les mêmes libellés que les notifs.
     if let Some(install) = pick_live_install_path() {
         let local_fr = parse_global_ini(&locale_file(&install, "french_(france)"));

@@ -48,7 +48,7 @@ export const featuresRouteGroups: NavRouteGroup[] = [
         path: "/traduction",
         label: "Traduction",
         icon: Languages,
-        description: "Traductions SCEFRA et Circuspes",
+        description: "Traductions SCEFRA",
       },
       {
         path: "/cache",
