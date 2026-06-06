@@ -2,13 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import PageMotion from "@/shared/components/PageMotion";
 import { DOCK_SAFE_PADDING, PAGE_CENTER } from "@/shared/components/pageStyles";
 import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
 import { BlueprintDetailPanel } from "@/features/blueprints/components/BlueprintDetailPanel";
 import { BlueprintCatalogRow } from "@/features/blueprints/components/BlueprintCatalogRow";
 import { BlueprintsCatalogToolbar } from "@/features/blueprints/components/BlueprintsCatalogToolbar";
-import { JournalMatchIssues } from "@/features/blueprints/components/JournalMatchIssues";
+import {
+  JournalMatchIssues,
+  JournalMatchIssuesBanner,
+} from "@/features/blueprints/components/JournalMatchIssues";
 import { BlueprintsStatusPanel } from "@/features/blueprints/components/BlueprintsStatusPanel";
 import { getUniqueOwners } from "@/features/blueprints/blueprints.lib";
 import {
@@ -53,6 +62,8 @@ export default function BlueprintsPage() {
     title: string;
     blueprintIds: Set<string>;
   } | null>(null);
+  const [issuesBannerDismissed, setIssuesBannerDismissed] = useState(false);
+  const [issuesSheetOpen, setIssuesSheetOpen] = useState(false);
 
   const watching = vm.status?.watching ?? false;
   const uniqueOwners = useMemo(() => getUniqueOwners(vm.blueprints), [vm.blueprints]);
@@ -280,15 +291,37 @@ export default function BlueprintsPage() {
               missionFilterTitle={missionFilter?.title ?? null}
               onClearMissionFilter={() => setMissionFilter(null)}
             />
-            <div className="shrink-0">
-              <JournalMatchIssues
+            {!issuesBannerDismissed && (
+              <JournalMatchIssuesBanner
                 unmatchedProductNames={matchStats.unmatchedProductNames}
                 ambiguousLinks={matchStats.ambiguousLinks}
-                missingCatalogIds={matchStats.missingCatalogIds}
                 journalProductCount={matchStats.journalProducts}
                 uniqueBlueprintIdCount={ownedIds.size}
+                onOpen={() => setIssuesSheetOpen(true)}
+                onDismiss={() => setIssuesBannerDismissed(true)}
               />
-            </div>
+            )}
+            <Sheet open={issuesSheetOpen} onOpenChange={setIssuesSheetOpen}>
+              <SheetContent
+                side="right"
+                className="w-full max-w-md overflow-y-auto"
+                data-no-window-drag
+              >
+                <SheetHeader className="mb-4">
+                  <SheetTitle className="flex items-center gap-2 text-amber-300">
+                    <AlertCircle className="h-4 w-4" />
+                    Liaison journal → encyclopédie
+                  </SheetTitle>
+                </SheetHeader>
+                <JournalMatchIssues
+                  unmatchedProductNames={matchStats.unmatchedProductNames}
+                  ambiguousLinks={matchStats.ambiguousLinks}
+                  missingCatalogIds={matchStats.missingCatalogIds}
+                  journalProductCount={matchStats.journalProducts}
+                  uniqueBlueprintIdCount={ownedIds.size}
+                />
+              </SheetContent>
+            </Sheet>
             <div className={cn(BP_LIST_SCROLL, "min-h-0 flex-1")}>
               {filteredCatalog.length === 0 ? (
                 <div className={BP_EMPTY_STATE}>
