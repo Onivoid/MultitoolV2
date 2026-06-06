@@ -48,9 +48,7 @@ impl PilotingExtractor {
         if self.current_file.as_deref() != Some(file_path) {
             self.current_file = Some(file_path.to_string());
         }
-        self.open_by_file
-            .entry(file_path.to_string())
-            .or_default()
+        self.open_by_file.entry(file_path.to_string()).or_default()
     }
 
     fn push_interval(&mut self, start: f64, end: f64) {
@@ -62,10 +60,7 @@ impl PilotingExtractor {
     fn handle_grant(&mut self, file_path: &str, ship_name: String, ship_id: String, ts: f64) {
         let file = self.file_state_mut(file_path);
         file.last_ts = Some(file.last_ts.map(|t| t.max(ts)).unwrap_or(ts));
-        let key = PilotingKey {
-            ship_name,
-            ship_id,
-        };
+        let key = PilotingKey { ship_name, ship_id };
         file.open.insert(key, ts);
     }
 
@@ -94,8 +89,7 @@ impl PilotingExtractor {
         let last_rel = file.last_release.get(&ship_id).copied();
         let should_track = last_rel.is_none_or(|rel| ts > rel);
         if should_track && !file.starmap_since_release.contains_key(&ship_id) {
-            file.starmap_since_release
-                .insert(ship_id, (ts, ship_name));
+            file.starmap_since_release.insert(ship_id, (ts, ship_name));
         }
     }
 

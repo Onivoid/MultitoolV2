@@ -36,9 +36,7 @@ describe("catalogRowBadges", () => {
   it("associe un filtre outputType depuis le badge slot", () => {
     const badges = catalogRowBadges({
       ...base,
-      summaryBadges: [
-        { key: "type", label: "Legs (Armor)", kind: "output_type" },
-      ],
+      summaryBadges: [{ key: "type", label: "Legs (Armor)", kind: "output_type" }],
     });
     const legs = badges.find((b) => b.label === "Legs (Armor)");
     expect(legs?.filter).toEqual({

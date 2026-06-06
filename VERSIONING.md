@@ -24,12 +24,12 @@ node scripts/check-version.js
 
 La config centrale est [`scripts/versioning/config.json`](scripts/versioning/config.json).
 
-| Canal   | Version exemple   | GitHub        | `latest.json` (auto-update stable) |
-|---------|-------------------|---------------|-------------------------------------|
-| stable  | `3.0.0`           | release       | oui                                 |
-| beta    | `3.0.0-1` + tag `v3.0.0-beta.1` | pre-release   | non                                 |
-| alpha   | `3.0.0-alpha.1`   | pre-release   | non                                 |
-| rc      | `3.0.0-rc.1`      | pre-release   | non                                 |
+| Canal  | Version exemple                 | GitHub      | `latest.json` (auto-update stable) |
+| ------ | ------------------------------- | ----------- | ---------------------------------- |
+| stable | `3.0.0`                         | release     | oui                                |
+| beta   | `3.0.0-1` + tag `v3.0.0-beta.1` | pre-release | non                                |
+| alpha  | `3.0.0-alpha.1`                 | pre-release | non                                |
+| rc     | `3.0.0-rc.1`                    | pre-release | non                                |
 
 La CI déduit le canal **uniquement du tag** (`v3.0.0-beta.1` → beta). Pas besoin de modifier le workflow à chaque bêta.
 

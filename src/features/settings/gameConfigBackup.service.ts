@@ -22,20 +22,13 @@ export interface BackupOptions {
 
 export const gameConfigBackupService = {
   listTargets: (installPath: string, options: BackupOptions = {}) =>
-    invokeCommand<BackupTargetStatus[]>(
-      TAURI_COMMANDS.listGameConfigBackupTargets,
-      {
-        installPath,
-        includeGameLog: options.includeGameLog ?? true,
-        includeLogBackups: options.includeLogBackups ?? true,
-      },
-    ),
+    invokeCommand<BackupTargetStatus[]>(TAURI_COMMANDS.listGameConfigBackupTargets, {
+      installPath,
+      includeGameLog: options.includeGameLog ?? true,
+      includeLogBackups: options.includeLogBackups ?? true,
+    }),
 
-  exportZip: (
-    installPath: string,
-    destZipPath: string,
-    options: BackupOptions = {},
-  ) =>
+  exportZip: (installPath: string, destZipPath: string, options: BackupOptions = {}) =>
     invokeCommand<BackupExportResult>(TAURI_COMMANDS.exportGameConfigBackup, {
       installPath,
       destZipPath,

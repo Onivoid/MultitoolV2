@@ -5,12 +5,7 @@ import {
   widgetIntersectsLogo,
 } from "@/features/home/dashboard/homeDashboard.lib";
 
-function domRect(
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-): DOMRect {
+function domRect(left: number, top: number, width: number, height: number): DOMRect {
   return {
     left,
     top,
@@ -37,7 +32,15 @@ describe("clampWidgetPosition", () => {
     const logo = domRect(400, 300, 200, 200);
     const result = clampWidgetPosition(42, 40, 280, 120, container);
     expect(
-      widgetIntersectsLogo(result.xPercent, result.yPercent, 280, 120, container, logo, 24),
+      widgetIntersectsLogo(
+        result.xPercent,
+        result.yPercent,
+        280,
+        120,
+        container,
+        logo,
+        24,
+      ),
     ).toBe(true);
   });
 });

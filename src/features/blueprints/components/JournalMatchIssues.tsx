@@ -47,10 +47,11 @@ export function JournalMatchIssues({
         Liaison journal → encyclopédie
       </div>
       <p className="mb-2 leading-relaxed text-muted-foreground">
-        Les noms du Game.log peuvent être en <strong className="text-foreground/90">français</strong>{" "}
-        (jeu traduit) ou en <strong className="text-foreground/90">anglais</strong> (jeu non
-        traduit) : les deux passent par PolyTool (<code className="text-[10px]">global.ini</code> FR/EN)
-        puis le catalogue Wiki.
+        Les noms du Game.log peuvent être en{" "}
+        <strong className="text-foreground/90">français</strong> (jeu traduit) ou en{" "}
+        <strong className="text-foreground/90">anglais</strong> (jeu non traduit) : les
+        deux passent par PolyTool (<code className="text-[10px]">global.ini</code>{" "}
+        FR/EN) puis le catalogue Wiki.
         {journalProductCount > 0 && uniqueBlueprintIdCount > 0 && (
           <>
             <br />
@@ -58,19 +59,17 @@ export function JournalMatchIssues({
               {journalProductCount} noms distincts
             </span>{" "}
             dans le log →{" "}
-            <span className="text-foreground/90">
-              {uniqueBlueprintIdCount} IDs
-            </span>{" "}
+            <span className="text-foreground/90">{uniqueBlueprintIdCount} IDs</span>{" "}
             <code className="text-[10px]">bp_craft_*</code> uniques.
             {surplusNames > 0 && (
               <>
                 {" "}
-                Écart de{" "}
-                <strong className="text-amber-200">{surplusNames}</strong> : dans{" "}
-                <code className="text-[10px]">gamelog_blueprints.json</code>, plusieurs
-                noms FR partagent le même <code className="text-[10px]">catalogBlueprintId</code>{" "}
-                (ancien matching trop large). Rechargez la page : matching via PolyTool
-                (FR → EN) puis noms anglais du catalogue Wiki, avec réécriture des liaisons.
+                Écart de <strong className="text-amber-200">{surplusNames}</strong> :
+                dans <code className="text-[10px]">gamelog_blueprints.json</code>,
+                plusieurs noms FR partagent le même{" "}
+                <code className="text-[10px]">catalogBlueprintId</code> (ancien matching
+                trop large). Rechargez la page : matching via PolyTool (FR → EN) puis
+                noms anglais du catalogue Wiki, avec réécriture des liaisons.
               </>
             )}
           </>

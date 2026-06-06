@@ -13,7 +13,9 @@ const tag = process.argv.includes("--tag")
   : null;
 
 if (!tag) {
-  console.error("Usage: node scripts/versioning/verify-release-safety.mjs --tag vX.Y.Z");
+  console.error(
+    "Usage: node scripts/versioning/verify-release-safety.mjs --tag vX.Y.Z",
+  );
   process.exit(1);
 }
 
@@ -48,9 +50,7 @@ async function main() {
   const latest = await apiGet(`/repos/${owner}/${repo}/releases/latest`);
   const normalizedTag = tag.startsWith("v") ? tag : `v${tag}`;
   if (latest.tag_name === normalizedTag) {
-    console.error(
-      `FAIL: ${normalizedTag} is marked as the repository Latest release.`,
-    );
+    console.error(`FAIL: ${normalizedTag} is marked as the repository Latest release.`);
     console.error("Stable users would receive this build via releases/latest.");
     process.exit(1);
   }

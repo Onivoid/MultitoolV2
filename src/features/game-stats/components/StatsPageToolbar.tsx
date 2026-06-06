@@ -44,9 +44,7 @@ export function StatsPageToolbar({
           ) : null}
         </div>
       </header>
-      {error ? (
-        <p className="px-3 py-2 text-xs text-destructive">{error}</p>
-      ) : null}
+      {error ? <p className="px-3 py-2 text-xs text-destructive">{error}</p> : null}
       <GameStatsSyncFooter
         status={status}
         progress={progress}

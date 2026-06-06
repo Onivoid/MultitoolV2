@@ -7,9 +7,9 @@ use std::path::PathBuf;
 
 use super::blueprints_catalog::{
     fetch_wiki_blueprint_by_uuid, http_client, load_wiki_catalog_from_disk, normalize_bp_id_key,
-    summary_from_wiki, BlueprintDetail, IngredientEnrichment, IngredientLocationPreview,
-    IngredientOption, MissionBlueprintReward, MissionDetailResult, MissionInfo, BlueprintSummary,
-    WIKI_API_BASE,
+    summary_from_wiki, BlueprintDetail, BlueprintSummary, IngredientEnrichment,
+    IngredientLocationPreview, IngredientOption, MissionBlueprintReward, MissionDetailResult,
+    MissionInfo, WIKI_API_BASE,
 };
 use tauri::command;
 
@@ -97,21 +97,21 @@ pub async fn fetch_blueprint_filters() -> Result<BlueprintCatalogFilters, String
         }
     }
 
-    let url = format!("{}/api/blueprints/filters", WIKI_API_BASE);
+    let url = format!("{WIKI_API_BASE}/api/blueprints/filters");
     let client = http_client()?;
     let response = client
         .get(&url)
         .header(reqwest::header::USER_AGENT, USER_AGENT)
         .send()
         .await
-        .map_err(|e| format!("Erreur reseau filters: {}", e))?;
+        .map_err(|e| format!("Erreur reseau filters: {e}"))?;
     if !response.status().is_success() {
         return Err(format!("Wiki filters HTTP {}", response.status()));
     }
     let raw: WikiFiltersResponse = response
         .json()
         .await
-        .map_err(|e| format!("Wiki filters illisible: {}", e))?;
+        .map_err(|e| format!("Wiki filters illisible: {e}"))?;
     let out = BlueprintCatalogFilters {
         output_type: map_filter_values(raw.filters.output_type),
         ingredient_uuid: map_filter_values(raw.filters.ingredient_uuid),
@@ -223,7 +223,7 @@ fn system_to_location_slug(system: &str) -> String {
 
 async fn fetch_location_jurisdiction(system: &str) -> Option<String> {
     let slug = system_to_location_slug(system);
-    let url = format!("{}/api/locations/{}", WIKI_API_BASE, slug);
+    let url = format!("{WIKI_API_BASE}/api/locations/{slug}");
     let client = http_client().ok()?;
     let response = client.get(&url).send().await.ok()?;
     if !response.status().is_success() {
@@ -257,7 +257,7 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
     if let Some(m) = cache.missions.get(uuid) {
         return Some(m.clone());
     }
-    let url = format!("{}/api/missions/{}", WIKI_API_BASE, uuid);
+    let url = format!("{WIKI_API_BASE}/api/missions/{uuid}");
     let client = http_client().ok()?;
     let response = client
         .get(&url)
@@ -320,7 +320,10 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
             .get("mission_giver")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        web_url: data.get("web_url").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        web_url: data
+            .get("web_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         blueprint_keys,
     };
     cache.missions.insert(uuid.to_string(), entry.clone());
@@ -346,8 +349,7 @@ pub async fn build_unlock_index_background() {
             for m in &full.unlocking_missions {
                 if let Some(url) = &m.web_url {
                     if let Some(uuid) = mission_uuid_from_url(url) {
-                        if let Some(cached) =
-                            fetch_mission_cached(&uuid, &mut mission_cache).await
+                        if let Some(cached) = fetch_mission_cached(&uuid, &mut mission_cache).await
                         {
                             for s in &cached.star_systems {
                                 systems.insert(s.clone());
@@ -478,17 +480,17 @@ fn parse_commodity_location(loc: &serde_json::Value) -> Option<IngredientLocatio
     })
 }
 
-fn sort_locations_by_spawn(mut locations: Vec<IngredientLocationPreview>) -> Vec<IngredientLocationPreview> {
-    locations.sort_by(|a, b| {
-        match (b.spawn_percent, a.spawn_percent) {
-            (Some(pb), Some(pa)) => pb
-                .partial_cmp(&pa)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.name.cmp(&b.name)),
-            (Some(_), None) => std::cmp::Ordering::Less,
-            (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => a.name.cmp(&b.name),
-        }
+fn sort_locations_by_spawn(
+    mut locations: Vec<IngredientLocationPreview>,
+) -> Vec<IngredientLocationPreview> {
+    locations.sort_by(|a, b| match (b.spawn_percent, a.spawn_percent) {
+        (Some(pb), Some(pa)) => pb
+            .partial_cmp(&pa)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.name.cmp(&b.name)),
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => a.name.cmp(&b.name),
     });
     locations
 }
@@ -498,12 +500,12 @@ fn truncate_desc(s: &str, max: usize) -> String {
         return s.to_string();
     }
     let mut out: String = s.chars().take(max).collect();
-    out.push_str("…");
+    out.push('…');
     out
 }
 
 async fn fetch_commodity_enrichment(uuid: &str) -> Option<IngredientEnrichment> {
-    let url = format!("{}/api/commodities/{}", WIKI_API_BASE, uuid);
+    let url = format!("{WIKI_API_BASE}/api/commodities/{uuid}");
     let client = http_client().ok()?;
     let response = client.get(&url).send().await.ok()?;
     if !response.status().is_success() {
@@ -515,10 +517,8 @@ async fn fetch_commodity_enrichment(uuid: &str) -> Option<IngredientEnrichment> 
     let location_count = locations.map(|a| a.len() as u64);
     let preview: Vec<IngredientLocationPreview> = locations
         .map(|arr| {
-            let mut list: Vec<IngredientLocationPreview> = arr
-                .iter()
-                .filter_map(parse_commodity_location)
-                .collect();
+            let mut list: Vec<IngredientLocationPreview> =
+                arr.iter().filter_map(parse_commodity_location).collect();
             list = sort_locations_by_spawn(list);
             list.into_iter().take(5).collect()
         })
@@ -573,7 +573,7 @@ async fn fetch_commodity_enrichment(uuid: &str) -> Option<IngredientEnrichment> 
 }
 
 async fn fetch_item_enrichment(uuid: &str) -> Option<IngredientEnrichment> {
-    let url = format!("{}/api/items/{}", WIKI_API_BASE, uuid);
+    let url = format!("{WIKI_API_BASE}/api/items/{uuid}");
     let client = http_client().ok()?;
     let response = client.get(&url).send().await.ok()?;
     if !response.status().is_success() {
@@ -612,7 +612,10 @@ async fn fetch_item_enrichment(uuid: &str) -> Option<IngredientEnrichment> {
     let mut enrichment = IngredientEnrichment {
         source_kind: "item".to_string(),
         tier: None,
-        rarity: data.get("rarity").and_then(|v| v.as_str()).map(String::from),
+        rarity: data
+            .get("rarity")
+            .and_then(|v| v.as_str())
+            .map(String::from),
         kind_label: data
             .get("sub_type_label")
             .or_else(|| data.get("type_label"))
@@ -652,9 +655,7 @@ async fn enrich_option(opt: &mut IngredientOption, cache: &mut IngredientCacheFi
     } else if opt.kind.as_deref() == Some("item") {
         opt.guid.clone().map(|u| format!("item:{u}"))
     } else {
-        opt.guid
-            .clone()
-            .map(|u| format!("commodity:{u}"))
+        opt.guid.clone().map(|u| format!("commodity:{u}"))
     };
     let Some(key) = cache_key else {
         return;
@@ -763,7 +764,9 @@ pub async fn fetch_mission_detail(
     })
 }
 
-pub async fn fetch_ingredient_locations(commodity_uuid: String) -> Result<Vec<IngredientLocationPreview>, String> {
+pub async fn fetch_ingredient_locations(
+    commodity_uuid: String,
+) -> Result<Vec<IngredientLocationPreview>, String> {
     if let Some(e) = load_ingredient_cache()
         .entries
         .get(&format!("commodity:{commodity_uuid}"))
@@ -772,20 +775,20 @@ pub async fn fetch_ingredient_locations(commodity_uuid: String) -> Result<Vec<In
             return Ok(e.location_preview.clone());
         }
     }
-    let url = format!("{}/api/commodities/{}", WIKI_API_BASE, commodity_uuid);
+    let url = format!("{WIKI_API_BASE}/api/commodities/{commodity_uuid}");
     let client = http_client()?;
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Erreur reseau: {}", e))?;
+        .map_err(|e| format!("Erreur reseau: {e}"))?;
     if !response.status().is_success() {
         return Err(format!("Commodity HTTP {}", response.status()));
     }
     let json: serde_json::Value = response
         .json()
         .await
-        .map_err(|e| format!("Reponse illisible: {}", e))?;
+        .map_err(|e| format!("Reponse illisible: {e}"))?;
     let out: Vec<IngredientLocationPreview> = json
         .get("data")
         .and_then(|d| d.get("locations"))

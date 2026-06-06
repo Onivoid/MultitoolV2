@@ -168,12 +168,7 @@ function matchesQuery(item: BlueprintCatalogSummary, q: string): boolean {
   const nameEn = (item.nameEn ?? "").toLowerCase();
   const id = item.blueprintId.toLowerCase();
   const cat = (item.category ?? "").toLowerCase();
-  return (
-    name.includes(q) ||
-    nameEn.includes(q) ||
-    id.includes(q) ||
-    cat.includes(q)
-  );
+  return name.includes(q) || nameEn.includes(q) || id.includes(q) || cat.includes(q);
 }
 
 function sortCatalog(
@@ -185,15 +180,16 @@ function sortCatalog(
   copy.sort((a, b) => {
     switch (sort) {
       case "nameEn":
-        return (a.nameEn || a.blueprintId).localeCompare(b.nameEn || b.blueprintId, "fr");
+        return (a.nameEn || a.blueprintId).localeCompare(
+          b.nameEn || b.blueprintId,
+          "fr",
+        );
       case "craftTime":
         return (a.craftTimeSeconds ?? 0) - (b.craftTimeSeconds ?? 0);
       case "size":
         return (a.size ?? 0) - (b.size ?? 0);
       case "missions":
-        return (
-          (b.unlockingMissionsCount ?? 0) - (a.unlockingMissionsCount ?? 0)
-        );
+        return (b.unlockingMissionsCount ?? 0) - (a.unlockingMissionsCount ?? 0);
       case "unlockDate": {
         const ta = unlockDates?.get(a.blueprintId) ?? 0;
         const tb = unlockDates?.get(b.blueprintId) ?? 0;
@@ -223,7 +219,9 @@ export function applyCatalogFilters(
     if (state.owned === "not_owned" && ownedIds.has(b.blueprintId)) return false;
     if (state.outputTypes.length > 0) {
       const t = b.outputType ?? b.category ?? "";
-      if (!state.outputTypes.some((ot) => t === ot || (b.category ?? "").includes(ot))) {
+      if (
+        !state.outputTypes.some((ot) => t === ot || (b.category ?? "").includes(ot))
+      ) {
         return false;
       }
     }
@@ -235,10 +233,7 @@ export function applyCatalogFilters(
       if (b.size == null || !state.sizes.includes(b.size)) return false;
     }
     if (state.grades.length > 0) {
-      const g = normalizeCatalogGrade(
-        b.grade,
-        b.outputType ?? b.category,
-      );
+      const g = normalizeCatalogGrade(b.grade, b.outputType ?? b.category);
       if (!g || !state.grades.includes(g)) return false;
     }
     if (state.manufacturerCodes.length > 0) {
@@ -247,17 +242,17 @@ export function applyCatalogFilters(
     }
     if (state.defaultOwned === "yes" && !b.defaultOwned) return false;
     if (state.defaultOwned === "no" && b.defaultOwned) return false;
-    if (state.hasMissions === "yes" && !(b.unlockingMissionsCount && b.unlockingMissionsCount > 0)) {
+    if (
+      state.hasMissions === "yes" &&
+      !(b.unlockingMissionsCount && b.unlockingMissionsCount > 0)
+    ) {
       return false;
     }
     if (state.hasMissions === "no" && (b.unlockingMissionsCount ?? 0) > 0) {
       return false;
     }
     if (state.resourceUuid) {
-      const want = new Set([
-        state.resourceUuid,
-        ...state.resourceUuidAliases,
-      ]);
+      const want = new Set([state.resourceUuid, ...state.resourceUuidAliases]);
       const uuids = b.resourceUuids ?? [];
       if (!uuids.some((u) => want.has(u))) return false;
     }

@@ -1,5 +1,4 @@
 //! Métriques GPU NVIDIA via NVML (`nvml.dll` du pilote GeForce/Quadro).
-#![cfg(windows)]
 
 use super::GpuMetrics;
 use nvml_wrapper::Nvml;

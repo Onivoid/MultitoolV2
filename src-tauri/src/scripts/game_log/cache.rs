@@ -76,6 +76,15 @@ pub fn load_cache(path: &PathResolver<impl Runtime>) -> Result<Option<GameStatsC
     Ok(Some(cache))
 }
 
+pub fn save_cache(
+    path: &PathResolver<impl Runtime>,
+    cache: &GameStatsCacheFile,
+) -> Result<(), String> {
+    let file = cache_file_path(path)?;
+    let json = serde_json::to_string_pretty(cache).map_err(|e| e.to_string())?;
+    fs::write(file, json).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,13 +107,4 @@ mod tests {
         assert_eq!(cache.snapshot.missions.completed, 0);
         assert_eq!(cache.snapshot.schema_version, 1);
     }
-}
-
-pub fn save_cache(
-    path: &PathResolver<impl Runtime>,
-    cache: &GameStatsCacheFile,
-) -> Result<(), String> {
-    let file = cache_file_path(path)?;
-    let json = serde_json::to_string_pretty(cache).map_err(|e| e.to_string())?;
-    fs::write(file, json).map_err(|e| e.to_string())
 }

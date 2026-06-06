@@ -26,8 +26,7 @@ export function GameStatsProgressDisplay({
   className,
   compact = false,
 }: GameStatsProgressDisplayProps) {
-  const busy =
-    status === "loading" || status === "updating" || status === "syncing";
+  const busy = status === "loading" || status === "updating" || status === "syncing";
   const elapsedMs = useOperationElapsed(operationStartedAt, busy);
   const stepLabel = getProgressStepLabel(status, progress);
   const detail = formatProgressDetail(progress, elapsedMs);
@@ -46,10 +45,7 @@ export function GameStatsProgressDisplay({
       aria-busy="true"
     >
       <div className="flex min-w-0 items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
-        <Loader2
-          className="mt-0.5 h-3 w-3 shrink-0 animate-spin"
-          aria-hidden
-        />
+        <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin" aria-hidden />
         <span className="min-w-0 break-words">{stepLabel}</span>
       </div>
       {showBar && (
@@ -60,9 +56,7 @@ export function GameStatsProgressDisplay({
         />
       )}
       {detail && (
-        <p className="text-[10px] tabular-nums text-muted-foreground/90">
-          {detail}
-        </p>
+        <p className="text-[10px] tabular-nums text-muted-foreground/90">{detail}</p>
       )}
     </div>
   );

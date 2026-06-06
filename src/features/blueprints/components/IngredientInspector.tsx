@@ -11,7 +11,11 @@ import {
   normalizeIngredientOption,
 } from "@/features/blueprints/blueprints.catalog.lib";
 import type { IngredientLocationPreview } from "@/features/blueprints/blueprints.catalog.types";
-import { BP_ACTION_BTN, bpDetailBlock, bpSheetPanel } from "@/features/blueprints/blueprints.ui";
+import {
+  BP_ACTION_BTN,
+  bpDetailBlock,
+  bpSheetPanel,
+} from "@/features/blueprints/blueprints.ui";
 import { cn } from "@/lib/utils";
 import type {
   IngredientGroup,
@@ -154,7 +158,10 @@ export function IngredientInspectorBody({
             {locations.map((loc, i) => {
               const pct = formatLocationSpawnPercent(loc.spawnPercent);
               return (
-                <li key={i} className="flex justify-between gap-2 text-muted-foreground">
+                <li
+                  key={i}
+                  className="flex justify-between gap-2 text-muted-foreground"
+                >
                   <span className="min-w-0">
                     {loc.name}
                     {loc.system && ` · ${loc.system}`}

@@ -29,8 +29,12 @@ export function useTranslation() {
     hasVersions,
     saveSelectedTranslations,
   } = data;
-  const { loadingButtonId, setLoadingButtonId, handleInstallTranslation, handleUpdateTranslation } =
-    actions;
+  const {
+    loadingButtonId,
+    setLoadingButtonId,
+    handleInstallTranslation,
+    handleUpdateTranslation,
+  } = actions;
 
   const { toast } = useToast();
   const distribution = detectDistribution();

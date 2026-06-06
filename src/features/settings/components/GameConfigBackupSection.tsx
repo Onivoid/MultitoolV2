@@ -92,23 +92,26 @@ export function GameConfigBackupSection() {
     [channels, selectedPath],
   );
 
-  const refreshTargets = useCallback(async (path: string) => {
-    if (!path) {
-      setTargets([]);
-      return;
-    }
-    setLoadingTargets(true);
-    setError(null);
-    try {
-      const list = await gameConfigBackupService.listTargets(path, backupOptions);
-      setTargets(list);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setTargets([]);
-    } finally {
-      setLoadingTargets(false);
-    }
-  }, [includeGameLog, includeLogBackups]);
+  const refreshTargets = useCallback(
+    async (path: string) => {
+      if (!path) {
+        setTargets([]);
+        return;
+      }
+      setLoadingTargets(true);
+      setError(null);
+      try {
+        const list = await gameConfigBackupService.listTargets(path, backupOptions);
+        setTargets(list);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setTargets([]);
+      } finally {
+        setLoadingTargets(false);
+      }
+    },
+    [includeGameLog, includeLogBackups],
+  );
 
   useEffect(() => {
     void refreshTargets(selectedPath);
@@ -163,7 +166,9 @@ export function GameConfigBackupSection() {
         {loadingChannels ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : channels.length === 0 ? (
-          <span className="text-xs text-muted-foreground">Aucune installation détectée</span>
+          <span className="text-xs text-muted-foreground">
+            Aucune installation détectée
+          </span>
         ) : (
           <Select value={selectedPath} onValueChange={setSelectedPath}>
             <SelectTrigger className="h-8 w-full max-w-[280px]">
@@ -206,7 +211,8 @@ export function GameConfigBackupSection() {
 
       {totalBytes > 50 * 1024 * 1024 && (
         <p className="px-4 text-ui-caption text-amber-300/90">
-          Archive volumineuse ({formatBytes(totalBytes)}) — l&apos;export peut prendre un moment.
+          Archive volumineuse ({formatBytes(totalBytes)}) — l&apos;export peut prendre
+          un moment.
         </p>
       )}
 

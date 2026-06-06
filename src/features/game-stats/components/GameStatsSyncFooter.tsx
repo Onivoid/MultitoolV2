@@ -22,8 +22,7 @@ export function GameStatsSyncFooter({
   onSync,
   disabled,
 }: GameStatsSyncFooterProps) {
-  const busy =
-    status === "loading" || status === "updating" || status === "syncing";
+  const busy = status === "loading" || status === "updating" || status === "syncing";
 
   return (
     <footer className="settings-section-footer flex flex-col gap-2 px-3 py-2">

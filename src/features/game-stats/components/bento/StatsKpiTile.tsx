@@ -19,9 +19,7 @@ export function StatsKpiTile({ item, className }: StatsKpiTileProps) {
       <div className="flex items-start justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
           <span className="truncate">{item.label}</span>
-          {item.hint ? (
-            <StatHintTooltip label={item.label} hint={item.hint} />
-          ) : null}
+          {item.hint ? <StatHintTooltip label={item.label} hint={item.hint} /> : null}
         </span>
       </div>
       <p className="mt-0.5 truncate text-base font-semibold tabular-nums leading-tight">

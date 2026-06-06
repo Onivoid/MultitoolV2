@@ -47,7 +47,10 @@ export function cleanScText(input: string | null | undefined): string {
 
 export function shortCategory(category: string | null | undefined): string {
   if (!category) return "—";
-  const parts = category.split("/").map((p) => p.trim()).filter(Boolean);
+  const parts = category
+    .split("/")
+    .map((p) => p.trim())
+    .filter(Boolean);
   return parts[parts.length - 1] || category;
 }
 
@@ -186,7 +189,7 @@ const OUTPUT_TYPE_BADGE_EN: Record<string, string> = {
 /** Libellé court anglais pour badge type (pas le libellé FR du détail). */
 export function outputTypeLabelEn(type: string | null | undefined): string | null {
   if (!type) return null;
-  const key = type.includes("/") ? type.split("/").pop() ?? type : type;
+  const key = type.includes("/") ? (type.split("/").pop() ?? type) : type;
   if (OUTPUT_TYPE_BADGE_EN[key]) return OUTPUT_TYPE_BADGE_EN[key];
 
   const armor = key.match(/^Char_Armor_(\w+)$/i);
@@ -244,7 +247,7 @@ export function jurisdictionDisplayKind(name: string): JurisdictionDisplayKind {
 
 export function outputTypeLabelFr(type: string | null | undefined): string {
   if (!type) return "—";
-  const key = type.includes("/") ? type.split("/").pop() ?? type : type;
+  const key = type.includes("/") ? (type.split("/").pop() ?? type) : type;
   return CATEGORY_FR[key] ?? key.replace(/_/g, " ");
 }
 
@@ -534,12 +537,8 @@ function normalizeItemProfile(raw: unknown): BlueprintItemProfile | null {
   const p = raw as Record<string, unknown>;
   return {
     itemUuid: nullIfEmptyString(p.itemUuid ?? p.item_uuid),
-    descriptionData: normalizeDescriptionData(
-      p.descriptionData ?? p.description_data,
-    ),
-    manufacturerName: nullIfEmptyString(
-      p.manufacturerName ?? p.manufacturer_name,
-    ),
+    descriptionData: normalizeDescriptionData(p.descriptionData ?? p.description_data),
+    manufacturerName: nullIfEmptyString(p.manufacturerName ?? p.manufacturer_name),
     size:
       typeof p.size === "number"
         ? p.size
@@ -742,7 +741,9 @@ export function sortLocationsBySpawn(
   });
 }
 
-export function formatLocationSpawnPercent(percent: number | null | undefined): string | null {
+export function formatLocationSpawnPercent(
+  percent: number | null | undefined,
+): string | null {
   if (percent == null || Number.isNaN(percent)) return null;
   const rounded = Math.round(percent * 10) / 10;
   return `${rounded % 1 === 0 ? Math.round(rounded) : rounded}%`;
@@ -809,9 +810,7 @@ export function normalizeIngredientEnrichment(
         : Array.isArray(raw.location_preview)
           ? raw.location_preview
           : []
-      ).map((loc) =>
-        normalizeIngredientLocation(loc as IngredientLocationPreview),
-      ),
+      ).map((loc) => normalizeIngredientLocation(loc as IngredientLocationPreview)),
     ),
     locationCount: asNumber(e.locationCount ?? raw.location_count),
     refinedVersionName: nullIfEmptyString(
@@ -829,9 +828,7 @@ export function normalizeIngredientEnrichment(
         : typeof raw.signature === "number"
           ? raw.signature
           : null,
-    descriptionShort: nullIfEmptyString(
-      e.descriptionShort ?? raw.description_short,
-    ),
+    descriptionShort: nullIfEmptyString(e.descriptionShort ?? raw.description_short),
     thumbnailUrl: nullIfEmptyString(e.thumbnailUrl ?? raw.thumbnail_url),
   };
 }
@@ -866,9 +863,7 @@ export function normalizeIngredientOption(o: IngredientOption): IngredientOption
     unit: nullIfEmptyString(o.unit),
     webUrl: nullIfEmptyString(o.webUrl ?? raw.web_url),
     apiLink: nullIfEmptyString(o.apiLink ?? raw.api_link),
-    enrichment: o.enrichment
-      ? normalizeIngredientEnrichment(o.enrichment)
-      : null,
+    enrichment: o.enrichment ? normalizeIngredientEnrichment(o.enrichment) : null,
   };
 }
 

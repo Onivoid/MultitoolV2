@@ -56,7 +56,7 @@ pub fn normalize_shop_display_name(raw: &str) -> String {
     } else {
         trimmed
     };
-    let rest = rest.trim_start_matches(|c| matches!(c, '_' | ' ' | '-'));
+    let rest = rest.trim_start_matches(['_', ' ', '-']);
     let collapsed: String = rest
         .split('_')
         .flat_map(|part| part.split_whitespace())
@@ -307,10 +307,7 @@ pub fn merge_time_intervals(mut intervals: Vec<(f64, f64)>) -> Vec<(f64, f64)> {
 }
 
 pub fn total_seconds_from_intervals(intervals: &[(f64, f64)]) -> f64 {
-    intervals
-        .iter()
-        .map(|(s, e)| (e - s).max(0.0))
-        .sum()
+    intervals.iter().map(|(s, e)| (e - s).max(0.0)).sum()
 }
 
 #[cfg(test)]

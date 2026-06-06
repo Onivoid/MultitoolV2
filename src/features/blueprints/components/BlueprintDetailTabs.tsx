@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Hammer,
-  MapPin,
-  Package,
-  Recycle,
-  Trophy,
-} from "lucide-react";
+import { Hammer, MapPin, Package, Recycle, Trophy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlueprintDescriptionDataTable } from "@/features/blueprints/components/BlueprintDescriptionDataTable";
 import { BlueprintIngredientExpand } from "@/features/blueprints/components/BlueprintIngredientExpand";
@@ -165,9 +159,7 @@ export function BlueprintDetailTabs({
                     type="button"
                     className="w-full text-left"
                     disabled={!uuid}
-                    onClick={() =>
-                      setExpandedMission(isOpen ? null : uuid ?? null)
-                    }
+                    onClick={() => setExpandedMission(isOpen ? null : (uuid ?? null))}
                   >
                     <p className="font-medium text-sm">{missionName}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">

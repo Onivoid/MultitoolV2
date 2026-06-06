@@ -11,7 +11,10 @@ import {
   catalogDisplayName,
   formatCraftDuration,
 } from "@/features/blueprints/blueprints.catalog.lib";
-import { FAMILY_LABEL_FR, resolveItemFamily } from "@/features/blueprints/blueprints.taxonomy";
+import {
+  FAMILY_LABEL_FR,
+  resolveItemFamily,
+} from "@/features/blueprints/blueprints.taxonomy";
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
 import { cn } from "@/lib/utils";
@@ -39,10 +42,9 @@ export function BlueprintHeroCard({
   const displayName = catalogDisplayName(detail, "fr");
   const nameEn = detail.nameEn?.trim();
   const showEn = nameEn && nameEn !== displayName;
-  const badges: ApiCatalogBadge[] =
-    detail.catalogBadges?.length
-      ? detail.catalogBadges
-      : detail.summaryBadges ?? [];
+  const badges: ApiCatalogBadge[] = detail.catalogBadges?.length
+    ? detail.catalogBadges
+    : (detail.summaryBadges ?? []);
   const heroStats: HeroStat[] = detail.heroStats ?? [];
 
   return (
@@ -54,9 +56,7 @@ export function BlueprintHeroCard({
             {detail.outputTypeLabel ? ` · ${detail.outputTypeLabel}` : ""}
           </p>
           <h2 className="text-base font-semibold leading-tight">{displayName}</h2>
-          {showEn && (
-            <p className="text-xs text-muted-foreground">{nameEn}</p>
-          )}
+          {showEn && <p className="text-xs text-muted-foreground">{nameEn}</p>}
         </div>
         {detail.itemProfile?.imageUrl && (
           <img
@@ -69,7 +69,10 @@ export function BlueprintHeroCard({
 
       <div className="flex flex-wrap gap-1.5">
         {isOwned && (
-          <BlueprintMetaBadge variant="system" className="border-primary/35 bg-primary/10 text-primary">
+          <BlueprintMetaBadge
+            variant="system"
+            className="border-primary/35 bg-primary/10 text-primary"
+          >
             Possédé
             {unlockDate != null && ` · ${formatUnlockDate(unlockDate)}`}
           </BlueprintMetaBadge>

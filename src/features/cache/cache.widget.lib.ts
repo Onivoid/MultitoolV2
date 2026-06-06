@@ -12,7 +12,6 @@ export function filterCacheFolders(
     return folders;
   }
   return folders.filter(
-    (f) =>
-      f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q),
+    (f) => f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q),
   );
 }

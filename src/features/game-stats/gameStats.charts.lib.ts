@@ -29,9 +29,10 @@ export interface VehicleSessionTier {
   vehicleCount: number;
 }
 
-export function normalizeRadarValues(
-  values: number[],
-): { normalized: number[]; max: number } {
+export function normalizeRadarValues(values: number[]): {
+  normalized: number[];
+  max: number;
+} {
   const max = Math.max(0, ...values);
   if (max === 0) {
     return { normalized: values.map(() => 0), max: 0 };
@@ -102,13 +103,8 @@ export function buildVehicleSessionTiers(
     if (minSessions > maxThreshold) {
       continue;
     }
-    const vehicleCount = entries.filter(
-      (e) => e.boardCount >= minSessions,
-    ).length;
-    if (
-      entries.length < VEHICLE_TIER_MIN_TOP ||
-      vehicleCount >= VEHICLE_TIER_MIN_TOP
-    ) {
+    const vehicleCount = entries.filter((e) => e.boardCount >= minSessions).length;
+    if (entries.length < VEHICLE_TIER_MIN_TOP || vehicleCount >= VEHICLE_TIER_MIN_TOP) {
       tiers.push({ minSessions, vehicleCount });
     }
   }
@@ -248,9 +244,7 @@ export function buildRadarCategoryResult(
 
   const data = category.buildData(snapshot, options);
   const isEmpty = data.length === 0 || data.every((d) => d.value === 0);
-  const ariaLabel = data
-    .map((d) => `${d.label} : ${d.formattedValue}`)
-    .join(", ");
+  const ariaLabel = data.map((d) => `${d.label} : ${d.formattedValue}`).join(", ");
 
   return {
     data,
@@ -345,8 +339,7 @@ export function getStatsPageKpiItems(
       hint: `${spending.purchaseCount} achat${spending.purchaseCount !== 1 ? "s" : ""} réussi${spending.purchaseCount !== 1 ? "s" : ""} détecté${spending.purchaseCount !== 1 ? "s" : ""} en boutique.`,
     });
     if (snapshot.playtime.totalSeconds > 0 && spending.totalSpent > 0) {
-      const perHour =
-        spending.totalSpent / (snapshot.playtime.totalSeconds / 3600);
+      const perHour = spending.totalSpent / (snapshot.playtime.totalSeconds / 3600);
       items.push({
         label: "Dépenses / h de jeu",
         value: formatAuec(perHour),

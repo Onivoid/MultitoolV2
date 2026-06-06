@@ -86,8 +86,12 @@ export function CacheWidgetContent() {
             >
               <HardDrive className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium leading-snug">{folder.name}</p>
-                <p className="text-ui-caption truncate text-muted-foreground">{folder.weight}</p>
+                <p className="truncate text-xs font-medium leading-snug">
+                  {folder.name}
+                </p>
+                <p className="text-ui-caption truncate text-muted-foreground">
+                  {folder.weight}
+                </p>
               </div>
               <Button
                 type="button"

@@ -10,13 +10,10 @@ import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const config = JSON.parse(
-  readFileSync(join(__dirname, "config.json"), "utf8"),
-);
+const config = JSON.parse(readFileSync(join(__dirname, "config.json"), "utf8"));
 
 const branch =
-  process.argv[2] ||
-  execSync("git branch --show-current", { encoding: "utf8" }).trim();
+  process.argv[2] || execSync("git branch --show-current", { encoding: "utf8" }).trim();
 
 const allowed = config.bumpBranches ?? ["master"];
 const match = allowed.some((b) => b === branch);

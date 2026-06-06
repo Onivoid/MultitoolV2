@@ -93,16 +93,9 @@ export function StatsRadarChart({
         <PolarAngleAxis
           dataKey="axisLabel"
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: axisFontSize }}
-          tickFormatter={(value) =>
-            truncateAxisLabel(String(value), axisMaxLen)
-          }
+          tickFormatter={(value) => truncateAxisLabel(String(value), axisMaxLen)}
         />
-        <PolarRadiusAxis
-          angle={90}
-          domain={[0, 1]}
-          tick={false}
-          axisLine={false}
-        />
+        <PolarRadiusAxis angle={90} domain={[0, 1]} tick={false} axisLine={false} />
         <Radar
           name="stat"
           dataKey="normalized"

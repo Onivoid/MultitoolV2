@@ -6,8 +6,7 @@ import {
 } from "@/features/blueprints/blueprints.catalog.lib";
 import { cn } from "@/lib/utils";
 
-const SAFE_CLASS =
-  "border-emerald-500/35 bg-emerald-500/10 text-emerald-300";
+const SAFE_CLASS = "border-emerald-500/35 bg-emerald-500/10 text-emerald-300";
 const HOSTILE_CLASS = "border-red-500/35 bg-red-500/10 text-red-300";
 
 export interface JurisdictionBadgeProps {

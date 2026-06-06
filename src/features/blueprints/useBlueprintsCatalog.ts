@@ -29,7 +29,7 @@ export function useBlueprintsCatalog() {
   }, [catalog]);
 
   const selectedSummary = useMemo(
-    () => (selectedBlueprintId ? catalogById.get(selectedBlueprintId) ?? null : null),
+    () => (selectedBlueprintId ? (catalogById.get(selectedBlueprintId) ?? null) : null),
     [selectedBlueprintId, catalogById],
   );
 
@@ -69,9 +69,12 @@ export function useBlueprintsCatalog() {
 
   useEffect(() => {
     void loadCatalog();
-    void blueprintsCatalogService.filters().then(setFacets).catch((e) => {
-      logger.warn("[blueprints] filters:", e);
-    });
+    void blueprintsCatalogService
+      .filters()
+      .then(setFacets)
+      .catch((e) => {
+        logger.warn("[blueprints] filters:", e);
+      });
   }, [loadCatalog]);
 
   const loadDetail = useCallback(async (summary: BlueprintCatalogSummary) => {
@@ -137,4 +140,4 @@ export function useBlueprintsCatalog() {
     facets,
     summaryFacets,
   };
-};
+}

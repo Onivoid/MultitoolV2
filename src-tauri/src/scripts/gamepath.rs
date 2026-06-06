@@ -288,8 +288,7 @@ pub fn get_star_citizen_versions_sync() -> VersionPaths {
         // Fusionne les alias (ex. clé « StarCitizen/LIVE ») vers la clé canonique LIVE.
         let (build_number, game_version, branch) = read_build_manifest_info(&normalized_path);
         let release_version = get_launcher_release_version(&log_lines, &version);
-        let game_update_status =
-            compute_game_update_status(&release_version, &game_version);
+        let game_update_status = compute_game_update_status(&release_version, &game_version);
         let up_to_date = game_update_status == GameUpdateStatus::UpToDate;
         let info = VersionInfo {
             path: normalized_path.clone(),
@@ -462,17 +461,11 @@ mod tests {
     #[test]
     fn game_update_status_matches_normalized_versions() {
         assert_eq!(
-            compute_game_update_status(
-                &Some("4.0.1".to_string()),
-                &Some("4.0.1-LIVE".to_string()),
-            ),
+            compute_game_update_status(&Some("4.0.1".to_string()), &Some("4.0.1-LIVE".to_string()),),
             GameUpdateStatus::UpToDate
         );
         assert_eq!(
-            compute_game_update_status(
-                &Some("4.0.2".to_string()),
-                &Some("4.0.1".to_string()),
-            ),
+            compute_game_update_status(&Some("4.0.2".to_string()), &Some("4.0.1".to_string()),),
             GameUpdateStatus::Outdated
         );
         assert_eq!(

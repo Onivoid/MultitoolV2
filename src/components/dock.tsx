@@ -202,7 +202,10 @@ export const Dock = ({
                       {React.Children.map(children, (child) => {
                         if (!React.isValidElement(child)) return null;
 
-                        if ((child.type as { displayName?: string }).displayName === "DockIcon") {
+                        if (
+                          (child.type as { displayName?: string }).displayName ===
+                          "DockIcon"
+                        ) {
                           const props = child.props as DockIconProps;
                           if (!props.href) return null;
                           return (
@@ -217,7 +220,10 @@ export const Dock = ({
                           );
                         }
 
-                        if ((child.type as { displayName?: string }).displayName === "DockLink") {
+                        if (
+                          (child.type as { displayName?: string }).displayName ===
+                          "DockLink"
+                        ) {
                           const props = child.props as DockLinkProps;
                           return (
                             <Link
@@ -244,7 +250,10 @@ export const Dock = ({
                         if (getComponentDisplayName(child.type) === "DockItem") {
                           const props = child.props as DockItemProps;
                           return (
-                            <div key={props.id ?? props.label} className="flex flex-col gap-4">
+                            <div
+                              key={props.id ?? props.label}
+                              className="flex flex-col gap-4"
+                            >
                               <span className="text-neutral-500 dark:text-neutral-400 text-lg">
                                 {props.label}
                               </span>
@@ -426,9 +435,7 @@ const DockItemImagePreview = ({ children }: { children: React.ReactNode }) => {
     (child) => child.props.href && activePage === child.props.href,
   );
 
-  const hoveredChild = dropdownItems.find(
-    (child) => child.props.href === hoveredLink,
-  );
+  const hoveredChild = dropdownItems.find((child) => child.props.href === hoveredLink);
 
   const displayImage = hoveredChild?.props.image || activeChild?.props.image;
   const shouldShowImage = hoveredLink || activeChild;

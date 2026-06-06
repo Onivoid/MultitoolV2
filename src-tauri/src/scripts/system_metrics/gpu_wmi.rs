@@ -1,5 +1,4 @@
 //! Métriques GPU via compteurs WMI Windows (repli si NVML / ADLX indisponibles).
-#![cfg(windows)]
 
 use super::GpuMetrics;
 use serde::Deserialize;

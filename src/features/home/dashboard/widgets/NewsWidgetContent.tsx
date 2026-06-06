@@ -64,9 +64,7 @@ export function NewsWidgetContent() {
     <ul className="max-h-[160px] overflow-y-auto" data-no-window-drag>
       {items.map((item) => {
         const title =
-          item.summary?.trim() ||
-          extractTitleFromUrl(item.url) ||
-          "Actualité RSI";
+          item.summary?.trim() || extractTitleFromUrl(item.url) || "Actualité RSI";
         const { url: thumb } = extractThumbnail(item.content_html, item.tags);
         return (
           <li key={item.id} className="border-b border-primary/6 last:border-b-0">

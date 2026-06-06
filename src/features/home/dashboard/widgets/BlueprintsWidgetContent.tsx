@@ -101,7 +101,8 @@ export function BlueprintsWidgetContent() {
 
       {!showList ? (
         <p className="px-3 py-3 text-xs leading-relaxed text-muted-foreground">
-          Aucun schéma enregistré. Démarrez la surveillance ou synchronisez depuis les logs.
+          Aucun schéma enregistré. Démarrez la surveillance ou synchronisez depuis les
+          logs.
         </p>
       ) : filteredBlueprints.length === 0 ? (
         <p className="px-3 py-3 text-xs text-muted-foreground">
@@ -171,13 +172,15 @@ export function BlueprintsWidgetContent() {
         </Button>
       </footer>
 
-      {showList && searchQuery.trim() === "" && filteredBlueprints.length < totalCount && (
-        <p className="text-ui-caption px-3 pb-2 text-center text-muted-foreground">
-          <Link to="/blueprints" className="text-primary hover:underline">
-            Voir les {totalCount} schémas
-          </Link>
-        </p>
-      )}
+      {showList &&
+        searchQuery.trim() === "" &&
+        filteredBlueprints.length < totalCount && (
+          <p className="text-ui-caption px-3 pb-2 text-center text-muted-foreground">
+            <Link to="/blueprints" className="text-primary hover:underline">
+              Voir les {totalCount} schémas
+            </Link>
+          </p>
+        )}
     </>
   );
 }

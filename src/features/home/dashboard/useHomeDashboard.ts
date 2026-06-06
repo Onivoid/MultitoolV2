@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HomeDashboardLayout, HomeWidgetInstance } from "@/features/home/dashboard/homeDashboard.types";
+import type {
+  HomeDashboardLayout,
+  HomeWidgetInstance,
+} from "@/features/home/dashboard/homeDashboard.types";
 import {
   createWidgetInstance,
   defaultDashboardLayout,

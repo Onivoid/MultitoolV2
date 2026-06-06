@@ -792,8 +792,8 @@ fn strip_en_class_prefix(name: &str) -> String {
 const MATCH_STOP_WORDS: &[&str] = &[
     "de", "du", "des", "la", "le", "les", "en", "au", "aux", "the", "and", "of", "for",
     // Termes génériques FR (évite qu'un « Chargeur X » matche le premier « Chargeur » du catalogue).
-    "chargeur", "batterie", "bras", "jambes", "torse", "casque", "fusil", "arme", "armes",
-    "canon", "missile", "tourelle", "bouclier", "reacteur", "moteur", "cap", "capacite",
+    "chargeur", "batterie", "bras", "jambes", "torse", "casque", "fusil", "arme", "armes", "canon",
+    "missile", "tourelle", "bouclier", "reacteur", "moteur", "cap", "capacite",
 ];
 
 fn tokenize_words(s: &str) -> Vec<String> {
@@ -806,9 +806,7 @@ fn tokenize_words(s: &str) -> Vec<String> {
 }
 
 fn has_distinctive_token(s: &str) -> bool {
-    tokenize_words(s)
-        .iter()
-        .any(|t| t.len() >= 3)
+    tokenize_words(s).iter().any(|t| t.len() >= 3)
 }
 
 /// global.ini FR : valeur affichée → libellés EN (même clé dans global_en.ini).
@@ -853,9 +851,7 @@ fn build_en_catalog_exact(summaries: &[BlueprintSummary]) -> HashMap<String, Str
         for name in [s.name_en.as_str(), stripped.as_str()] {
             let norm = normalize_match_key(name);
             if norm.len() >= 3 {
-                lookup
-                    .entry(norm)
-                    .or_insert_with(|| s.blueprint_id.clone());
+                lookup.entry(norm).or_insert_with(|| s.blueprint_id.clone());
             }
         }
     }
@@ -872,10 +868,7 @@ fn token_overlap_threshold(token_count: usize) -> f64 {
     }
 }
 
-fn best_token_match(
-    target_tokens: &[String],
-    entries: &[(String, Vec<String>)],
-) -> Option<String> {
+fn best_token_match(target_tokens: &[String], entries: &[(String, Vec<String>)]) -> Option<String> {
     if target_tokens.len() < 2 {
         return None;
     }
@@ -964,10 +957,7 @@ fn lookup_item_display_name(
     suffix: &str,
 ) -> Option<String> {
     let lower = suffix.to_ascii_lowercase();
-    let keys = [
-        format!("item_name{}", lower),
-        format!("{lower}_name"),
-    ];
+    let keys = [format!("item_name{lower}"), format!("{lower}_name")];
     for key in &keys {
         for map in maps {
             let Some(m) = map else { continue };
@@ -1026,8 +1016,7 @@ fn merge_loc_maps(
 fn find_blueprint_for_item_suffix(item: &str, summaries: &[BlueprintSummary]) -> Option<String> {
     let item_lower = item.to_ascii_lowercase();
     for s in summaries {
-        if s
-            .internal_name
+        if s.internal_name
             .as_deref()
             .map(|i| i.eq_ignore_ascii_case(&item_lower))
             == Some(true)
@@ -1091,9 +1080,7 @@ fn build_display_name_lookup(summaries: &[BlueprintSummary]) -> HashMap<String, 
         for name in names {
             let norm = normalize_match_key(name);
             if norm.len() >= 3 {
-                lookup
-                    .entry(norm)
-                    .or_insert_with(|| s.blueprint_id.clone());
+                lookup.entry(norm).or_insert_with(|| s.blueprint_id.clone());
             }
         }
     }
@@ -1150,12 +1137,7 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
         push_alias(&mut aliases, s.name_fr.clone());
         push_alias(&mut aliases, Some(s.name_en.clone()));
         push_alias(&mut aliases, Some(strip_en_class_prefix(&s.name_en)));
-        append_ini_aliases(
-            s.internal_name.as_deref(),
-            &stem,
-            &loc_refs,
-            &mut aliases,
-        );
+        append_ini_aliases(s.internal_name.as_deref(), &stem, &loc_refs, &mut aliases);
 
         let stripped_en = strip_en_class_prefix(&s.name_en);
         let mut en_only = Vec::new();
@@ -1202,7 +1184,8 @@ fn ensure_match_index_built() -> Result<(), String> {
         return Ok(());
     }
     let summaries = CATALOG_SUMMARIES.lock().unwrap().clone().ok_or_else(|| {
-        "Catalogue non chargé — ouvrez la page Blueprints après le chargement de la liste.".to_string()
+        "Catalogue non chargé — ouvrez la page Blueprints après le chargement de la liste."
+            .to_string()
     })?;
     if summaries.is_empty() {
         return Err("Catalogue vide.".to_string());
@@ -1241,7 +1224,7 @@ fn match_product_to_blueprint(product_name: &str) -> Option<String> {
         return Some(id);
     }
 
-    let target_tokens = tokenize_words(&product_name);
+    let target_tokens = tokenize_words(product_name);
     // Journal EN ou FR : scoring prioritaire sur les alias anglais du catalogue.
     if let Some(id) = best_token_match(&target_tokens, &index.en_entries) {
         return Some(id);
@@ -1270,7 +1253,7 @@ fn pick_live_install_path() -> Option<PathBuf> {
     })
 }
 
-fn locale_file(install: &PathBuf, locale_folder: &str) -> PathBuf {
+fn locale_file(install: &std::path::Path, locale_folder: &str) -> PathBuf {
     install
         .join("data")
         .join("Localization")
@@ -1442,7 +1425,7 @@ fn lookup_class(internal_name: &str) -> Option<String> {
 /// `bp_craft_*` key conventions (manufacturer segment) :
 ///   - `bp_craft_<mfg>_<weapon>_...`     ← armes ship & FPS (parts[0] = mfg)
 ///   - `bp_craft_<type>_<mfg>_...`       ← shields/coolers/QDs/radars/powerplants
-///                                          (parts[0] = type prefix shld/powr/cool/qdrv/radr/etc.)
+///     (parts[0] = type prefix shld/powr/cool/qdrv/radr/etc.)
 ///   - `bp_craft_<weapon>_<mfg>_..._mag` ← FPS magazines (parts[0] = weapon kind, parts[1] = mfg)
 ///
 /// On essaie parts[0] puis parts[1] et on retourne le 1er qui matche un fabricant connu.
@@ -1498,7 +1481,7 @@ pub(crate) fn http_client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .build()
-        .map_err(|e| format!("Impossible d'initialiser le client HTTP: {}", e))
+        .map_err(|e| format!("Impossible d'initialiser le client HTTP: {e}"))
 }
 
 fn wiki_catalog_cache_path() -> Option<PathBuf> {
@@ -1522,11 +1505,9 @@ fn wiki_category(bp: &WikiBlueprint) -> Option<String> {
 }
 
 fn wiki_output_class(bp: &WikiBlueprint) -> Option<String> {
-    bp.output_class.clone().or_else(|| {
-        bp.output
-            .as_ref()
-            .and_then(|o| o.class.clone())
-    })
+    bp.output_class
+        .clone()
+        .or_else(|| bp.output.as_ref().and_then(|o| o.class.clone()))
 }
 
 fn wiki_name_en(bp: &WikiBlueprint) -> String {
@@ -1563,7 +1544,10 @@ fn resolve_wiki_uuid(blueprint_id: &str) -> Option<String> {
         .and_then(|m| m.get(&key).cloned())
 }
 
-fn insert_requirement_child_uuids(child: &WikiRequirementChild, set: &mut std::collections::HashSet<String>) {
+fn insert_requirement_child_uuids(
+    child: &WikiRequirementChild,
+    set: &mut std::collections::HashSet<String>,
+) {
     if let Some(u) = &child.uuid {
         if !u.is_empty() {
             set.insert(u.clone());
@@ -1614,19 +1598,10 @@ pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
     let size = extract_size(&blueprint_id, size_hint);
     let sub_type = wiki_sub_type(bp);
     let manufacturer = manufacturer_code_from_id(&blueprint_id);
-    let manufacturer_name = wiki_manufacturer_name(bp).or_else(|| {
-        manufacturer
-            .as_deref()
-            .and_then(manufacturer_display_name)
-    });
-    let output_type = bp
-        .output
-        .as_ref()
-        .and_then(|o| o.r#type.clone());
-    let output_type_label = bp
-        .output
-        .as_ref()
-        .and_then(|o| o.type_label.clone());
+    let manufacturer_name = wiki_manufacturer_name(bp)
+        .or_else(|| manufacturer.as_deref().and_then(manufacturer_display_name));
+    let output_type = bp.output.as_ref().and_then(|o| o.r#type.clone());
+    let output_type_label = bp.output.as_ref().and_then(|o| o.type_label.clone());
     let family = super::blueprint_family::classify_output_type(output_type.as_deref());
     let summary_badges = super::blueprint_family::build_summary_badges(
         family,
@@ -1692,14 +1667,8 @@ fn map_wiki_modifiers(ms: &[WikiModifier]) -> Vec<IngredientModifier> {
             better_when: m.better_when.clone(),
             quality_min: m.quality_range.as_ref().and_then(|q| q.min),
             quality_max: m.quality_range.as_ref().and_then(|q| q.max),
-            modifier_at_min_quality: m
-                .modifier_range
-                .as_ref()
-                .and_then(|r| r.at_min_quality),
-            modifier_at_max_quality: m
-                .modifier_range
-                .as_ref()
-                .and_then(|r| r.at_max_quality),
+            modifier_at_min_quality: m.modifier_range.as_ref().and_then(|r| r.at_min_quality),
+            modifier_at_max_quality: m.modifier_range.as_ref().and_then(|r| r.at_max_quality),
         })
         .collect()
 }
@@ -1716,13 +1685,10 @@ fn mission_uuid_from_web_url(url: &str) -> Option<String> {
 fn wiki_child_to_option(child: WikiRequirementChild) -> IngredientOption {
     let guid = child.uuid.clone().or_else(|| child.name.clone());
     let qty = child.quantity.map(|q| q.round() as u64);
-    let loc_key = child
-        .name
-        .as_ref()
-        .and_then(|n| {
-            let lower = n.to_ascii_lowercase().replace(' ', "_");
-            Some(loc_key_for_output_class(&lower))
-        });
+    let loc_key = child.name.as_ref().map(|n| {
+        let lower = n.to_ascii_lowercase().replace(' ', "_");
+        loc_key_for_output_class(&lower)
+    });
     IngredientOption {
         kind: child.kind.clone(),
         guid,
@@ -1769,7 +1735,10 @@ fn merge_aspect_into_groups(
             .as_deref()
             .map(normalize_slot_key)
             .unwrap_or_else(|| normalize_slot_key(&g.slot));
-        let aspect = summary.slots.iter().find(|a| normalize_slot_key(&a.key) == gkey);
+        let aspect = summary
+            .slots
+            .iter()
+            .find(|a| normalize_slot_key(&a.key) == gkey);
         if let Some(a) = aspect {
             g.initial_quality = a.initial_quality;
             g.slider_min = a.slider_min;
@@ -1823,10 +1792,7 @@ fn map_wiki_flat_ingredients(ings: Vec<WikiIngredient>) -> Vec<IngredientGroup> 
         options: ings
             .into_iter()
             .map(|i| {
-                let guid = i
-                    .resource_type_uuid
-                    .clone()
-                    .or(i.item_uuid.clone());
+                let guid = i.resource_type_uuid.clone().or(i.item_uuid.clone());
                 let qty = i.quantity.map(|q| q.round() as u64);
                 IngredientOption {
                     kind: i.kind.clone(),
@@ -1858,15 +1824,8 @@ fn map_wiki_ingredients(bp: &WikiBlueprint) -> Vec<IngredientGroup> {
 fn map_wiki_missions(ms: Vec<WikiUnlockingMission>) -> Vec<MissionInfo> {
     ms.into_iter()
         .map(|m| {
-            let name_raw = m
-                .title
-                .clone()
-                .or(m.debug_name.clone())
-                .unwrap_or_default();
-            let mission_uuid = m
-                .web_url
-                .as_deref()
-                .and_then(mission_uuid_from_web_url);
+            let name_raw = m.title.clone().or(m.debug_name.clone()).unwrap_or_default();
+            let mission_uuid = m.web_url.as_deref().and_then(mission_uuid_from_web_url);
             MissionInfo {
                 mission_id: None,
                 mission_uuid,
@@ -1938,8 +1897,12 @@ fn parse_wiki_modifiers_json(value: Option<&serde_json::Value>) -> Vec<Ingredien
                     .get("better_when")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string()),
-                quality_min: quality_range.and_then(|q| q.get("min")).and_then(|v| v.as_i64()),
-                quality_max: quality_range.and_then(|q| q.get("max")).and_then(|v| v.as_i64()),
+                quality_min: quality_range
+                    .and_then(|q| q.get("min"))
+                    .and_then(|v| v.as_i64()),
+                quality_max: quality_range
+                    .and_then(|q| q.get("max"))
+                    .and_then(|v| v.as_i64()),
                 modifier_at_min_quality: modifier_range
                     .and_then(|r| r.get("at_min_quality"))
                     .and_then(|v| v.as_f64()),
@@ -1996,18 +1959,17 @@ fn map_wiki_aspects(raw: &serde_json::Value) -> Option<BlueprintAspectsSummary> 
 }
 
 fn blueprint_detail_from_wiki(bp: WikiBlueprint) -> Result<BlueprintDetail, String> {
-    let _ = ensure_loc_cache()?;
+    ensure_loc_cache()?;
     let summary = summary_from_wiki(&bp);
-    let aspects = bp
-        .aspects
-        .as_ref()
-        .and_then(map_wiki_aspects);
+    let aspects = bp.aspects.as_ref().and_then(map_wiki_aspects);
     let mut ingredients = map_wiki_ingredients(&bp);
     merge_aspect_into_groups(&mut ingredients, aspects.as_ref());
     let dismantle = map_wiki_dismantle(&bp);
     let missions = map_wiki_missions(bp.unlocking_missions);
     let item_stats = if bp.summary_properties.is_empty() {
-        bp.output.as_ref().map(|o| serde_json::to_value(o).unwrap_or_default())
+        bp.output
+            .as_ref()
+            .map(|o| serde_json::to_value(o).unwrap_or_default())
     } else {
         Some(serde_json::json!({
             "summaryProperties": bp.summary_properties,
@@ -2028,7 +1990,7 @@ fn blueprint_detail_from_wiki(bp: WikiBlueprint) -> Result<BlueprintDetail, Stri
 fn polytool_global_cache_path(suffix: &str) -> Option<PathBuf> {
     let dir = dirs::data_local_dir()?.join("multitool").join("blueprints");
     fs::create_dir_all(&dir).ok()?;
-    Some(dir.join(format!("polytool_global_{}.ini", suffix)))
+    Some(dir.join(format!("polytool_global_{suffix}.ini")))
 }
 
 /// Returns true if `path` is missing or older than `max_age_days`.
@@ -2051,14 +2013,14 @@ async fn fetch_text(url: &str) -> Result<String, String> {
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("Erreur reseau {}: {}", url, e))?;
+        .map_err(|e| format!("Erreur reseau {url}: {e}"))?;
     if !response.status().is_success() {
         return Err(format!("{} HTTP {}", url, response.status()));
     }
     response
         .text()
         .await
-        .map_err(|e| format!("Reponse {} illisible: {}", url, e))
+        .map_err(|e| format!("Reponse {url} illisible: {e}"))
 }
 
 /// Fetches the latest PolyTool global.ini (FR or EN) to disk if cache is stale.
@@ -2075,7 +2037,7 @@ async fn ensure_polytool_global(suffix: &str, url: &str) {
             let _ = fs::write(&path, text);
         }
         Err(e) => {
-            eprintln!("[blueprints] polytool {} fetch failed: {}", suffix, e);
+            eprintln!("[blueprints] polytool {suffix} fetch failed: {e}");
         }
     }
 }
@@ -2092,9 +2054,8 @@ async fn prefetch_polytool_globals() {
 }
 
 pub(crate) fn load_wiki_catalog_from_disk() -> Result<Vec<WikiBlueprint>, String> {
-    let path = wiki_catalog_cache_path().ok_or_else(|| {
-        "Impossible de résoudre le dossier cache blueprints.".to_string()
-    })?;
+    let path = wiki_catalog_cache_path()
+        .ok_or_else(|| "Impossible de résoudre le dossier cache blueprints.".to_string())?;
     if !path.exists() {
         return Err(
             "Cache Star Citizen Wiki absent — connectez-vous à Internet et ouvrez la page Blueprints."
@@ -2103,7 +2064,7 @@ pub(crate) fn load_wiki_catalog_from_disk() -> Result<Vec<WikiBlueprint>, String
     }
     let bytes = fs::read(&path).map_err(|e| e.to_string())?;
     let cache: WikiCatalogCache =
-        serde_json::from_slice(&bytes).map_err(|e| format!("Cache Wiki illisible: {}", e))?;
+        serde_json::from_slice(&bytes).map_err(|e| format!("Cache Wiki illisible: {e}"))?;
     Ok(cache.blueprints)
 }
 
@@ -2119,17 +2080,17 @@ fn persist_wiki_catalog(blueprints: &[WikiBlueprint], game_version: Option<Strin
     }
 }
 
-async fn fetch_wiki_blueprints_page(page: u64, page_size: u64) -> Result<WikiBlueprintListResponse, String> {
-    let url = format!(
-        "{}/api/blueprints?page[number]={}&page[size]={}",
-        WIKI_API_BASE, page, page_size
-    );
+async fn fetch_wiki_blueprints_page(
+    page: u64,
+    page_size: u64,
+) -> Result<WikiBlueprintListResponse, String> {
+    let url = format!("{WIKI_API_BASE}/api/blueprints?page[number]={page}&page[size]={page_size}");
     let client = http_client()?;
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Erreur reseau vers Star Citizen Wiki: {}", e))?;
+        .map_err(|e| format!("Erreur reseau vers Star Citizen Wiki: {e}"))?;
     if !response.status().is_success() {
         return Err(format!(
             "Star Citizen Wiki a renvoye HTTP {}",
@@ -2139,7 +2100,7 @@ async fn fetch_wiki_blueprints_page(page: u64, page_size: u64) -> Result<WikiBlu
     response
         .json()
         .await
-        .map_err(|e| format!("Reponse Wiki /api/blueprints illisible: {}", e))
+        .map_err(|e| format!("Reponse Wiki /api/blueprints illisible: {e}"))
 }
 
 /// Télécharge toutes les pages du catalogue Wiki (page[size]=200).
@@ -2157,7 +2118,7 @@ async fn fetch_wiki_catalog_all() -> Result<Vec<WikiBlueprint>, String> {
 
 async fn load_wiki_catalog_summaries() -> Result<Vec<BlueprintSummary>, String> {
     prefetch_polytool_globals().await;
-    let _ = ensure_loc_cache()?;
+    ensure_loc_cache()?;
 
     if let Some(path) = wiki_catalog_cache_path() {
         if !is_cache_stale(&path, 7) {
@@ -2171,7 +2132,7 @@ async fn load_wiki_catalog_summaries() -> Result<Vec<BlueprintSummary>, String> 
         Ok(bps) => bps,
         Err(e) => {
             if let Ok(cached) = load_wiki_catalog_from_disk() {
-                eprintln!("[blueprints] fetch Wiki echoue, cache local utilise: {}", e);
+                eprintln!("[blueprints] fetch Wiki echoue, cache local utilise: {e}");
                 return Ok(build_summaries_from_wiki(&cached));
             }
             return Err(e);
@@ -2218,22 +2179,16 @@ pub async fn blueprints_catalog_revalidate() -> Result<RevalidateResult, String>
     }
 
     prefetch_polytool_globals().await;
-    let _ = ensure_loc_cache()?;
+    ensure_loc_cache()?;
 
     let old_ids: std::collections::HashSet<String> = load_wiki_catalog_from_disk()
         .ok()
-        .map(|bps| {
-            bps.iter()
-                .map(|b| normalize_bp_id_key(&b.key))
-                .collect()
-        })
+        .map(|bps| bps.iter().map(|b| normalize_bp_id_key(&b.key)).collect())
         .unwrap_or_default();
 
     let fresh = fetch_wiki_catalog_all().await?;
-    let fresh_ids: std::collections::HashSet<String> = fresh
-        .iter()
-        .map(|b| normalize_bp_id_key(&b.key))
-        .collect();
+    let fresh_ids: std::collections::HashSet<String> =
+        fresh.iter().map(|b| normalize_bp_id_key(&b.key)).collect();
 
     let new_count = fresh_ids.difference(&old_ids).count() as u64;
     let removed_count = old_ids.difference(&fresh_ids).count() as u64;
@@ -2256,20 +2211,20 @@ pub async fn blueprints_catalog_revalidate() -> Result<RevalidateResult, String>
 }
 
 pub(crate) async fn fetch_wiki_blueprint_by_uuid(uuid: &str) -> Result<WikiBlueprint, String> {
-    let url = format!("{}/api/blueprints/{}", WIKI_API_BASE, uuid);
+    let url = format!("{WIKI_API_BASE}/api/blueprints/{uuid}");
     let client = http_client()?;
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Erreur reseau: {}", e))?;
+        .map_err(|e| format!("Erreur reseau: {e}"))?;
     if !response.status().is_success() {
         return Err(format!("Star Citizen Wiki HTTP {}", response.status()));
     }
     let raw: WikiBlueprintDetailResponse = response
         .json()
         .await
-        .map_err(|e| format!("Reponse Wiki detail illisible: {}", e))?;
+        .map_err(|e| format!("Reponse Wiki detail illisible: {e}"))?;
     Ok(raw.data)
 }
 
@@ -2291,8 +2246,7 @@ async fn fetch_wiki_blueprint(blueprint_id: &str) -> Result<WikiBlueprint, Strin
         }
     }
     Err(format!(
-        "Blueprint « {} » introuvable (chargez le catalogue ou reconnectez-vous).",
-        trimmed
+        "Blueprint « {trimmed} » introuvable (chargez le catalogue ou reconnectez-vous)."
     ))
 }
 
@@ -2301,29 +2255,24 @@ async fn fetch_wiki_blueprint(blueprint_id: &str) -> Result<WikiBlueprint, Strin
 pub async fn blueprints_catalog_supplement_ids(
     blueprint_ids: Vec<String>,
 ) -> Result<Vec<BlueprintSummary>, String> {
-    let _ = ensure_loc_cache()?;
+    ensure_loc_cache()?;
     let mut out = Vec::with_capacity(blueprint_ids.len());
     for id in blueprint_ids {
         let trimmed = id.trim();
         if trimmed.is_empty() {
             continue;
         }
-        if let Some(existing) = CATALOG_SUMMARIES
-            .lock()
-            .unwrap()
-            .as_ref()
-            .and_then(|list| {
-                list.iter()
-                    .find(|s| s.blueprint_id.eq_ignore_ascii_case(trimmed))
-                    .cloned()
-            })
-        {
+        if let Some(existing) = CATALOG_SUMMARIES.lock().unwrap().as_ref().and_then(|list| {
+            list.iter()
+                .find(|s| s.blueprint_id.eq_ignore_ascii_case(trimmed))
+                .cloned()
+        }) {
             out.push(existing);
             continue;
         }
         match fetch_wiki_blueprint(trimmed).await {
             Ok(bp) => out.push(summary_from_wiki(&bp)),
-            Err(e) => eprintln!("[blueprints] supplement {}: {}", trimmed, e),
+            Err(e) => eprintln!("[blueprints] supplement {trimmed}: {e}"),
         }
     }
     Ok(out)
@@ -2508,7 +2457,10 @@ mod tests {
         assert_eq!(summary.wiki_uuid, "280f47b7-8434-410c-b854-380768fdccec");
         assert_eq!(summary.name_en, "Omnisky III Cannon");
         assert_eq!(summary.category.as_deref(), Some("Weapon Gun"));
-        assert_eq!(summary.internal_name.as_deref(), Some("amrs_lasercannon_s1"));
+        assert_eq!(
+            summary.internal_name.as_deref(),
+            Some("amrs_lasercannon_s1")
+        );
     }
 
     #[test]

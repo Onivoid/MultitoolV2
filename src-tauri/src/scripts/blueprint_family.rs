@@ -223,14 +223,7 @@ pub fn build_summary_badges(
     sub_type: Option<&str>,
     size: Option<u64>,
 ) -> Vec<CatalogBadge> {
-    build_catalog_badges(
-        family,
-        output_type,
-        output_type_label,
-        sub_type,
-        size,
-        &[],
-    )
+    build_catalog_badges(family, output_type, output_type_label, sub_type, size, &[])
 }
 
 pub fn build_hero_stats(
@@ -251,13 +244,7 @@ pub fn build_hero_stats(
             "Effective Range",
             "Manufacturer",
         ],
-        BlueprintFamily::ShipComponent => &[
-            "Grade",
-            "Size",
-            "Class",
-            "Manufacturer",
-            "Item Type",
-        ],
+        BlueprintFamily::ShipComponent => &["Grade", "Size", "Class", "Manufacturer", "Item Type"],
         BlueprintFamily::ShipWeapon => &["Size", "Item Type", "Manufacturer", "Class"],
         BlueprintFamily::Mining => &["Laser Power", "Size", "Item Type", "Manufacturer"],
         BlueprintFamily::Refuel => &["Item Type", "Manufacturer"],

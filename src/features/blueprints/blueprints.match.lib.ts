@@ -202,11 +202,7 @@ export async function resolveOwnedBlueprints(
     }
   }
 
-  const ambiguousLinks = buildAmbiguousLinks(
-    uniqueNames,
-    sampleByProduct,
-    matchMap,
-  );
+  const ambiguousLinks = buildAmbiguousLinks(uniqueNames, sampleByProduct, matchMap);
 
   return {
     blueprintIds: ids,

@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Select,
   SelectContent,
@@ -60,10 +54,7 @@ export function StatsSpendingChartBody({
 }: StatsSpendingChartBodyProps) {
   const byDay = snapshot.spending?.byDay ?? [];
 
-  const periodOptions = useMemo(
-    () => buildSpendingPeriodOptions(byDay),
-    [byDay],
-  );
+  const periodOptions = useMemo(() => buildSpendingPeriodOptions(byDay), [byDay]);
 
   const [periodId, setPeriodId] = useState<SpendingPeriodId>("all");
 
@@ -75,9 +66,7 @@ export function StatsSpendingChartBody({
     if (periodOptions.length === 0) {
       return [];
     }
-    const id = periodOptions.some((o) => o.id === periodId)
-      ? periodId
-      : "all";
+    const id = periodOptions.some((o) => o.id === periodId) ? periodId : "all";
     return sliceSpendingForPeriod(byDay, id);
   }, [byDay, periodId, periodOptions]);
 

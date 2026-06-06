@@ -5,24 +5,6 @@ use scripts::background_service::{
     set_background_service_config, start_background_service, start_background_service_internal,
     stop_background_service, BackgroundServiceState,
 };
-use scripts::cache_functions::{
-    clear_cache, delete_folder, get_cache_informations, open_cache_folder,
-};
-use scripts::game_log::{
-    get_cached_game_stats, get_game_stats, get_game_stats_scan_status, sync_game_stats,
-    GameStatsScanState,
-};
-use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
-use scripts::gamelog_watcher::{
-    export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
-    load_gamelog_blueprints, load_gamelog_watcher_config,
-    save_gamelog_blueprint_catalog_matches, save_gamelog_watcher_config,
-    start_gamelog_watcher, start_gamelog_watcher_internal, stop_gamelog_watcher,
-    GamelogWatcherState,
-};
-use scripts::game_config_backup::{
-    export_game_config_backup, list_game_config_backup_targets,
-};
 use scripts::blueprints_catalog::{
     blueprint_catalog_detail, blueprints_catalog_list_full, blueprints_catalog_match_products,
     blueprints_catalog_refresh_localization, blueprints_catalog_revalidate,
@@ -31,18 +13,33 @@ use scripts::blueprints_catalog::{
 use scripts::blueprints_wiki_extended::{
     blueprints_catalog_filters, blueprints_mission_detail, ingredient_locations,
 };
+use scripts::cache_functions::{
+    clear_cache, delete_folder, get_cache_informations, open_cache_folder,
+};
+use scripts::game_config_backup::{export_game_config_backup, list_game_config_backup_targets};
+use scripts::game_log::{
+    get_cached_game_stats, get_game_stats, get_game_stats_scan_status, sync_game_stats,
+    GameStatsScanState,
+};
+use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
+use scripts::gamelog_watcher::{
+    export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
+    load_gamelog_blueprints, load_gamelog_watcher_config, save_gamelog_blueprint_catalog_matches,
+    save_gamelog_watcher_config, start_gamelog_watcher, start_gamelog_watcher_internal,
+    stop_gamelog_watcher, GamelogWatcherState,
+};
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
 use scripts::home_dashboard::{get_home_dashboard, save_home_dashboard};
 use scripts::local_characters_functions::{
     delete_character, download_character, duplicate_character, get_character_informations,
     open_characters_folder,
 };
-use scripts::patchnote::get_latest_commits;
-use scripts::presets_list_functions::get_characters;
-use scripts::recent_routes::{get_top_routes, record_page_visit};
 use scripts::onboarding::{
     complete_onboarding, get_onboarding_state, record_onboarding_attempt, reset_onboarding,
 };
+use scripts::patchnote::get_latest_commits;
+use scripts::presets_list_functions::get_characters;
+use scripts::recent_routes::{get_top_routes, record_page_visit};
 use scripts::rsi_news::fetch_rsi_news;
 use scripts::rsi_status::fetch_rsi_status_feed;
 use scripts::startup_manager::{

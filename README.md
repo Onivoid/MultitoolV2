@@ -69,8 +69,8 @@ Les réglages sont persistés et s'appliquent immédiatement sur toutes les page
   </a>
 </p>
 
-| Fichier                         | Usage                                                    |
-| ------------------------------- | -------------------------------------------------------- |
+| Fichier                       | Usage                                                    |
+| ----------------------------- | -------------------------------------------------------- |
 | **`Multitool-Portable.exe`**  | Lance directement, sans installation                     |
 | **`Multitool-Installer.msi`** | Installation Windows + mises à jour auto (Tauri updater) |
 

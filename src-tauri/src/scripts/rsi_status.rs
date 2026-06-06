@@ -31,13 +31,21 @@ pub async fn fetch_rsi_status_feed() -> Result<String, String> {
     let mut systems_out: Vec<serde_json::Value> = Vec::new();
     if let Some(systems) = v.get("systems").and_then(|x| x.as_array()) {
         for s in systems {
-            let name = s.get("name").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let name = s
+                .get("name")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
             let status = s
                 .get("status")
                 .and_then(|x| x.as_str())
                 .unwrap_or("operational")
                 .to_string();
-            let category = s.get("category").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let category = s
+                .get("category")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
 
             let mut issues: Vec<serde_json::Value> = Vec::new();
             if let Some(arr) = s.get("unresolvedIssues").and_then(|x| x.as_array()) {

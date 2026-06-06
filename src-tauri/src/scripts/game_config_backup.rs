@@ -104,11 +104,7 @@ fn file_matches_ext(path: &Path, exts: &[&str]) -> bool {
         .unwrap_or(false)
 }
 
-fn collect_files(
-    install_root: &Path,
-    target: &BackupTargetDef,
-    out: &mut Vec<(PathBuf, String)>,
-) {
+fn collect_files(install_root: &Path, target: &BackupTargetDef, out: &mut Vec<(PathBuf, String)>) {
     let abs = install_root.join(target.rel.replace('/', std::path::MAIN_SEPARATOR_STR));
     match target.kind {
         TargetKind::File => {
@@ -221,7 +217,9 @@ fn collect_optional_logs(
                 let mut entries: Vec<PathBuf> = read
                     .flatten()
                     .map(|e| e.path())
-                    .filter(|p| p.is_file() && p.extension().and_then(|e| e.to_str()) == Some("log"))
+                    .filter(|p| {
+                        p.is_file() && p.extension().and_then(|e| e.to_str()) == Some("log")
+                    })
                     .collect();
                 entries.sort_by(|a, b| b.cmp(a));
                 for path in entries.into_iter().take(MAX_LOGBACKUP_FILES) {
@@ -243,15 +241,11 @@ fn collect_optional_logs(
     }
 }
 
-fn scan_log_targets(
-    include_game_log: bool,
-    include_log_backups: bool,
-) -> Vec<BackupTargetStatus> {
+fn scan_log_targets(include_game_log: bool, include_log_backups: bool) -> Vec<BackupTargetStatus> {
     let mut statuses = Vec::new();
     if include_game_log {
         let exists = get_live_game_log_path_sync()
             .ok()
-            .map(PathBuf::from)
             .filter(|p| p.is_file())
             .map(|p| fs::metadata(&p).ok().map(|m| m.len()).unwrap_or(0))
             .unwrap_or(0);
@@ -274,7 +268,8 @@ fn scan_log_targets(
                 if let Ok(read) = fs::read_dir(dir) {
                     for entry in read.flatten() {
                         let path = entry.path();
-                        if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("log")
+                        if path.is_file()
+                            && path.extension().and_then(|e| e.to_str()) == Some("log")
                         {
                             count += 1;
                             if let Ok(meta) = fs::metadata(&path) {
@@ -331,12 +326,7 @@ pub fn export_game_config_backup_sync(
     for target in TARGETS {
         collect_files(&root, target, &mut files);
     }
-    collect_optional_logs(
-        &root,
-        include_game_log,
-        include_log_backups,
-        &mut files,
-    );
+    collect_optional_logs(&root, include_game_log, include_log_backups, &mut files);
 
     if files.is_empty() {
         return Err("Aucun fichier de configuration trouvé à exporter.".to_string());
@@ -351,8 +341,7 @@ pub fn export_game_config_backup_sync(
 
     let file = File::create(&dest).map_err(|e| e.to_string())?;
     let mut zip = ZipWriter::new(file);
-    let options =
-        SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
     let mut files_packed = 0u32;
     let mut bytes_packed = 0u64;

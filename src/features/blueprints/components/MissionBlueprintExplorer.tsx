@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
 import { JurisdictionBadge } from "@/features/blueprints/components/JurisdictionBadge";
 import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
-import { BP_ACTION_BTN, bpCatalogRow, bpSheetPanel } from "@/features/blueprints/blueprints.ui";
+import {
+  BP_ACTION_BTN,
+  bpCatalogRow,
+  bpSheetPanel,
+} from "@/features/blueprints/blueprints.ui";
 import type { MissionDetailResult } from "@/features/blueprints/blueprints.catalog.types";
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
@@ -121,7 +125,9 @@ export function MissionExplorerBody({
                   )}
                 </p>
                 {bp.nameFr && bp.nameEn !== bp.nameFr && (
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{bp.nameEn}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {bp.nameEn}
+                  </p>
                 )}
               </button>
             );

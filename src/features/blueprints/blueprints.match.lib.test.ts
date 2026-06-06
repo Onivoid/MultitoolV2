@@ -54,9 +54,7 @@ describe("buildAmbiguousLinks", () => {
         catalogBlueprintId: "bp_craft_unique_gun",
       },
     ];
-    const sampleByProduct = new Map(
-      entries.map((e) => [e.productName, e] as const),
-    );
+    const sampleByProduct = new Map(entries.map((e) => [e.productName, e] as const));
     const matchMap: Record<string, string> = {
       "Chargeur A": "bp_craft_same_charger",
       "Chargeur B": "bp_craft_same_charger",
@@ -75,9 +73,9 @@ describe("buildAmbiguousLinks", () => {
 
 describe("matchProductName", () => {
   it("matches French log name to catalog", () => {
-    expect(
-      matchProductName("Jambes Morozov-SH Thule", sampleCatalog),
-    ).toBe("bp_craft_morozov_legs");
+    expect(matchProductName("Jambes Morozov-SH Thule", sampleCatalog)).toBe(
+      "bp_craft_morozov_legs",
+    );
   });
 
   it("matches English name", () => {

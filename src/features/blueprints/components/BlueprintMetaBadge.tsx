@@ -22,8 +22,7 @@ const VARIANT_CLASS: Record<BlueprintMetaBadgeVariant, string> = {
   jurisdiction: "text-muted-foreground",
   mission: "text-muted-foreground",
   neutral: "text-muted-foreground",
-  grade:
-    "border-amber-500/35 bg-amber-500/15 font-bold text-amber-200/95 tabular-nums",
+  grade: "border-amber-500/35 bg-amber-500/15 font-bold text-amber-200/95 tabular-nums",
   size: "border-primary/30 bg-primary/12 font-semibold text-primary",
   tier: "border-primary/25 bg-primary/8 font-medium text-primary",
   manufacturer: "border-border/50 bg-background/30 text-foreground/90",

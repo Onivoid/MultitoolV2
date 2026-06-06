@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 
 /** Met à jour l’horloge chaque seconde pendant une opération longue. */
-export function useOperationElapsed(
-  startedAt: number | null,
-  active: boolean,
-): number {
+export function useOperationElapsed(startedAt: number | null, active: boolean): number {
   const [elapsedMs, setElapsedMs] = useState(0);
 
   useEffect(() => {

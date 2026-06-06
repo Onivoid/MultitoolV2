@@ -82,12 +82,7 @@ export interface GameStatsResponse {
   fromCache: boolean;
 }
 
-export type GameStatsLoadStatus =
-  | "idle"
-  | "loading"
-  | "updating"
-  | "syncing"
-  | "error";
+export type GameStatsLoadStatus = "idle" | "loading" | "updating" | "syncing" | "error";
 
 export type GameStatsScanKind = "load" | "sync";
 

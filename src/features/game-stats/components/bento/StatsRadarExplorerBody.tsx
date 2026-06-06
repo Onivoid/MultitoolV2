@@ -19,10 +19,7 @@ export interface StatsRadarExplorerBodyProps {
 export function StatsRadarExplorerBody({ snapshot }: StatsRadarExplorerBodyProps) {
   const [categoryId, setCategoryId] = useState<RadarCategoryId>("star_systems");
 
-  const vehicleTiers = useMemo(
-    () => buildVehicleSessionTiers(snapshot),
-    [snapshot],
-  );
+  const vehicleTiers = useMemo(() => buildVehicleSessionTiers(snapshot), [snapshot]);
 
   const [vehicleTierIndex, setVehicleTierIndex] = useState(() =>
     pickDefaultVehicleTierIndex(vehicleTiers),

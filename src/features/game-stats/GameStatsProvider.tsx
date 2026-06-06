@@ -41,9 +41,7 @@ export function GameStatsProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<GameStatsLoadStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<GameStatsScanProgress | null>(null);
-  const [operationStartedAt, setOperationStartedAt] = useState<number | null>(
-    null,
-  );
+  const [operationStartedAt, setOperationStartedAt] = useState<number | null>(null);
   const snapshotRef = useRef(snapshot);
   const bootstrapDoneRef = useRef(false);
 
@@ -178,8 +176,7 @@ export function GameStatsProvider({ children }: { children: ReactNode }) {
     };
   }, [bootstrap, clearBusyUi]);
 
-  const isBusy =
-    status === "loading" || status === "updating" || status === "syncing";
+  const isBusy = status === "loading" || status === "updating" || status === "syncing";
 
   return (
     <GameStatsContext.Provider

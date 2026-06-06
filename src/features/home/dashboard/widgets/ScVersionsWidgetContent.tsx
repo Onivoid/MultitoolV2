@@ -33,8 +33,7 @@ function GameUpdateBadge({ status }: { status: GameUpdateStatus }) {
         variant="default"
         className="h-5 shrink-0 gap-1 border-emerald-500/30 bg-emerald-500/15 px-1.5 text-[10px] text-emerald-400"
       >
-        <CheckCircle2 className="h-3 w-3" aria-hidden />
-        À jour
+        <CheckCircle2 className="h-3 w-3" aria-hidden />À jour
       </Badge>
     );
   }

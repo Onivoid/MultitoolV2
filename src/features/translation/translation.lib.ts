@@ -42,7 +42,13 @@ export const TRANSLATION_CARD_WIDTH_CLASS = "w-[288px]";
 
 export const TRANSLATION_LOAD_DELAY_MS = 3000;
 
-const EXCLUSIVE_NON_LIVE = new Set(["PTU", "EPTU", "HOTFIX", "TECH-PREVIEW", "TECH_PREVIEW"]);
+const EXCLUSIVE_NON_LIVE = new Set([
+  "PTU",
+  "EPTU",
+  "HOTFIX",
+  "TECH-PREVIEW",
+  "TECH_PREVIEW",
+]);
 
 /**
  * Aligne les clés de version sur le backend : tout nom contenant « LIVE »

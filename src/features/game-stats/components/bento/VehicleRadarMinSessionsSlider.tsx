@@ -19,10 +19,7 @@ export function VehicleRadarMinSessionsSlider({
   onTierIndexChange,
   className,
 }: VehicleRadarMinSessionsSliderProps) {
-  const tiers = useMemo(
-    () => buildVehicleSessionTiers(snapshot),
-    [snapshot],
-  );
+  const tiers = useMemo(() => buildVehicleSessionTiers(snapshot), [snapshot]);
 
   const safeIndex = Math.max(0, Math.min(tierIndex, tiers.length - 1));
   const active = tiers[safeIndex];

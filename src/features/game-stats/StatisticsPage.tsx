@@ -11,15 +11,8 @@ import { snapshotHasHomeStats } from "@/features/game-stats/gameStats.lib";
 import { useGameStats } from "@/features/game-stats/useGameStats";
 
 export default function StatisticsPage() {
-  const {
-    snapshot,
-    status,
-    error,
-    progress,
-    operationStartedAt,
-    sync,
-    isBusy,
-  } = useGameStats();
+  const { snapshot, status, error, progress, operationStartedAt, sync, isBusy } =
+    useGameStats();
   const showSkeleton = status === "loading" && !snapshot;
   const hasStats = snapshotHasHomeStats(snapshot);
 
@@ -45,8 +38,8 @@ export default function StatisticsPage() {
                 Aucune statistique détectée
               </p>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Lancez Star Citizen, jouez une session puis synchronisez les logs
-                pour alimenter cette page.
+                Lancez Star Citizen, jouez une session puis synchronisez les logs pour
+                alimenter cette page.
               </p>
               {isBusy ? (
                 <div className="mt-4 text-left">
@@ -57,11 +50,7 @@ export default function StatisticsPage() {
                   />
                 </div>
               ) : (
-                <Button
-                  type="button"
-                  className="mt-4"
-                  onClick={() => void sync()}
-                >
+                <Button type="button" className="mt-4" onClick={() => void sync()}>
                   Synchroniser
                 </Button>
               )}

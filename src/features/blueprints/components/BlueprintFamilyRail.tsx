@@ -88,10 +88,7 @@ export function BlueprintFamilyRail({
               key={item.id}
               type="button"
               onClick={() => onChange(item.id)}
-              className={cn(
-                bpFilterChip(active),
-                "shrink-0 whitespace-nowrap",
-              )}
+              className={cn(bpFilterChip(active), "shrink-0 whitespace-nowrap")}
             >
               {item.label}
               {count != null && count > 0 && (

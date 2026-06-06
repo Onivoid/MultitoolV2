@@ -38,13 +38,7 @@ const SORT_OPTIONS: { value: CatalogSortKey; label: string }[] = [
   { value: "missions", label: "Missions" },
 ];
 
-const CLASS_OPTIONS: BlueprintClassCode[] = [
-  "civi",
-  "mili",
-  "indu",
-  "stlh",
-  "comp",
-];
+const CLASS_OPTIONS: BlueprintClassCode[] = ["civi", "mili", "indu", "stlh", "comp"];
 
 const SIZE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -98,13 +92,7 @@ function familyShowsOutputTypes(family: BlueprintFamily | "all"): boolean {
   return family !== "armor";
 }
 
-function ActiveFilterChip({
-  label,
-  onClear,
-}: {
-  label: string;
-  onClear: () => void;
-}) {
+function ActiveFilterChip({ label, onClear }: { label: string; onClear: () => void }) {
   return (
     <div className="mb-2 flex items-center gap-2 rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs">
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -262,9 +250,7 @@ function AdvancedFiltersBody({
           )}
         </>
       )}
-      {familyShowsOutputTypes(family) &&
-        facets &&
-        facets.outputType.length > 0 && (
+      {familyShowsOutputTypes(family) && facets && facets.outputType.length > 0 && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">
             Type d&apos;objet
@@ -322,22 +308,24 @@ function AdvancedFiltersBody({
       )}
       {familyShowsManufacturer(family) &&
         (summaryFacets?.manufacturers.length ?? 0) > 0 && (
-        <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Fabricant</p>
-          <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto overscroll-contain">
-            {summaryFacets!.manufacturers.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => toggleManufacturer(f.value)}
-                className={bpFilterChip(state.manufacturerCodes.includes(f.value))}
-              >
-                {f.label} ({f.count})
-              </button>
-            ))}
+          <div>
+            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+              Fabricant
+            </p>
+            <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+              {summaryFacets!.manufacturers.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => toggleManufacturer(f.value)}
+                  className={bpFilterChip(state.manufacturerCodes.includes(f.value))}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       {familyShowsClass(family) && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Classe</p>
@@ -439,10 +427,7 @@ export function BlueprintsCatalogFilters({
     add(facets.ingredientUuid);
     add(facets.resourceUuid);
     if (state.resourceUuid && !byValue.has(state.resourceUuid)) {
-      byValue.set(
-        state.resourceUuid,
-        state.resourceFilterLabel ?? state.resourceUuid,
-      );
+      byValue.set(state.resourceUuid, state.resourceFilterLabel ?? state.resourceUuid);
     }
     return [
       { value: "__none__", label: "Aucun filtre ressource" },
@@ -545,9 +530,7 @@ export function BlueprintsCatalogFilters({
               <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">
                 Filtres avancés
-                {active > 0 && (
-                  <span className="ml-1 text-primary">({active})</span>
-                )}
+                {active > 0 && <span className="ml-1 text-primary">({active})</span>}
               </span>
             </span>
           </Button>

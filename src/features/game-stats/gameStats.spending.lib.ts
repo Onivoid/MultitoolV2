@@ -101,9 +101,7 @@ export function buildSpendingPeriodOptions(
   const last = sorted[sorted.length - 1].date;
   const spanDays = daysBetweenInclusive(first, last);
 
-  const options: SpendingPeriodOption[] = [
-    { id: "all", label: "Toute la période" },
-  ];
+  const options: SpendingPeriodOption[] = [{ id: "all", label: "Toute la période" }];
 
   if (spanDays >= 6) {
     options.push({ id: "7d", label: "7 derniers jours" });

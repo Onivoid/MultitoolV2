@@ -20,10 +20,7 @@ export interface IngredientGroupCardProps {
   onQualityChange: (value: number) => void;
   onResetQuality: () => void;
   onSelectOption?: (option: IngredientOption, group: IngredientGroup) => void;
-  renderOptionExtra?: (
-    option: IngredientOption,
-    group: IngredientGroup,
-  ) => ReactNode;
+  renderOptionExtra?: (option: IngredientOption, group: IngredientGroup) => ReactNode;
 }
 
 function formatQuantity(opt: IngredientOption): string {

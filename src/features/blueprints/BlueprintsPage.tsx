@@ -11,7 +11,11 @@ import { BlueprintsCatalogToolbar } from "@/features/blueprints/components/Bluep
 import { JournalMatchIssues } from "@/features/blueprints/components/JournalMatchIssues";
 import { BlueprintsStatusPanel } from "@/features/blueprints/components/BlueprintsStatusPanel";
 import { getUniqueOwners } from "@/features/blueprints/blueprints.lib";
-import { BP_EMPTY_STATE, BP_LIST_SCROLL, BP_SECTION } from "@/features/blueprints/blueprints.ui";
+import {
+  BP_EMPTY_STATE,
+  BP_LIST_SCROLL,
+  BP_SECTION,
+} from "@/features/blueprints/blueprints.ui";
 import { BlueprintSectionHeader } from "@/features/blueprints/components/BlueprintSectionHeader";
 import { BookOpen } from "lucide-react";
 import {
@@ -101,14 +105,17 @@ export default function BlueprintsPage() {
     return () => {
       cancelled = true;
     };
-  }, [vm.blueprints, vm.ownerFilter, catalogVm.catalogById, catalogVm.isLoadingCatalog]);
+  }, [
+    vm.blueprints,
+    vm.ownerFilter,
+    catalogVm.catalogById,
+    catalogVm.isLoadingCatalog,
+  ]);
 
   // Schémas journal absents du cache local : complément via API Wiki.
   useEffect(() => {
     if (catalogVm.isLoadingCatalog || ownedIds.size === 0) return;
-    const missing = [...ownedIds].filter(
-      (id) => !catalogVm.catalogById.has(id),
-    );
+    const missing = [...ownedIds].filter((id) => !catalogVm.catalogById.has(id));
     if (missing.length === 0) return;
     let cancelled = false;
     void blueprintsCatalogService.supplementIds(missing).then((extra) => {
@@ -167,7 +174,12 @@ export default function BlueprintsPage() {
     if (catalogVm.catalogById.has(deepLinkId)) {
       catalogVm.selectBlueprint(deepLinkId);
     }
-  }, [deepLinkId, catalogVm.isLoadingCatalog, catalogVm.catalogById, catalogVm.selectBlueprint]);
+  }, [
+    deepLinkId,
+    catalogVm.isLoadingCatalog,
+    catalogVm.catalogById,
+    catalogVm.selectBlueprint,
+  ]);
 
   const isPageLoading = catalogVm.isLoadingCatalog;
   const showCatalog = !isPageLoading && !catalogVm.catalogError;
@@ -175,26 +187,26 @@ export default function BlueprintsPage() {
   return (
     <PageMotion className="flex min-h-0 flex-1 flex-col px-4 pt-2">
       <div className="shrink-0">
-      <BlueprintsStatusPanel
-        status={vm.status}
-        watching={watching}
-        blueprintCount={vm.blueprints.length}
-        isRefreshing={vm.isRefreshing || catalogVm.isRevalidating}
-        isLoading={vm.isLoading}
-        isImporting={vm.isImporting}
-        importProgress={vm.importProgress}
-        importStartedAt={vm.importStartedAt}
-        isExporting={vm.isExporting}
-        isTogglingWatch={vm.isTogglingWatch}
-        onRefresh={() => {
-          void vm.refresh();
-          void catalogVm.revalidateCatalog();
-        }}
-        onImportHistory={vm.importHistory}
-        onExport={vm.exportBlueprints}
-        onStartWatch={vm.startWatch}
-        onStopWatch={vm.stopWatch}
-      />
+        <BlueprintsStatusPanel
+          status={vm.status}
+          watching={watching}
+          blueprintCount={vm.blueprints.length}
+          isRefreshing={vm.isRefreshing || catalogVm.isRevalidating}
+          isLoading={vm.isLoading}
+          isImporting={vm.isImporting}
+          importProgress={vm.importProgress}
+          importStartedAt={vm.importStartedAt}
+          isExporting={vm.isExporting}
+          isTogglingWatch={vm.isTogglingWatch}
+          onRefresh={() => {
+            void vm.refresh();
+            void catalogVm.revalidateCatalog();
+          }}
+          onImportHistory={vm.importHistory}
+          onExport={vm.exportBlueprints}
+          onStartWatch={vm.startWatch}
+          onStopWatch={vm.stopWatch}
+        />
       </div>
 
       {isPageLoading ? (
@@ -237,28 +249,26 @@ export default function BlueprintsPage() {
               subtitle={`${catalogVm.catalog.length} blueprints · filtre journal et facettes`}
             />
             <div className="shrink-0">
-            <BlueprintsCatalogToolbar
-              searchQuery={catalogSearch}
-              onSearchChange={setCatalogSearch}
-              ownedFilter={ownedFilter}
-              onOwnedFilterChange={setOwnedFilter}
-              filteredCount={filteredCatalog.length}
-              totalCount={catalogVm.catalog.length}
-              ownedCount={ownedIds.size}
-              journalProductCount={matchStats.journalProducts}
-              matchedProductCount={matchStats.matchedProducts}
-              uniqueBlueprintIdCount={ownedIds.size}
-              uniqueOwners={uniqueOwners}
-              ownerFilter={vm.ownerFilter}
-              onOwnerFilterChange={vm.setOwnerFilter}
-            />
+              <BlueprintsCatalogToolbar
+                searchQuery={catalogSearch}
+                onSearchChange={setCatalogSearch}
+                ownedFilter={ownedFilter}
+                onOwnedFilterChange={setOwnedFilter}
+                filteredCount={filteredCatalog.length}
+                totalCount={catalogVm.catalog.length}
+                ownedCount={ownedIds.size}
+                journalProductCount={matchStats.journalProducts}
+                matchedProductCount={matchStats.matchedProducts}
+                uniqueBlueprintIdCount={ownedIds.size}
+                uniqueOwners={uniqueOwners}
+                ownerFilter={vm.ownerFilter}
+                onOwnerFilterChange={vm.setOwnerFilter}
+              />
             </div>
             <div className="shrink-0 border-t border-primary/8 px-3 py-2">
               <BlueprintFamilyRail
                 value={filterState.family}
-                onChange={(family) =>
-                  setFilterState((s) => ({ ...s, family }))
-                }
+                onChange={(family) => setFilterState((s) => ({ ...s, family }))}
                 counts={familyCounts}
               />
             </div>
@@ -271,13 +281,13 @@ export default function BlueprintsPage() {
               onClearMissionFilter={() => setMissionFilter(null)}
             />
             <div className="shrink-0">
-            <JournalMatchIssues
-              unmatchedProductNames={matchStats.unmatchedProductNames}
-              ambiguousLinks={matchStats.ambiguousLinks}
-              missingCatalogIds={matchStats.missingCatalogIds}
-              journalProductCount={matchStats.journalProducts}
-              uniqueBlueprintIdCount={ownedIds.size}
-            />
+              <JournalMatchIssues
+                unmatchedProductNames={matchStats.unmatchedProductNames}
+                ambiguousLinks={matchStats.ambiguousLinks}
+                missingCatalogIds={matchStats.missingCatalogIds}
+                journalProductCount={matchStats.journalProducts}
+                uniqueBlueprintIdCount={ownedIds.size}
+              />
             </div>
             <div className={cn(BP_LIST_SCROLL, "min-h-0 flex-1")}>
               {filteredCatalog.length === 0 ? (
@@ -320,7 +330,7 @@ export default function BlueprintsPage() {
               }
               unlockDate={
                 catalogVm.selectedBlueprintId != null
-                  ? unlockDates.get(catalogVm.selectedBlueprintId) ?? null
+                  ? (unlockDates.get(catalogVm.selectedBlueprintId) ?? null)
                   : null
               }
               onSelectBlueprint={(id) => catalogVm.selectBlueprint(id)}

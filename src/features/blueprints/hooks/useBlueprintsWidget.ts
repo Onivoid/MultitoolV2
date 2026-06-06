@@ -24,12 +24,8 @@ export function useBlueprintsWidget() {
   const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
   const [ownedMatchedCount, setOwnedMatchedCount] = useState(0);
 
-  const {
-    isImporting,
-    progress,
-    operationStartedAt,
-    importFromLogbackups,
-  } = useBlueprintsImport();
+  const { isImporting, progress, operationStartedAt, importFromLogbackups } =
+    useBlueprintsImport();
 
   const loadData = useCallback(async () => {
     setError(null);

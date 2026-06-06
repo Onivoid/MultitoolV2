@@ -3,9 +3,7 @@ import type { GameStatsLoadStatus } from "@/features/game-stats/gameStats.types"
 
 const SCAN_IN_PROGRESS_CODE = "GAME_STATS_SCAN_IN_PROGRESS";
 
-export function parseScanInProgressError(
-  error: unknown,
-): GameStatsScanStatus | null {
+export function parseScanInProgressError(error: unknown): GameStatsScanStatus | null {
   const raw = error instanceof Error ? error.message : String(error);
   try {
     const parsed = JSON.parse(raw) as {

@@ -23,7 +23,9 @@ export function BlueprintSectionHeader({
       <div className="min-w-0 flex-1">
         <h2 className="text-sm font-semibold leading-tight">{title}</h2>
         {subtitle && (
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{subtitle}</p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            {subtitle}
+          </p>
         )}
       </div>
     </header>

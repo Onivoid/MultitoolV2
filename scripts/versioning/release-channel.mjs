@@ -51,20 +51,14 @@ export function resolveReleaseMeta({ tag, version }) {
     .trim()
     .replace(/^v/i, "");
   const channelId = detectChannelId(rawVersion);
-  const channel =
-    config.channels[channelId] ??
-    ({
-      label: "unknown",
-      prerelease: true,
-      publishUpdater: false,
-      makeLatest: false,
-    });
+  const channel = config.channels[channelId] ?? {
+    label: "unknown",
+    prerelease: true,
+    publishUpdater: false,
+    makeLatest: false,
+  };
 
-  const tagName = tag
-    ? String(tag).trim()
-    : rawVersion
-      ? `v${rawVersion}`
-      : "";
+  const tagName = tag ? String(tag).trim() : rawVersion ? `v${rawVersion}` : "";
 
   const titlePrefix = channel.prerelease ? "Pre-release" : "Release";
   const releaseName = tagName ? `${titlePrefix} ${tagName}` : titlePrefix;
@@ -118,7 +112,9 @@ function main() {
   const meta = resolveReleaseMeta({ tag, version });
   if (meta.channel === "unknown") {
     console.error(
-      `Unknown prerelease in version "${meta.version}". Allowed: ${Object.entries(config.channels)
+      `Unknown prerelease in version "${meta.version}". Allowed: ${Object.entries(
+        config.channels,
+      )
         .filter(([, c]) => c.prereleaseId)
         .map(([, c]) => c.prereleaseId)
         .join(", ")}`,

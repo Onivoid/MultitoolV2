@@ -85,8 +85,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           {step === 0 && (
             <p className="leading-relaxed text-muted-foreground">
               Multitool regroupe traduction, blueprints, statistiques et outils
-              communautaires pour Star Citizen. Cette introduction configure les
-              bases en quelques étapes.
+              communautaires pour Star Citizen. Cette introduction configure les bases
+              en quelques étapes.
             </p>
           )}
           {step === 1 && (
@@ -94,7 +94,10 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               {channels.length > 0 ? (
                 <ul className="space-y-1">
                   {channels.map((ch) => (
-                    <li key={ch} className="rounded-md border border-primary/15 px-3 py-2">
+                    <li
+                      key={ch}
+                      className="rounded-md border border-primary/15 px-3 py-2"
+                    >
                       Canal <strong>{ch}</strong> détecté
                     </li>
                   ))}
@@ -125,14 +128,22 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 description="Tâche en arrière-plan"
                 htmlFor="onb-bg"
               >
-                <Switch id="onb-bg" checked={bgService} onCheckedChange={setBgService} />
+                <Switch
+                  id="onb-bg"
+                  checked={bgService}
+                  onCheckedChange={setBgService}
+                />
               </SettingRow>
               <SettingRow
                 title="Démarrage automatique"
                 description="Lancer Multitool avec Windows"
                 htmlFor="onb-auto"
               >
-                <Switch id="onb-auto" checked={autostart} onCheckedChange={setAutostart} />
+                <Switch
+                  id="onb-auto"
+                  checked={autostart}
+                  onCheckedChange={setAutostart}
+                />
               </SettingRow>
               <p className="text-ui-caption pt-2 text-muted-foreground">
                 Vous pourrez affiner ces réglages dans{" "}
@@ -153,7 +164,12 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
         <div className="mt-6 flex items-center justify-between gap-2">
           {canSkip ? (
-            <Button type="button" variant="ghost" size="sm" onClick={() => void handleSkip()}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleSkip()}
+            >
               Passer
             </Button>
           ) : (

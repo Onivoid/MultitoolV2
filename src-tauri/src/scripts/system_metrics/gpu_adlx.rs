@@ -1,5 +1,4 @@
 //! Métriques GPU AMD via ADLX (bibliothèque du pilote Adrenalin).
-#![cfg(windows)]
 
 use super::GpuMetrics;
 use adlx::{gpu::Gpu1, helper::AdlxHelper, interface::Interface};

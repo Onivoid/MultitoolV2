@@ -109,7 +109,8 @@ fn parse_item_profile(uuid: &str, data: &serde_json::Value) -> BlueprintItemProf
     BlueprintItemProfile {
         item_uuid: Some(uuid.to_string()),
         description_data: parse_description_data(
-            data.get("description_data").unwrap_or(&serde_json::Value::Null),
+            data.get("description_data")
+                .unwrap_or(&serde_json::Value::Null),
         ),
         manufacturer_name,
         size,
@@ -141,7 +142,7 @@ pub async fn fetch_item_profile(item_uuid: &str) -> Option<BlueprintItemProfile>
         }
     }
 
-    let url = format!("{}/api/items/{}", WIKI_API_BASE, uuid);
+    let url = format!("{WIKI_API_BASE}/api/items/{uuid}");
     let client = http_client().ok()?;
     let response = client
         .get(&url)

@@ -10,10 +10,7 @@ export function slotQualityBounds(group: {
   initialQuality?: number | null;
   options?: { minQuality?: number | null }[];
 }): { min: number; max: number; initial: number } {
-  const minOpt = group.options?.reduce(
-    (m, o) => Math.max(m, o.minQuality ?? 0),
-    0,
-  );
+  const minOpt = group.options?.reduce((m, o) => Math.max(m, o.minQuality ?? 0), 0);
   const min = Math.max(
     group.sliderMin ?? DEFAULT_SLIDER_MIN,
     minOpt ?? 0,
@@ -81,8 +78,7 @@ export function computeModifierImpact(
 
   const percentVsNominal = (current - 1) * 100;
   const atBase = modifierValueAtQuality(mod, baseQuality);
-  const isNeutral =
-    atBase != null && Math.abs(current - atBase) < 0.0001;
+  const isNeutral = atBase != null && Math.abs(current - atBase) < 0.0001;
 
   if (isNeutral || Math.abs(percentVsNominal) < 0.05) {
     return {
@@ -95,9 +91,7 @@ export function computeModifierImpact(
   }
 
   const favorable =
-    mod.betterWhen === "lower"
-      ? percentVsNominal < 0
-      : percentVsNominal > 0;
+    mod.betterWhen === "lower" ? percentVsNominal < 0 : percentVsNominal > 0;
 
   return {
     label: mod.label,
@@ -116,8 +110,6 @@ export function groupHasQualitySliders(group: {
 }): boolean {
   return (
     (group.modifiers?.length ?? 0) > 0 &&
-    (group.initialQuality != null ||
-      group.sliderMin != null ||
-      group.sliderMax != null)
+    (group.initialQuality != null || group.sliderMin != null || group.sliderMax != null)
   );
 }

@@ -208,9 +208,7 @@ export function HomeWidgetShell({
               <X className="h-3 w-3" aria-hidden />
             </button>
           ) : (
-            definition.headerRoute && (
-              <WidgetHeaderLink to={definition.headerRoute} />
-            )
+            definition.headerRoute && <WidgetHeaderLink to={definition.headerRoute} />
           )}
         </header>
         <Content />

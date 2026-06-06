@@ -115,11 +115,7 @@ export function BlueprintDetailPanel({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3 pb-2 space-y-3">
-        <BlueprintHeroCard
-          detail={detail}
-          isOwned={isOwned}
-          unlockDate={unlockDate}
-        />
+        <BlueprintHeroCard detail={detail} isOwned={isOwned} unlockDate={unlockDate} />
         <BlueprintDetailTabs
           detail={detail}
           selectedId={selectedId}

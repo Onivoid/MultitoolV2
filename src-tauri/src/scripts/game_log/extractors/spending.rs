@@ -77,13 +77,16 @@ impl GameLogStatExtractor for SpendingExtractor {
     fn on_line(&mut self, line: &str, ctx: &LineContext) {
         if let Some(req) = parse_shop_buy_request(line) {
             let key = (req.shop_id.clone(), req.kiosk_id.clone());
-            self.pending.entry(key).or_default().push_back(PendingRequest {
-                shop_name: req.shop_name,
-                price: req.price,
-                qty: req.qty,
-                item: req.item,
-                ts: req.ts,
-            });
+            self.pending
+                .entry(key)
+                .or_default()
+                .push_back(PendingRequest {
+                    shop_name: req.shop_name,
+                    price: req.price,
+                    qty: req.qty,
+                    item: req.item,
+                    ts: req.ts,
+                });
             return;
         }
 
@@ -175,11 +178,13 @@ impl GameLogStatExtractor for SpendingExtractor {
         let by_shop: Vec<GameStatsSpendingShop> = shops
             .into_iter()
             .take(TOP_SHOPS)
-            .map(|(shop, total_spent, purchase_count)| GameStatsSpendingShop {
-                shop,
-                total_spent,
-                purchase_count,
-            })
+            .map(
+                |(shop, total_spent, purchase_count)| GameStatsSpendingShop {
+                    shop,
+                    total_spent,
+                    purchase_count,
+                },
+            )
             .collect();
 
         out.spending = GameStatsSpending {

@@ -1,10 +1,6 @@
 import { LayoutGrid, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HOME_WIDGET_REGISTRY } from "@/features/home/dashboard/homeDashboard.registry";
 import type { HomeWidgetInstance } from "@/features/home/dashboard/homeDashboard.types";
 import type { HomeWidgetType } from "@/features/home/dashboard/homeDashboard.types";
@@ -51,7 +47,12 @@ export function HomeDashboardEditBar({
       {editMode && available.length > 0 && (
         <Popover>
           <PopoverTrigger asChild>
-            <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+            >
               <Plus className="h-3.5 w-3.5" aria-hidden />
               Ajouter un widget
             </Button>
@@ -71,7 +72,10 @@ export function HomeDashboardEditBar({
                       className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-primary/10"
                       onClick={() => onAddWidget(def.type)}
                     >
-                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <Icon
+                        className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        aria-hidden
+                      />
                       <span>
                         <span className="font-medium">{def.label}</span>
                         <span className="mt-0.5 block text-xs text-muted-foreground">

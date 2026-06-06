@@ -1,4 +1,12 @@
-import { FileDown, Hammer, Loader2, Play, RefreshCw, Square, FolderSync } from "lucide-react";
+import {
+  FileDown,
+  Hammer,
+  Loader2,
+  Play,
+  RefreshCw,
+  Square,
+  FolderSync,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BP_ACTION_BTN } from "@/features/blueprints/blueprints.ui";
@@ -50,7 +58,8 @@ function ActionButton({
       className={cn(
         BP_ACTION_BTN,
         variant === "outline" && "text-foreground hover:bg-primary/20",
-        variant === "destructive" && "border-destructive/40 bg-destructive/10 hover:bg-destructive/20",
+        variant === "destructive" &&
+          "border-destructive/40 bg-destructive/10 hover:bg-destructive/20",
         variant === "default" && "border-primary/30",
         className,
       )}

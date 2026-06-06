@@ -225,7 +225,10 @@ pub fn merge_blueprint_entries(
 }
 
 /// Garde l’entrée la plus ancienne (ts) et fusionne `catalog_blueprint_id` si présent sur l’autre.
-fn merge_blueprint_entry_pair(current: &BlueprintEntry, incoming: &BlueprintEntry) -> BlueprintEntry {
+fn merge_blueprint_entry_pair(
+    current: &BlueprintEntry,
+    incoming: &BlueprintEntry,
+) -> BlueprintEntry {
     let (primary, secondary) = if incoming.ts < current.ts {
         (incoming, current)
     } else {

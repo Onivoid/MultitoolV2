@@ -34,7 +34,10 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
             <Skeleton
               key={i}
               className="absolute top-1/2 h-48 w-[min(280px,calc(100%-1rem))] -translate-y-1/2"
-              style={{ left: i === 0 ? "2px" : "auto", right: i === 1 ? "2px" : "auto" }}
+              style={{
+                left: i === 0 ? "2px" : "auto",
+                right: i === 1 ? "2px" : "auto",
+              }}
             />
           ))}
 
@@ -66,8 +69,8 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-3 px-4 md:hidden">
         <p className="text-center text-xs text-muted-foreground">
-          Les widgets personnalisables sont disponibles sur un écran plus large. Passez en
-          mode bureau pour déplacer et organiser votre accueil.
+          Les widgets personnalisables sont disponibles sur un écran plus large. Passez
+          en mode bureau pour déplacer et organiser votre accueil.
         </p>
         {layout?.widgets.map((instance) => {
           const def = getWidgetDefinition(instance.type);

@@ -18,9 +18,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "../..");
-const config = JSON.parse(
-  readFileSync(join(__dirname, "config.json"), "utf8"),
-);
+const config = JSON.parse(readFileSync(join(__dirname, "config.json"), "utf8"));
 
 const PACKAGE_JSON = join(rootDir, "package.json");
 const TAURI_CONF = join(rootDir, "src-tauri", "tauri.conf.json");
@@ -66,9 +64,7 @@ function suggestPrereleaseNumber(base, prereleaseId, msiNumericPrerelease) {
   let max = 0;
   const baseEsc = base.replace(/\./g, "\\.");
   for (const tag of tags) {
-    const labelMatch = tag.match(
-      new RegExp(`^v${baseEsc}-${prereleaseId}\\.(\\d+)$`),
-    );
+    const labelMatch = tag.match(new RegExp(`^v${baseEsc}-${prereleaseId}\\.(\\d+)$`));
     if (labelMatch) {
       max = Math.max(max, Number(labelMatch[1]));
       continue;
@@ -175,9 +171,7 @@ async function main() {
   }
 
   if (!isGreaterThan(newVersion, current)) {
-    console.error(
-      `Version '${newVersion}' must be greater than current '${current}'`,
-    );
+    console.error(`Version '${newVersion}' must be greater than current '${current}'`);
     rl.close();
     process.exit(1);
   }

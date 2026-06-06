@@ -9,15 +9,8 @@ import {
 import { useGameStats } from "@/features/game-stats/useGameStats";
 
 export function GameStatsWidgetContent() {
-  const {
-    snapshot,
-    status,
-    error,
-    progress,
-    operationStartedAt,
-    sync,
-    isBusy,
-  } = useGameStats();
+  const { snapshot, status, error, progress, operationStartedAt, sync, isBusy } =
+    useGameStats();
   const items = getHomeSummaryItems(snapshot);
   const showSkeleton = status === "loading" && !snapshot;
 
