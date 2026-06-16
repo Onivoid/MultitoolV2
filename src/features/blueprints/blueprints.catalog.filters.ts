@@ -19,6 +19,7 @@ export interface BlueprintCatalogFilterState {
   query: string;
   owned: BlueprintOwnedFilter;
   outputTypes: string[];
+  outputTypeLabels: string[];
   classCodes: BlueprintClassCode[];
   sizes: number[];
   grades: string[];
@@ -31,6 +32,9 @@ export interface BlueprintCatalogFilterState {
   resourceFilterLabel: string | null;
   starSystems: string[];
   jurisdictions: string[];
+  contractors: string[];
+  missionTypes: string[];
+  lawful: "all" | "legal" | "illegal";
   missionUuid: string | null;
   /** Sous-chaînes requises dans blueprintId (ex. _heavy_, _legs_). */
   idTokens: string[];
@@ -44,6 +48,7 @@ export const DEFAULT_CATALOG_FILTER_STATE: BlueprintCatalogFilterState = {
   query: "",
   owned: "all",
   outputTypes: [],
+  outputTypeLabels: [],
   classCodes: [],
   sizes: [],
   grades: [],
@@ -55,6 +60,9 @@ export const DEFAULT_CATALOG_FILTER_STATE: BlueprintCatalogFilterState = {
   resourceFilterLabel: null,
   starSystems: [],
   jurisdictions: [],
+  contractors: [],
+  missionTypes: [],
+  lawful: "all",
   missionUuid: null,
   idTokens: [],
   tiersCount: null,
@@ -65,6 +73,7 @@ export const DEFAULT_CATALOG_FILTER_STATE: BlueprintCatalogFilterState = {
 export function countActiveFilters(state: BlueprintCatalogFilterState): number {
   let n = 0;
   if (state.outputTypes.length) n += 1;
+  if (state.outputTypeLabels.length) n += 1;
   if (state.classCodes.length) n += 1;
   if (state.sizes.length) n += 1;
   if (state.grades.length) n += 1;
@@ -74,6 +83,9 @@ export function countActiveFilters(state: BlueprintCatalogFilterState): number {
   if (state.resourceUuid) n += 1;
   if (state.starSystems.length) n += 1;
   if (state.jurisdictions.length) n += 1;
+  if (state.contractors.length) n += 1;
+  if (state.missionTypes.length) n += 1;
+  if (state.lawful !== "all") n += 1;
   if (state.missionUuid) n += 1;
   if (state.idTokens.length) n += 1;
   if (state.tiersCount != null) n += 1;
@@ -94,6 +106,8 @@ export function isCatalogBadgeFilterActive(
       return state.manufacturerCodes.includes(filter.code);
     case "outputType":
       return state.outputTypes.includes(filter.value);
+    case "outputTypeLabel":
+      return state.outputTypeLabels.includes(filter.label);
     case "class":
       return state.classCodes.includes(filter.code);
     case "defaultOwned":
@@ -136,6 +150,12 @@ export function applyCatalogBadgeFilter(
       if (active) outputTypes.delete(filter.value);
       else outputTypes.add(filter.value);
       return { ...state, outputTypes: [...outputTypes] };
+    }
+    case "outputTypeLabel": {
+      const outputTypeLabels = new Set(state.outputTypeLabels);
+      if (active) outputTypeLabels.delete(filter.label);
+      else outputTypeLabels.add(filter.label);
+      return { ...state, outputTypeLabels: [...outputTypeLabels].sort() };
     }
     case "class": {
       const classCodes = new Set(state.classCodes);
@@ -212,11 +232,13 @@ export function applyCatalogFilters(
   ownedIds: Set<string>,
   missionBlueprintIds?: Set<string> | null,
   unlockDates?: Map<string, number>,
+  wishlistIds?: Set<string> | null,
 ): BlueprintCatalogSummary[] {
   const q = state.query.trim().toLowerCase();
   let result = catalog.filter((b) => {
     if (state.owned === "owned" && !ownedIds.has(b.blueprintId)) return false;
     if (state.owned === "not_owned" && ownedIds.has(b.blueprintId)) return false;
+    if (state.owned === "wishlist" && !wishlistIds?.has(b.blueprintId)) return false;
     if (state.outputTypes.length > 0) {
       const t = b.outputType ?? b.category ?? "";
       if (
@@ -224,6 +246,10 @@ export function applyCatalogFilters(
       ) {
         return false;
       }
+    }
+    if (state.outputTypeLabels.length > 0) {
+      const lbl = (b.outputTypeLabel ?? "").trim();
+      if (!lbl || !state.outputTypeLabels.includes(lbl)) return false;
     }
     if (state.classCodes.length > 0) {
       const cls = resolveBlueprintClass(b);
@@ -263,6 +289,19 @@ export function applyCatalogFilters(
     if (state.jurisdictions.length > 0) {
       const jurs = b.unlockJurisdictions ?? [];
       if (!state.jurisdictions.some((j) => jurs.includes(j))) return false;
+    }
+    if (state.contractors.length > 0) {
+      const contractors = b.unlockContractors ?? [];
+      if (!state.contractors.some((c) => contractors.includes(c))) return false;
+    }
+    if (state.missionTypes.length > 0) {
+      const types = b.unlockMissionTypes ?? [];
+      if (!state.missionTypes.some((t) => types.includes(t))) return false;
+    }
+    if (state.lawful !== "all") {
+      const lawfulOpts = b.unlockLawful ?? [];
+      const wantLegal = state.lawful === "legal";
+      if (!lawfulOpts.some((l) => l === wantLegal)) return false;
     }
     if (state.missionUuid && missionBlueprintIds) {
       if (!missionBlueprintIds.has(b.blueprintId)) return false;

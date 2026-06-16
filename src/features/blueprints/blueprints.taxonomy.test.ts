@@ -9,6 +9,7 @@ describe("blueprints.taxonomy", () => {
     expect(classifyBlueprintFamily("Char_Armor_Helmet")).toBe("armor");
     expect(classifyBlueprintFamily("PowerPlant")).toBe("ship_component");
     expect(classifyBlueprintFamily("WeaponPersonal")).toBe("fps_weapon");
+    expect(classifyBlueprintFamily("Misc")).toBe("other");
   });
 
   it("lit description_data par clé", () => {

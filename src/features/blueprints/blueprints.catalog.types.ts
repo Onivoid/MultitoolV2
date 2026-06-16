@@ -59,6 +59,9 @@ export interface BlueprintCatalogSummary {
   webUrl?: string | null;
   unlockSystems?: string[];
   unlockJurisdictions?: string[];
+  unlockContractors?: string[];
+  unlockMissionTypes?: string[];
+  unlockLawful?: boolean[];
   family?: BlueprintFamily | string | null;
   outputTypeLabel?: string | null;
   summaryBadges?: ApiCatalogBadge[];
@@ -178,6 +181,8 @@ export interface MissionInfo {
   minStandingName: string | null;
   minStandingReputation: number | null;
   standingReward: number | null;
+  shareable: boolean | null;
+  rankIndex: number | null;
   debugName: string | null;
   webUrl: string | null;
   starSystems: string[];
@@ -201,6 +206,12 @@ export interface MissionDetailResult {
   faction: string | null;
   missionGiver: string | null;
   webUrl: string | null;
+  shareable: boolean | null;
+  rankIndex: number | null;
+  minStandingName: string | null;
+  minStandingReputation: number | null;
+  missionType: string | null;
+  timeToCompleteMinutes: number | null;
   blueprintRewards: MissionBlueprintReward[];
 }
 
@@ -235,7 +246,16 @@ export interface BlueprintCatalogFilters {
   resourceUuid: FilterValue[];
 }
 
-export type BlueprintOwnedFilter = "all" | "owned" | "not_owned";
+export interface WikiItemsFilters {
+  category: string;
+  type: FilterValue[];
+  class: FilterValue[];
+  grade: FilterValue[];
+  size: FilterValue[];
+  manufacturer: FilterValue[];
+}
+
+export type BlueprintOwnedFilter = "all" | "owned" | "not_owned" | "wishlist";
 
 export type BlueprintClassCode = "civi" | "mili" | "indu" | "stlh" | "comp";
 

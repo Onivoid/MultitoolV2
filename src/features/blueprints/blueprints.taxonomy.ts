@@ -39,6 +39,7 @@ export function classifyBlueprintFamily(
   if (t === "WeaponGun") return "ship_weapon";
   if (t === "WeaponMining") return "mining";
   if (t === "DockingCollar") return "refuel";
+  if (t === "Misc") return "other";
   if (
     [
       "PowerPlant",
@@ -68,6 +69,25 @@ export function resolveItemFamily(
   const raw = (item.family ?? "").trim() as BlueprintFamily;
   if (BLUEPRINT_FAMILIES.includes(raw)) return raw;
   return classifyBlueprintFamily(item.outputType ?? item.category);
+}
+
+export function wikiItemsCategoryForFamily(
+  family: BlueprintFamily,
+): string | null {
+  switch (family) {
+    case "ship_component":
+      return "vehicle-components";
+    case "ship_weapon":
+      return "vehicle-weapons";
+    case "fps_weapon":
+      return "weapons";
+    case "armor":
+      return "armor";
+    case "mining":
+      return "mining-modifiers";
+    default:
+      return null;
+  }
 }
 
 export function isValidDescriptionValue(value: string | null | undefined): boolean {

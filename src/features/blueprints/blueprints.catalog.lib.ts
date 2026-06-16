@@ -92,6 +92,12 @@ const CATEGORY_FR: Record<string, string> = {
   ShipWeaponController: "Contrôleur d'armes",
   ShipMissileRack: "Rack missiles",
   ShipWeaponMissile: "Missile embarqué",
+  Misc: "Divers",
+  QuantumInterdictionGenerator: "Générateur QID",
+  TowingBeam: "Rayon de remorquage",
+  EMP: "IEM",
+  Bomb: "Bombe",
+  Missile: "Missile",
 };
 
 export function categoryLabelFr(category: string | null | undefined): string {
@@ -277,10 +283,32 @@ export type CatalogBadgeFilter =
   | { type: "grade"; letter: string }
   | { type: "manufacturer"; code: string }
   | { type: "outputType"; value: string }
+  | { type: "outputTypeLabel"; label: string }
   | { type: "class"; code: BlueprintClassCode }
   | { type: "defaultOwned" }
   | { type: "idToken"; token: string }
   | { type: "tiers"; count: number };
+
+/** Libellés anglais Wiki → code classe (badges `component_class`). */
+const COMPONENT_CLASS_LABEL_TO_CODE: Record<string, BlueprintClassCode> = {
+  Civilian: "civi",
+  Civil: "civi",
+  Military: "mili",
+  Militaire: "mili",
+  Industrial: "indu",
+  Industriel: "indu",
+  Stealth: "stlh",
+  Furtif: "stlh",
+  Competition: "comp",
+  Compétition: "comp",
+};
+
+function componentClassCodeFromBadgeLabel(label: string): BlueprintClassCode | null {
+  const direct = COMPONENT_CLASS_LABEL_TO_CODE[label.trim()];
+  if (direct) return direct;
+  const entry = Object.entries(CLASS_LABEL_EN).find(([, en]) => en === label.trim());
+  return (entry?.[0] as BlueprintClassCode | undefined) ?? null;
+}
 
 const MANUFACTURER_LABELS: Record<string, string> = {
   AEGS: "Aegis Dynamics",
@@ -397,15 +425,27 @@ export interface CatalogSummaryFacet {
 
 export interface CatalogSummaryFacets {
   grades: CatalogSummaryFacet[];
+  classCodes: CatalogSummaryFacet[];
+  outputTypeLabels: CatalogSummaryFacet[];
   manufacturers: CatalogSummaryFacet[];
+  starSystems: CatalogSummaryFacet[];
+  jurisdictions: CatalogSummaryFacet[];
+  contractors: CatalogSummaryFacet[];
+  missionTypes: CatalogSummaryFacet[];
 }
 
-/** Facettes grade / fabricant dérivées du catalogue chargé (non fournies par l’API Wiki filters). */
+/** Facettes dérivées du catalogue chargé (non fournies par l’API Wiki filters). */
 export function buildCatalogSummaryFacets(
   catalog: BlueprintCatalogSummary[],
 ): CatalogSummaryFacets {
   const gradeCounts = new Map<string, number>();
+  const classCounts = new Map<string, number>();
+  const outputTypeLabelCounts = new Map<string, number>();
   const mfrCounts = new Map<string, { label: string; count: number }>();
+  const systemCounts = new Map<string, number>();
+  const jurisdictionCounts = new Map<string, number>();
+  const contractorCounts = new Map<string, number>();
+  const missionTypeCounts = new Map<string, number>();
 
   for (const raw of catalog) {
     const b = normalizeCatalogSummary(raw);
@@ -413,23 +453,69 @@ export function buildCatalogSummaryFacets(
     if (g) {
       gradeCounts.set(g, (gradeCounts.get(g) ?? 0) + 1);
     }
+    const cls = resolveBlueprintClass(b);
+    if (cls) {
+      classCounts.set(cls, (classCounts.get(cls) ?? 0) + 1);
+    }
+    const typeLabel = (b.outputTypeLabel ?? "").trim();
+    if (typeLabel) {
+      outputTypeLabelCounts.set(
+        typeLabel,
+        (outputTypeLabelCounts.get(typeLabel) ?? 0) + 1,
+      );
+    }
     const code = (b.manufacturer ?? "").trim().toUpperCase();
-    if (!code) continue;
-    const label = catalogManufacturerLabel(b) ?? code;
-    const prev = mfrCounts.get(code);
-    mfrCounts.set(code, {
-      label: prev?.label ?? label,
-      count: (prev?.count ?? 0) + 1,
-    });
+    if (code) {
+      const label = catalogManufacturerLabel(b) ?? code;
+      const prev = mfrCounts.get(code);
+      mfrCounts.set(code, {
+        label: prev?.label ?? label,
+        count: (prev?.count ?? 0) + 1,
+      });
+    }
+    for (const sys of b.unlockSystems ?? []) {
+      systemCounts.set(sys, (systemCounts.get(sys) ?? 0) + 1);
+    }
+    for (const jur of b.unlockJurisdictions ?? []) {
+      jurisdictionCounts.set(jur, (jurisdictionCounts.get(jur) ?? 0) + 1);
+    }
+    for (const c of b.unlockContractors ?? []) {
+      contractorCounts.set(c, (contractorCounts.get(c) ?? 0) + 1);
+    }
+    for (const t of b.unlockMissionTypes ?? []) {
+      missionTypeCounts.set(t, (missionTypeCounts.get(t) ?? 0) + 1);
+    }
   }
+
+  const facetList = (counts: Map<string, number>) =>
+    [...counts.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, "fr"))
+      .map(([value, count]) => ({ value, label: value, count }));
 
   return {
     grades: [...gradeCounts.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([value, count]) => ({ value, label: value, count })),
+    classCodes: [...classCounts.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([value, count]) => ({
+        value,
+        label: CLASS_LABEL_FR[value as BlueprintClassCode] ?? value,
+        count,
+      })),
+    outputTypeLabels: [...outputTypeLabelCounts.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, "fr"))
+      .map(([value, count]) => ({ value, label: value, count })),
     manufacturers: [...mfrCounts.entries()]
       .sort(([, a], [, b]) => a.label.localeCompare(b.label))
       .map(([value, { label, count }]) => ({ value, label, count })),
+    starSystems: facetList(systemCounts),
+    jurisdictions: facetList(jurisdictionCounts).map((f) => ({
+      ...f,
+      label: jurisdictionLabelFr(String(f.value)),
+    })),
+    contractors: facetList(contractorCounts),
+    missionTypes: facetList(missionTypeCounts),
   };
 }
 
@@ -481,6 +567,13 @@ export function normalizeCatalogSummary(
     unlockJurisdictions: ensureStringArray(
       b.unlockJurisdictions ?? raw.unlock_jurisdictions,
     ),
+    unlockContractors: ensureStringArray(
+      b.unlockContractors ?? raw.unlock_contractors,
+    ),
+    unlockMissionTypes: ensureStringArray(
+      b.unlockMissionTypes ?? raw.unlock_mission_types,
+    ),
+    unlockLawful: ensureBooleanArray(b.unlockLawful ?? raw.unlock_lawful),
     family: normalizeFamily(b.family ?? raw.family),
     outputTypeLabel: nullIfEmptyString(
       b.outputTypeLabel ?? (raw.output_type_label as string | undefined),
@@ -627,10 +720,22 @@ function filterFromApiBadge(
       return { type: "idToken", token };
     }
     case "output_type":
+      if (
+        summary.family === "ship_component" &&
+        summary.outputTypeLabel &&
+        summary.outputTypeLabel === b.label
+      ) {
+        return { type: "outputTypeLabel", label: b.label };
+      }
       if (summary.outputType) {
         return { type: "outputType", value: summary.outputType };
       }
       return null;
+    case "component_class": {
+      const code =
+        componentClassCodeFromBadgeLabel(b.label) ?? resolveBlueprintClass(summary);
+      return code ? { type: "class", code } : null;
+    }
     default:
       return null;
   }
@@ -650,7 +755,7 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
         filter: { type: "defaultOwned" },
       });
     }
-    return out.slice(0, 6);
+    return out.slice(0, 8);
   }
 
   const family = summary.family ?? classifyBlueprintFamily(summary.outputType);
@@ -760,6 +865,11 @@ export function ensureStringArray(value: unknown): string[] {
   return value.filter((v): v is string => typeof v === "string" && v.length > 0);
 }
 
+function ensureBooleanArray(value: unknown): boolean[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is boolean => typeof v === "boolean");
+}
+
 export function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
@@ -775,11 +885,30 @@ function asNumber(value: unknown): number | null {
 }
 
 export function normalizeMissionInfo(m: MissionInfo): MissionInfo {
-  const raw = m as MissionInfo & { star_systems?: string[] };
+  const raw = m as MissionInfo & {
+    star_systems?: string[];
+    rank_index?: number | null;
+    min_standing_name?: string | null;
+    min_standing_reputation?: number | null;
+  };
   return {
     ...m,
     starSystems: ensureStringArray(m.starSystems ?? raw.star_systems),
     jurisdictions: ensureStringArray(m.jurisdictions),
+    shareable: typeof m.shareable === "boolean" ? m.shareable : null,
+    rankIndex:
+      typeof m.rankIndex === "number"
+        ? m.rankIndex
+        : typeof raw.rank_index === "number"
+          ? raw.rank_index
+          : null,
+    minStandingName: nullIfEmptyString(m.minStandingName ?? raw.min_standing_name),
+    minStandingReputation:
+      typeof m.minStandingReputation === "number"
+        ? m.minStandingReputation
+        : typeof raw.min_standing_reputation === "number"
+          ? raw.min_standing_reputation
+          : null,
   };
 }
 

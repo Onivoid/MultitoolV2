@@ -5,13 +5,16 @@ use scripts::background_service::{
     set_background_service_config, start_background_service, start_background_service_internal,
     stop_background_service, BackgroundServiceState,
 };
+use scripts::blueprint_wishlist::{
+    blueprint_wishlist_get, blueprint_wishlist_prune, blueprint_wishlist_toggle,
+};
 use scripts::blueprints_catalog::{
     blueprint_catalog_detail, blueprints_catalog_list_full, blueprints_catalog_match_products,
     blueprints_catalog_refresh_localization, blueprints_catalog_revalidate,
     blueprints_catalog_supplement_ids,
 };
 use scripts::blueprints_wiki_extended::{
-    blueprints_catalog_filters, blueprints_mission_detail, ingredient_locations,
+    blueprints_catalog_filters, blueprints_mission_detail, ingredient_locations, wiki_items_filters,
 };
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
@@ -233,8 +236,12 @@ pub fn run() {
             blueprints_catalog_match_products,
             blueprints_catalog_supplement_ids,
             blueprints_catalog_filters,
+            wiki_items_filters,
             blueprints_mission_detail,
             ingredient_locations,
+            blueprint_wishlist_get,
+            blueprint_wishlist_toggle,
+            blueprint_wishlist_prune,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Hammer, MapPin, Package, Recycle, Trophy } from "lucide-react";
+import { Hammer, Package, Recycle, Trophy, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlueprintDescriptionDataTable } from "@/features/blueprints/components/BlueprintDescriptionDataTable";
 import { BlueprintIngredientExpand } from "@/features/blueprints/components/BlueprintIngredientExpand";
-import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
+import { LegalityBadge } from "@/features/blueprints/components/LegalityBadge";
 import { JurisdictionBadge } from "@/features/blueprints/components/JurisdictionBadge";
+import { SystemBadge } from "@/features/blueprints/components/SystemBadge";
 import { IngredientGroupCard } from "@/features/blueprints/components/IngredientGroupCard";
 import { MissionExplorerBody } from "@/features/blueprints/components/MissionBlueprintExplorer";
 import type { BlueprintCatalogDetail } from "@/features/blueprints/blueprints.catalog.types";
-import { BP_META_BADGE, bpDetailBlock } from "@/features/blueprints/blueprints.ui";
+import { bpDetailBlock } from "@/features/blueprints/blueprints.ui";
 import {
   cleanScText,
   formatCraftDuration,
@@ -26,6 +27,7 @@ function ingredientGroupKey(group: IngredientGroup, index: number): string {
 export interface BlueprintDetailTabsProps {
   detail: BlueprintCatalogDetail;
   selectedId: string | null;
+  ownedIds?: Set<string>;
   qualityBySlot: Record<string, number>;
   onQualityChange: (slotKey: string, value: number) => void;
   onResetQuality: (slotKey: string, initial: number) => void;
@@ -41,6 +43,7 @@ export interface BlueprintDetailTabsProps {
 export function BlueprintDetailTabs({
   detail,
   selectedId,
+  ownedIds,
   qualityBySlot,
   onQualityChange,
   onResetQuality,
@@ -133,9 +136,7 @@ export function BlueprintDetailTabs({
         {(unlockSystems.length > 0 || unlockJurisdictions.length > 0) && (
           <div className="flex flex-wrap gap-1.5">
             {unlockSystems.map((sys) => (
-              <BlueprintMetaBadge key={sys} variant="system" icon={MapPin}>
-                {sys}
-              </BlueprintMetaBadge>
+              <SystemBadge key={sys} name={sys} />
             ))}
             {unlockJurisdictions.map((j) => (
               <JurisdictionBadge key={j} name={j} />
@@ -164,14 +165,21 @@ export function BlueprintDetailTabs({
                     <p className="font-medium text-sm">{missionName}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
                       {(m.starSystems ?? []).map((s) => (
-                        <span key={s} className={BP_META_BADGE}>
-                          {s}
-                        </span>
+                        <SystemBadge key={s} name={s} />
                       ))}
                       {(m.jurisdictions ?? []).map((j) => (
                         <JurisdictionBadge key={j} name={j} />
                       ))}
+                      <LegalityBadge lawful={m.lawful} />
                       {m.contractor && <span>· {m.contractor}</span>}
+                      {m.missionType && <span>· {m.missionType}</span>}
+                      {m.minStandingName && <span>· Rang : {m.minStandingName}</span>}
+                      {m.shareable != null && (
+                        <span className="inline-flex items-center gap-0.5">
+                          <Users className="h-3 w-3" />
+                          {m.shareable ? "Partageable" : "Solo"}
+                        </span>
+                      )}
                       {m.dropChance && <span>· {m.dropChance}</span>}
                     </div>
                   </button>
@@ -182,6 +190,7 @@ export function BlueprintDetailTabs({
                         missionUuid={uuid}
                         missionTitle={missionName}
                         directUnlockBlueprintId={selectedId}
+                        ownedIds={ownedIds}
                         onSelectBlueprint={(id) => {
                           onSelectBlueprint?.(id);
                           setExpandedMission(null);

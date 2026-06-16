@@ -1,5 +1,6 @@
 pub mod background_service;
 pub mod blueprint_family;
+pub mod blueprint_wishlist;
 pub mod blueprints_catalog;
 pub mod blueprints_item_profile;
 pub mod blueprints_wiki_extended;

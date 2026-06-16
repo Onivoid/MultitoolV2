@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
 import type {
@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 export interface BlueprintHeroCardProps {
   detail: BlueprintCatalogDetail;
   isOwned: boolean;
+  isWishlisted?: boolean;
+  onToggleWishlist?: () => void;
   unlockDate?: number | null;
 }
 
@@ -36,6 +38,8 @@ function formatUnlockDate(ts: number): string {
 export function BlueprintHeroCard({
   detail,
   isOwned,
+  isWishlisted = false,
+  onToggleWishlist,
   unlockDate,
 }: BlueprintHeroCardProps) {
   const family = resolveItemFamily(detail);
@@ -58,13 +62,32 @@ export function BlueprintHeroCard({
           <h2 className="text-base font-semibold leading-tight">{displayName}</h2>
           {showEn && <p className="text-xs text-muted-foreground">{nameEn}</p>}
         </div>
-        {detail.itemProfile?.imageUrl && (
-          <img
-            src={detail.itemProfile.imageUrl}
-            alt=""
-            className="h-14 w-14 shrink-0 rounded-md border border-border/40 bg-background/30 object-contain"
-          />
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {onToggleWishlist && (
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              aria-label={isWishlisted ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
+              aria-pressed={isWishlisted}
+              onClick={() => onToggleWishlist()}
+              data-no-window-drag
+            >
+              <Star
+                className={cn(
+                  "h-4 w-4",
+                  isWishlisted && "fill-amber-400 text-amber-400",
+                )}
+              />
+            </button>
+          )}
+          {detail.itemProfile?.imageUrl && (
+            <img
+              src={detail.itemProfile.imageUrl}
+              alt=""
+              className="h-14 w-14 shrink-0 rounded-md border border-border/40 bg-background/30 object-contain"
+            />
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5">

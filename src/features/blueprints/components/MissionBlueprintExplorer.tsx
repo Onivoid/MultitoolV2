@@ -1,8 +1,9 @@
-import { ExternalLink, Filter, Loader2, Trophy } from "lucide-react";
+import { ExternalLink, Filter, Loader2, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
 import { JurisdictionBadge } from "@/features/blueprints/components/JurisdictionBadge";
+import { LegalityBadge } from "@/features/blueprints/components/LegalityBadge";
+import { SystemBadge } from "@/features/blueprints/components/SystemBadge";
 import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
 import {
   BP_ACTION_BTN,
@@ -13,15 +14,23 @@ import type { MissionDetailResult } from "@/features/blueprints/blueprints.catal
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
 import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 export interface MissionExplorerBodyProps {
   active: boolean;
   missionUuid: string;
   missionTitle?: string;
   directUnlockBlueprintId?: string | null;
+  ownedIds?: Set<string>;
   onSelectBlueprint: (blueprintId: string) => void;
   onFilterMission: (missionUuid: string, title: string, blueprintIds: string[]) => void;
   onClose?: () => void;
+}
+
+function missionRankLabel(detail: MissionDetailResult): string | null {
+  if (detail.minStandingName) return detail.minStandingName;
+  if (detail.rankIndex != null) return `Rang ${detail.rankIndex}`;
+  return null;
 }
 
 export function MissionExplorerBody({
@@ -29,6 +38,7 @@ export function MissionExplorerBody({
   missionUuid,
   missionTitle: _missionTitle,
   directUnlockBlueprintId,
+  ownedIds,
   onSelectBlueprint,
   onFilterMission,
   onClose,
@@ -80,17 +90,18 @@ export function MissionExplorerBody({
 
   if (!detail) return null;
 
+  const rankLabel = missionRankLabel(detail);
+
   return (
     <div className={bpSheetPanel()}>
       <div className="flex flex-wrap gap-1.5">
         {(detail.starSystems ?? []).map((s, i) => (
-          <BlueprintMetaBadge key={`sys-${s}-${i}`} variant="system">
-            {s}
-          </BlueprintMetaBadge>
+          <SystemBadge key={`sys-${s}-${i}`} name={s} />
         ))}
         {(detail.jurisdictions ?? []).map((j, i) => (
           <JurisdictionBadge key={`jur-${j}-${i}`} name={j} />
         ))}
+        <LegalityBadge illegal={detail.illegal} />
       </div>
       {detail.missionGiver && (
         <p className="text-xs text-muted-foreground">
@@ -98,6 +109,19 @@ export function MissionExplorerBody({
           {detail.faction && ` · ${detail.faction}`}
         </p>
       )}
+      <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+        {rankLabel && <span>Rang requis : {rankLabel}</span>}
+        {detail.shareable != null && (
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            Partageable : {detail.shareable ? "Oui" : "Non"}
+          </span>
+        )}
+        {detail.missionType && <span>Type : {detail.missionType}</span>}
+        {detail.timeToCompleteMinutes != null && (
+          <span>~{Math.round(detail.timeToCompleteMinutes)} min</span>
+        )}
+      </div>
       <div>
         <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           Blueprints récompense ({detail.blueprintRewards.length})
@@ -106,6 +130,7 @@ export function MissionExplorerBody({
           {detail.blueprintRewards.map((bp, i) => {
             const id = bp.blueprintId;
             if (!id) return null;
+            const owned = ownedIds?.has(id) ?? false;
             return (
               <button
                 key={`${id}-${i}`}
@@ -114,13 +139,21 @@ export function MissionExplorerBody({
                   onSelectBlueprint(id);
                   onClose?.();
                 }}
-                className={bpCatalogRow(bp.isDirectUnlock)}
+                className={bpCatalogRow(bp.isDirectUnlock || owned)}
               >
                 <p className="text-sm font-semibold leading-snug">
+                  {owned && (
+                    <Check className="mr-1 inline h-3.5 w-3.5 text-primary" aria-hidden />
+                  )}
                   {bp.nameFr || bp.nameEn}
                   {bp.isDirectUnlock && (
                     <span className="ml-1.5 text-[10px] font-normal text-primary">
                       unlock direct
+                    </span>
+                  )}
+                  {owned && (
+                    <span className="ml-1.5 text-[10px] font-normal text-primary">
+                      possédé
                     </span>
                   )}
                 </p>

@@ -63,6 +63,12 @@ pub struct BlueprintSummary {
     pub unlock_systems: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unlock_jurisdictions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlock_contractors: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlock_mission_types: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlock_lawful: Vec<bool>,
     /// Famille craft (armor, ship_component, fps_weapon…).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
@@ -177,6 +183,12 @@ pub struct MissionDetailResult {
     pub faction: Option<String>,
     pub mission_giver: Option<String>,
     pub web_url: Option<String>,
+    pub shareable: Option<bool>,
+    pub rank_index: Option<i64>,
+    pub min_standing_name: Option<String>,
+    pub min_standing_reputation: Option<i64>,
+    pub mission_type: Option<String>,
+    pub time_to_complete_minutes: Option<f64>,
     pub blueprint_rewards: Vec<MissionBlueprintReward>,
 }
 
@@ -463,6 +475,10 @@ pub struct MissionInfo {
     pub standing_reward: Option<i64>,
     pub debug_name: Option<String>,
     pub web_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shareable: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rank_index: Option<i64>,
     #[serde(default)]
     pub star_systems: Vec<String>,
     #[serde(default)]
@@ -777,8 +793,8 @@ fn normalize_match_key(s: &str) -> String {
     out
 }
 
-/// Strips leading class/size tokens like `Mil/2/D` from legacy EN display names.
-fn strip_en_class_prefix(name: &str) -> String {
+/// Strips leading class/size tokens like `Mil/2/D` (EN) or `Sth/2/C` (FR traduit) from display names.
+fn strip_class_size_prefix(name: &str) -> String {
     let parts: Vec<&str> = name.split_whitespace().collect();
     if parts.len() >= 2 {
         let first = parts[0];
@@ -847,7 +863,7 @@ fn build_fr_display_to_en(
 fn build_en_catalog_exact(summaries: &[BlueprintSummary]) -> HashMap<String, String> {
     let mut lookup = HashMap::with_capacity(summaries.len() * 2);
     for s in summaries {
-        let stripped = strip_en_class_prefix(&s.name_en);
+        let stripped = strip_class_size_prefix(&s.name_en);
         for name in [s.name_en.as_str(), stripped.as_str()] {
             let norm = normalize_match_key(name);
             if norm.len() >= 3 {
@@ -1071,14 +1087,20 @@ fn resolve_item_suffix_to_blueprint(
 fn build_display_name_lookup(summaries: &[BlueprintSummary]) -> HashMap<String, String> {
     let mut lookup = HashMap::with_capacity(summaries.len() * 3);
     for s in summaries {
-        let mut names: Vec<&str> = vec![&s.name_en];
+        let mut names: Vec<String> = vec![s.name_en.clone()];
         if let Some(fr) = s.name_fr.as_deref() {
-            names.push(fr);
+            names.push(fr.to_string());
+            let stripped_fr = strip_class_size_prefix(fr);
+            if stripped_fr != fr {
+                names.push(stripped_fr);
+            }
         }
-        let stripped = strip_en_class_prefix(&s.name_en);
-        names.push(stripped.as_str());
+        let stripped = strip_class_size_prefix(&s.name_en);
+        if stripped != s.name_en {
+            names.push(stripped);
+        }
         for name in names {
-            let norm = normalize_match_key(name);
+            let norm = normalize_match_key(&name);
             if norm.len() >= 3 {
                 lookup.entry(norm).or_insert_with(|| s.blueprint_id.clone());
             }
@@ -1136,10 +1158,13 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
         let mut aliases = Vec::new();
         push_alias(&mut aliases, s.name_fr.clone());
         push_alias(&mut aliases, Some(s.name_en.clone()));
-        push_alias(&mut aliases, Some(strip_en_class_prefix(&s.name_en)));
+        push_alias(&mut aliases, Some(strip_class_size_prefix(&s.name_en)));
+        if let Some(fr) = s.name_fr.as_deref() {
+            push_alias(&mut aliases, Some(strip_class_size_prefix(fr)));
+        }
         append_ini_aliases(s.internal_name.as_deref(), &stem, &loc_refs, &mut aliases);
 
-        let stripped_en = strip_en_class_prefix(&s.name_en);
+        let stripped_en = strip_class_size_prefix(&s.name_en);
         let mut en_only = Vec::new();
         push_alias(&mut en_only, Some(s.name_en.clone()));
         push_alias(&mut en_only, Some(stripped_en));
@@ -1201,6 +1226,12 @@ fn ensure_match_index_built() -> Result<(), String> {
 /// - EN : alias / `name_en` Wiki, valeurs `global_en.ini` (indexées dans `ini_value_to_id`), tokens EN.
 fn match_product_to_blueprint(product_name: &str) -> Option<String> {
     let product_name = normalize_log_product_name(product_name);
+    let stripped = strip_class_size_prefix(product_name);
+    let product_name = if stripped != product_name.trim() {
+        stripped.as_str()
+    } else {
+        product_name
+    };
     let target = normalize_match_key(product_name);
     if target.len() < 2 {
         return None;
@@ -1588,6 +1619,13 @@ fn collect_resource_uuids(bp: &WikiBlueprint) -> Vec<String> {
     out
 }
 
+pub(crate) fn wiki_output_item_uuid(bp: &WikiBlueprint) -> Option<String> {
+    bp.output
+        .as_ref()
+        .and_then(|o| o.uuid.clone())
+        .filter(|u| !u.is_empty())
+}
+
 pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
     let blueprint_id = normalize_bp_id_key(&bp.key);
     let output_class = wiki_output_class(bp);
@@ -1603,12 +1641,18 @@ pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
     let output_type = bp.output.as_ref().and_then(|o| o.r#type.clone());
     let output_type_label = bp.output.as_ref().and_then(|o| o.type_label.clone());
     let family = super::blueprint_family::classify_output_type(output_type.as_deref());
+    let grade = wiki_grade(bp);
     let summary_badges = super::blueprint_family::build_summary_badges(
         family,
         output_type.as_deref(),
         output_type_label.as_deref(),
         sub_type.as_deref(),
         size,
+        super::blueprint_family::SummaryBadgeContext {
+            grade: grade.as_deref(),
+            class_code: class_code.as_deref(),
+            manufacturer_name: manufacturer_name.as_deref(),
+        },
     );
     BlueprintSummary {
         wiki_uuid: bp.uuid.clone(),
@@ -1623,7 +1667,7 @@ pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
         version: bp.game_version.clone(),
         class_code,
         size,
-        grade: wiki_grade(bp),
+        grade,
         sub_type,
         manufacturer,
         manufacturer_name,
@@ -1635,6 +1679,9 @@ pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
         web_url: bp.web_url.clone(),
         unlock_systems: Vec::new(),
         unlock_jurisdictions: Vec::new(),
+        unlock_contractors: Vec::new(),
+        unlock_mission_types: Vec::new(),
+        unlock_lawful: Vec::new(),
         family: Some(family.as_str().to_string()),
         output_type_label,
         summary_badges,
@@ -1848,6 +1895,8 @@ fn map_wiki_missions(ms: Vec<WikiUnlockingMission>) -> Vec<MissionInfo> {
                 standing_reward: None,
                 debug_name: m.debug_name.clone(),
                 web_url: m.web_url.clone(),
+                shareable: None,
+                rank_index: None,
                 star_systems: Vec::new(),
                 jurisdictions: Vec::new(),
             }
@@ -2148,6 +2197,7 @@ async fn load_wiki_catalog_summaries() -> Result<Vec<BlueprintSummary>, String> 
 pub async fn blueprints_catalog_list_full() -> Result<Vec<BlueprintSummary>, String> {
     let mut list = load_wiki_catalog_summaries().await?;
     super::blueprints_wiki_extended::merge_unlock_index(&mut list);
+    super::blueprints_item_profile::merge_item_meta_index(&mut list);
     Ok(list)
 }
 
@@ -2168,6 +2218,7 @@ pub async fn blueprints_catalog_revalidate() -> Result<RevalidateResult, String>
             if let Ok(blueprints) = load_wiki_catalog_from_disk() {
                 let mut list = build_summaries_from_wiki(&blueprints);
                 super::blueprints_wiki_extended::merge_unlock_index(&mut list);
+                super::blueprints_item_profile::merge_item_meta_index(&mut list);
                 return Ok(RevalidateResult {
                     list,
                     new_count: 0,
@@ -2199,8 +2250,10 @@ pub async fn blueprints_catalog_revalidate() -> Result<RevalidateResult, String>
 
     let mut list = build_summaries_from_wiki(&fresh);
     super::blueprints_wiki_extended::merge_unlock_index(&mut list);
+    super::blueprints_item_profile::merge_item_meta_index(&mut list);
     tauri::async_runtime::spawn(async {
         super::blueprints_wiki_extended::build_unlock_index_background().await;
+        super::blueprints_item_profile::build_item_meta_index_background().await;
     });
     Ok(RevalidateResult {
         list,
@@ -2368,6 +2421,27 @@ pub async fn blueprints_catalog_refresh_localization() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Les tests catalogue partagent LOC_CACHE / MATCH_INDEX — exécution sérialisée.
+    static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn reset_catalog_test_state() {
+        *MATCH_INDEX.lock().unwrap() = None;
+        *CATALOG_SUMMARIES.lock().unwrap() = None;
+        let mut cache = LOC_CACHE.lock().unwrap();
+        cache.fr = None;
+        cache.en = None;
+        cache.classes = None;
+        cache.version = None;
+    }
+
+    fn with_catalog_test_lock<F: FnOnce()>(f: F) {
+        let _guard = CATALOG_TEST_LOCK.lock().unwrap();
+        reset_catalog_test_state();
+        f();
+        reset_catalog_test_state();
+    }
 
     fn find_blueprint_by_display_name(
         display: &str,
@@ -2386,24 +2460,40 @@ mod tests {
             if normalize_match_key(&s.name_en) == norm {
                 return Some(s.blueprint_id.clone());
             }
-            let stripped = strip_en_class_prefix(&s.name_en);
+            let stripped = strip_class_size_prefix(&s.name_en);
             if normalize_match_key(&stripped) == norm {
                 return Some(s.blueprint_id.clone());
             }
+            if let Some(fr) = s.name_fr.as_deref() {
+                let stripped_fr = strip_class_size_prefix(fr);
+                if normalize_match_key(&stripped_fr) == norm {
+                    return Some(s.blueprint_id.clone());
+                }
+            }
         }
 
+        let display_stripped = strip_class_size_prefix(display);
+        let display = if display_stripped != display.trim() {
+            display_stripped.as_str()
+        } else {
+            display
+        };
         let target_tokens = tokenize_words(display);
         if target_tokens.len() < 2 {
             return None;
         }
         let mut best: Option<(f64, String)> = None;
         for s in summaries {
-            let stripped = strip_en_class_prefix(&s.name_en);
-            let mut candidates: Vec<&str> = vec![&s.name_en, stripped.as_str()];
+            let stripped = strip_class_size_prefix(&s.name_en);
+            let mut candidates: Vec<String> = vec![s.name_en.clone(), stripped];
             if let Some(fr) = s.name_fr.as_deref() {
-                candidates.push(fr);
+                candidates.push(fr.to_string());
+                let stripped_fr = strip_class_size_prefix(fr);
+                if stripped_fr != fr {
+                    candidates.push(stripped_fr);
+                }
             }
-            for cand in candidates {
+            for cand in &candidates {
                 let score = token_overlap_score(&target_tokens, &tokenize_words(cand));
                 if score >= 0.55 && best.as_ref().map(|(b, _)| score > *b).unwrap_or(true) {
                     best = Some((score, s.blueprint_id.clone()));
@@ -2465,6 +2555,7 @@ mod tests {
 
     #[test]
     fn match_journal_english_from_en_ini_and_catalog() {
+        with_catalog_test_lock(|| {
         let fr = HashMap::new();
         let en = HashMap::from([(
             "item_nameksar_rifle_energy_01_mag".to_string(),
@@ -2494,17 +2585,12 @@ mod tests {
             match_product_to_blueprint("Karna Rifle Magazine (30 cap)").as_deref(),
             Some("bp_craft_ksar_rifle_energy_01_mag")
         );
-
-        *MATCH_INDEX.lock().unwrap() = None;
-        *CATALOG_SUMMARIES.lock().unwrap() = None;
-        let mut cache = LOC_CACHE.lock().unwrap();
-        cache.fr = None;
-        cache.en = None;
-        cache.version = None;
+        });
     }
 
     #[test]
     fn match_journal_fr_via_polytool_en_bridge() {
+        with_catalog_test_lock(|| {
         let fr = HashMap::from([
             (
                 "item_nameksar_rifle_energy_01_mag".to_string(),
@@ -2563,13 +2649,7 @@ mod tests {
             match_product_to_blueprint("Chargeur R97 (10 cap)").as_deref(),
             Some("bp_craft_gmni_shotgun_ballistic_01_mag")
         );
-
-        *MATCH_INDEX.lock().unwrap() = None;
-        *CATALOG_SUMMARIES.lock().unwrap() = None;
-        let mut cache = LOC_CACHE.lock().unwrap();
-        cache.fr = None;
-        cache.en = None;
-        cache.version = None;
+        });
     }
 
     #[test]
@@ -2666,6 +2746,7 @@ mod tests {
 
     #[test]
     fn match_fuel_nozzle_short_names_via_name_suffix_keys() {
+        with_catalog_test_lock(|| {
         let fr = HashMap::from([
             (
                 "nozzle_fuelgiver_grin_nozzlesecure_name".to_string(),
@@ -2742,13 +2823,46 @@ mod tests {
             match_product_to_blueprint("Torres").as_deref(),
             Some("bp_craft_nozzle_fuelgiver_shin_nozzleexpensivesecure")
         );
+        });
+    }
 
+    #[test]
+    fn strip_class_size_prefix_removes_en_and_fr_tokens() {
+        assert_eq!(strip_class_size_prefix("Mil/2/D Cirrus"), "Cirrus");
+        assert_eq!(strip_class_size_prefix("Sth/2/C Cirrus"), "Cirrus");
+        assert_eq!(strip_class_size_prefix("Cirrus"), "Cirrus");
+    }
+
+    #[test]
+    fn match_ship_component_french_translated_log_name() {
+        with_catalog_test_lock(|| {
+        let summaries = vec![
+            BlueprintSummary {
+                blueprint_id: "bp_craft_cooler_aegs_cirrus_s01".to_string(),
+                name_en: "Mil/2/D Cirrus".to_string(),
+                name_fr: Some("Sth/2/C Cirrus".to_string()),
+                ..BlueprintSummary::default()
+            },
+            BlueprintSummary {
+                blueprint_id: "bp_craft_cooler_aegs_other_s01".to_string(),
+                name_en: "Mil/2/D Other".to_string(),
+                name_fr: Some("Sth/2/C Other".to_string()),
+                ..BlueprintSummary::default()
+            },
+        ];
+        *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
         *MATCH_INDEX.lock().unwrap() = None;
-        *CATALOG_SUMMARIES.lock().unwrap() = None;
-        let mut cache = LOC_CACHE.lock().unwrap();
-        cache.fr = None;
-        cache.en = None;
-        cache.version = None;
+        rebuild_match_index(&summaries);
+
+        assert_eq!(
+            match_product_to_blueprint("Sth/2/C Cirrus").as_deref(),
+            Some("bp_craft_cooler_aegs_cirrus_s01")
+        );
+        assert_eq!(
+            match_product_to_blueprint("Mil/2/D Cirrus").as_deref(),
+            Some("bp_craft_cooler_aegs_cirrus_s01")
+        );
+        });
     }
 
     #[test]

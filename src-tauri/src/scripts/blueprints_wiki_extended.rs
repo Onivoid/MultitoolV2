@@ -130,8 +130,16 @@ pub async fn fetch_blueprint_filters() -> Result<BlueprintCatalogFilters, String
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 struct BpUnlockEntry {
+    #[serde(default)]
     systems: Vec<String>,
+    #[serde(default)]
     jurisdictions: Vec<String>,
+    #[serde(default)]
+    contractors: Vec<String>,
+    #[serde(default)]
+    mission_types: Vec<String>,
+    #[serde(default)]
+    lawful: Vec<bool>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -157,6 +165,9 @@ pub fn merge_unlock_index(summaries: &mut [BlueprintSummary]) {
         if let Some(e) = index.entries.get(&s.blueprint_id) {
             s.unlock_systems = e.systems.clone();
             s.unlock_jurisdictions = e.jurisdictions.clone();
+            s.unlock_contractors = e.contractors.clone();
+            s.unlock_mission_types = e.mission_types.clone();
+            s.unlock_lawful = e.lawful.clone();
         }
     }
 }
@@ -177,6 +188,13 @@ struct CachedMission {
     mission_giver: Option<String>,
     web_url: Option<String>,
     blueprint_keys: Vec<String>,
+    shareable: Option<bool>,
+    rank_index: Option<i64>,
+    min_standing_name: Option<String>,
+    min_standing_reputation: Option<i64>,
+    mission_type: Option<String>,
+    reward_scope: Option<String>,
+    time_to_complete_minutes: Option<f64>,
 }
 
 fn mission_cache_path() -> Option<PathBuf> {
@@ -325,6 +343,37 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         blueprint_keys,
+        shareable: data.get("shareable").and_then(|v| v.as_bool()),
+        rank_index: data.get("rank_index").and_then(|v| v.as_i64()),
+        min_standing_name: data
+            .get("min_standing")
+            .and_then(|m| m.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                data.get("min_standing_name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            }),
+        min_standing_reputation: data
+            .get("min_standing")
+            .and_then(|m| m.get("min_reputation"))
+            .and_then(|v| v.as_i64())
+            .or_else(|| {
+                data.get("min_standing_reputation")
+                    .and_then(|v| v.as_i64())
+            }),
+        mission_type: data
+            .get("mission_type")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        reward_scope: data
+            .get("reward_scope")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        time_to_complete_minutes: data
+            .get("time_to_complete_minutes")
+            .and_then(|v| v.as_f64()),
     };
     cache.missions.insert(uuid.to_string(), entry.clone());
     Some(entry)
@@ -346,6 +395,9 @@ pub async fn build_unlock_index_background() {
         if let Ok(full) = fetch_wiki_blueprint_by_uuid(&bp.uuid).await {
             let mut systems = HashSet::new();
             let mut jurisdictions = HashSet::new();
+            let mut contractors = HashSet::new();
+            let mut mission_types = HashSet::new();
+            let mut lawful_set = HashSet::new();
             for m in &full.unlocking_missions {
                 if let Some(url) = &m.web_url {
                     if let Some(uuid) = mission_uuid_from_url(url) {
@@ -356,6 +408,19 @@ pub async fn build_unlock_index_background() {
                             }
                             for j in &cached.jurisdictions {
                                 jurisdictions.insert(j.clone());
+                            }
+                            if let Some(giver) = &cached.mission_giver {
+                                contractors.insert(giver.clone());
+                            }
+                            if let Some(scope) = cached
+                                .reward_scope
+                                .as_ref()
+                                .or(cached.mission_type.as_ref())
+                            {
+                                mission_types.insert(scope.clone());
+                            }
+                            if let Some(illegal) = cached.illegal {
+                                lawful_set.insert(!illegal);
                             }
                         }
                     }
@@ -370,16 +435,30 @@ pub async fn build_unlock_index_background() {
                     }
                 }
             }
-            if !systems.is_empty() || !jurisdictions.is_empty() {
+            let has_meta = !systems.is_empty()
+                || !jurisdictions.is_empty()
+                || !contractors.is_empty()
+                || !mission_types.is_empty()
+                || !lawful_set.is_empty();
+            if has_meta {
                 let mut sys_vec: Vec<_> = systems.into_iter().collect();
                 sys_vec.sort();
                 let mut jur_vec: Vec<_> = jurisdictions.into_iter().collect();
                 jur_vec.sort();
+                let mut contractor_vec: Vec<_> = contractors.into_iter().collect();
+                contractor_vec.sort();
+                let mut mission_type_vec: Vec<_> = mission_types.into_iter().collect();
+                mission_type_vec.sort();
+                let mut lawful_vec: Vec<_> = lawful_set.into_iter().collect();
+                lawful_vec.sort_by(|a, b| b.cmp(a));
                 index_entries.insert(
                     bp_id,
                     BpUnlockEntry {
                         systems: sys_vec,
                         jurisdictions: jur_vec,
+                        contractors: contractor_vec,
+                        mission_types: mission_type_vec,
+                        lawful: lawful_vec,
                     },
                 );
             }
@@ -409,6 +488,18 @@ pub fn enrich_missions_from_cache(missions: &mut [MissionInfo]) {
             m.jurisdictions = c.jurisdictions.clone();
             m.contractor = c.mission_giver.clone();
             m.lawful = c.illegal.map(|i| !i);
+            m.mission_type = c
+                .reward_scope
+                .clone()
+                .or(c.mission_type.clone())
+                .or(m.mission_type.clone());
+            m.shareable = c.shareable;
+            m.rank_index = c.rank_index;
+            m.min_standing_name = c.min_standing_name.clone();
+            m.min_standing_reputation = c.min_standing_reputation;
+            if let Some(mins) = c.time_to_complete_minutes {
+                m.time_to_complete_minutes = Some(mins.round() as u64);
+            }
         }
     }
 }
@@ -760,6 +851,15 @@ pub async fn fetch_mission_detail(
         faction: cached.faction,
         mission_giver: cached.mission_giver,
         web_url: cached.web_url,
+        shareable: cached.shareable,
+        rank_index: cached.rank_index,
+        min_standing_name: cached.min_standing_name,
+        min_standing_reputation: cached.min_standing_reputation,
+        mission_type: cached
+            .reward_scope
+            .clone()
+            .or(cached.mission_type.clone()),
+        time_to_complete_minutes: cached.time_to_complete_minutes,
         blueprint_rewards,
     })
 }
@@ -805,6 +905,100 @@ pub async fn fetch_ingredient_locations(
 #[command]
 pub async fn blueprints_catalog_filters() -> Result<BlueprintCatalogFilters, String> {
     fetch_blueprint_filters().await
+}
+
+// --- Items filters cache (taxonomie Wiki par catégorie item) ---
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WikiItemsFilters {
+    pub category: String,
+    pub r#type: Vec<FilterValue>,
+    pub class: Vec<FilterValue>,
+    pub grade: Vec<FilterValue>,
+    pub size: Vec<FilterValue>,
+    pub manufacturer: Vec<FilterValue>,
+}
+
+#[derive(Deserialize, Default)]
+struct WikiItemsFiltersResponse {
+    filters: WikiItemsFiltersBody,
+}
+
+#[derive(Deserialize, Default)]
+struct WikiItemsFiltersBody {
+    #[serde(rename = "type", default)]
+    item_type: Vec<WikiFilterValue>,
+    #[serde(default)]
+    class: Vec<WikiFilterValue>,
+    #[serde(default)]
+    grade: Vec<WikiFilterValue>,
+    #[serde(default)]
+    size: Vec<WikiFilterValue>,
+    #[serde(default)]
+    manufacturer: Vec<WikiFilterValue>,
+}
+
+fn items_filters_cache_path(category: &str) -> Option<PathBuf> {
+    let safe = category
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect::<String>();
+    wiki_data_dir().map(|d| d.join(format!("wiki_items_filters_{safe}.json")))
+}
+
+pub async fn fetch_wiki_items_filters(category: &str) -> Result<WikiItemsFilters, String> {
+    let cat = category.trim();
+    if cat.is_empty() {
+        return Err("Catégorie items vide".into());
+    }
+    if let Some(path) = items_filters_cache_path(cat) {
+        if !is_cache_stale(&path, 7) {
+            if let Ok(bytes) = fs::read(&path) {
+                if let Ok(parsed) = serde_json::from_slice::<WikiItemsFilters>(&bytes) {
+                    return Ok(parsed);
+                }
+            }
+        }
+    }
+
+    let url = format!(
+        "{WIKI_API_BASE}/api/items/filters?filter[category]={}",
+        urlencoding::encode(cat)
+    );
+    let client = http_client()?;
+    let response = client
+        .get(&url)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur reseau items/filters: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!("Wiki items/filters HTTP {}", response.status()));
+    }
+    let raw: WikiItemsFiltersResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Wiki items/filters illisible: {e}"))?;
+    let out = WikiItemsFilters {
+        category: cat.to_string(),
+        r#type: map_filter_values(raw.filters.item_type),
+        class: map_filter_values(raw.filters.class),
+        grade: map_filter_values(raw.filters.grade),
+        size: map_filter_values(raw.filters.size),
+        manufacturer: map_filter_values(raw.filters.manufacturer),
+    };
+    if let Some(path) = items_filters_cache_path(cat) {
+        if let Ok(bytes) = serde_json::to_vec(&out) {
+            let _ = fs::write(path, bytes);
+        }
+    }
+    Ok(out)
+}
+
+#[command]
+pub async fn wiki_items_filters(category: String) -> Result<WikiItemsFilters, String> {
+    fetch_wiki_items_filters(&category).await
 }
 
 #[command]

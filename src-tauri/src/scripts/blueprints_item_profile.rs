@@ -5,7 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use super::blueprint_family::{
-    build_catalog_badges, build_hero_stats, classify_output_type, BlueprintFamily,
+    build_catalog_badges, build_hero_stats, build_summary_badges, classify_output_type,
+    BlueprintFamily,
 };
 use super::blueprints_catalog::{http_client, BlueprintDetail, WIKI_API_BASE};
 
@@ -240,4 +241,299 @@ pub async fn enrich_detail_item(
         detail.summary.size,
         desc,
     );
+}
+
+// --- Item meta index (liste catalogue enrichie depuis GET /api/items/{uuid}) ---
+
+use super::blueprints_catalog::{
+    load_wiki_catalog_from_disk, normalize_bp_id_key, BlueprintSummary,
+};
+use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct ItemMetaEntry {
+    #[serde(default)]
+    description_data: Vec<DescriptionDataRow>,
+    grade: Option<String>,
+    class_code: Option<String>,
+    type_label: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct ItemMetaIndexFile {
+    entries: HashMap<String, ItemMetaEntry>,
+}
+
+fn item_meta_index_path() -> Option<PathBuf> {
+    wiki_data_dir().map(|d| d.join("wiki_item_meta_index.json"))
+}
+
+fn item_class_to_code(class: &str) -> Option<String> {
+    match class.trim().to_ascii_lowercase().as_str() {
+        "civilian" => Some("civi".into()),
+        "military" => Some("mili".into()),
+        "industrial" => Some("indu".into()),
+        "stealth" => Some("stlh".into()),
+        "competition" => Some("comp".into()),
+        _ => None,
+    }
+}
+
+fn normalize_item_grade(raw: &str) -> Option<String> {
+    let t = raw.trim();
+    if t.is_empty() {
+        return None;
+    }
+    let lower = t.to_ascii_lowercase();
+    if matches!(lower.as_str(), "undefined" | "null" | "none" | "n/a" | "na") {
+        return None;
+    }
+    if let Ok(n) = t.parse::<u64>() {
+        if (1..=7).contains(&n) {
+            return Some(char::from(b'A' + (n as u8 - 1)).to_string());
+        }
+    }
+    if t.len() == 1 {
+        let c = t.chars().next().unwrap().to_ascii_uppercase();
+        if ('A'..='G').contains(&c) {
+            return Some(c.to_string());
+        }
+    }
+    None
+}
+
+fn meta_from_profile(profile: &BlueprintItemProfile) -> ItemMetaEntry {
+    let grade = profile
+        .description_data
+        .iter()
+        .find(|r| r.name.eq_ignore_ascii_case("Grade"))
+        .and_then(|r| normalize_item_grade(&r.value));
+    let class_code = profile
+        .description_data
+        .iter()
+        .find(|r| r.name.eq_ignore_ascii_case("Class"))
+        .and_then(|r| item_class_to_code(&r.value));
+    ItemMetaEntry {
+        description_data: profile.description_data.clone(),
+        grade,
+        class_code,
+        type_label: profile.item_type_label.clone(),
+    }
+}
+
+fn meta_from_item_data(data: &serde_json::Value, profile: &BlueprintItemProfile) -> ItemMetaEntry {
+    let mut meta = meta_from_profile(profile);
+    if meta.grade.is_none() {
+        meta.grade = data
+            .get("grade")
+            .and_then(|v| v.as_str())
+            .and_then(normalize_item_grade);
+    }
+    if meta.class_code.is_none() {
+        meta.class_code = data
+            .get("class")
+            .and_then(|v| v.as_str())
+            .and_then(item_class_to_code);
+    }
+    if meta.type_label.is_none() {
+        meta.type_label = data
+            .get("type_label")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+    }
+    meta
+}
+
+fn summary_needs_item_meta(summary: &BlueprintSummary) -> bool {
+    if summary.family.as_deref() != Some("ship_component") {
+        return false;
+    }
+    let has_grade = summary.grade.is_some()
+        || summary
+            .summary_badges
+            .iter()
+            .any(|b| b.kind == "grade");
+    let has_class = summary.class_code.is_some()
+        || summary
+            .summary_badges
+            .iter()
+            .any(|b| b.kind == "component_class");
+    !has_grade || !has_class
+}
+
+fn apply_item_meta(summary: &mut BlueprintSummary, meta: &ItemMetaEntry) {
+    if summary.grade.is_none() {
+        summary.grade = meta.grade.clone();
+    }
+    if summary.class_code.is_none() {
+        summary.class_code = meta.class_code.clone();
+    }
+    if summary.output_type_label.is_none() {
+        summary.output_type_label = meta.type_label.clone();
+    }
+    if summary.manufacturer_name.is_none() {
+        if let Some(mfg) = meta
+            .description_data
+            .iter()
+            .find(|r| r.name.eq_ignore_ascii_case("Manufacturer"))
+            .map(|r| r.value.trim().to_string())
+            .filter(|s| !s.is_empty())
+        {
+            summary.manufacturer_name = Some(mfg);
+        }
+    }
+
+    let family = classify_output_type(summary.output_type.as_deref());
+    if !meta.description_data.is_empty() {
+        summary.summary_badges = build_catalog_badges(
+            family,
+            summary.output_type.as_deref(),
+            summary.output_type_label.as_deref(),
+            summary.sub_type.as_deref(),
+            summary.size,
+            &meta.description_data,
+        );
+    } else {
+        summary.summary_badges = build_summary_badges(
+            family,
+            summary.output_type.as_deref(),
+            summary.output_type_label.as_deref(),
+            summary.sub_type.as_deref(),
+            summary.size,
+            super::blueprint_family::SummaryBadgeContext {
+                grade: summary.grade.as_deref(),
+                class_code: summary.class_code.as_deref(),
+                manufacturer_name: summary.manufacturer_name.as_deref(),
+            },
+        );
+    }
+}
+
+pub fn merge_item_meta_index(summaries: &mut [BlueprintSummary]) {
+    let Some(path) = item_meta_index_path() else {
+        return;
+    };
+    let Ok(bytes) = fs::read(&path) else {
+        return;
+    };
+    let Ok(index) = serde_json::from_slice::<ItemMetaIndexFile>(&bytes) else {
+        return;
+    };
+    for s in summaries.iter_mut() {
+        if let Some(meta) = index.entries.get(&s.blueprint_id) {
+            apply_item_meta(s, meta);
+        }
+    }
+}
+
+pub async fn build_item_meta_index_background() {
+    let Ok(blueprints) = load_wiki_catalog_from_disk() else {
+        return;
+    };
+    let targets: Vec<_> = blueprints
+        .iter()
+        .filter(|bp| {
+            let summary = super::blueprints_catalog::summary_from_wiki(bp);
+            summary_needs_item_meta(&summary)
+        })
+        .collect();
+
+    let mut entries: HashMap<String, ItemMetaEntry> = item_meta_index_path()
+        .and_then(|p| fs::read(&p).ok())
+        .and_then(|b| serde_json::from_slice::<ItemMetaIndexFile>(&b).ok())
+        .map(|f| f.entries)
+        .unwrap_or_default();
+
+    for bp in targets {
+        let Some(uuid) = super::blueprints_catalog::wiki_output_item_uuid(bp) else {
+            continue;
+        };
+        let bp_id = normalize_bp_id_key(&bp.key);
+        if entries.contains_key(&bp_id) {
+            continue;
+        }
+        if let Some(profile) = fetch_item_profile(&uuid).await {
+            let meta = if let Some(path) = item_cache_path(&uuid) {
+                if let Ok(bytes) = fs::read(&path) {
+                    if let Ok(data) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                        meta_from_item_data(&data, &profile)
+                    } else {
+                        meta_from_profile(&profile)
+                    }
+                } else {
+                    meta_from_profile(&profile)
+                }
+            } else {
+                meta_from_profile(&profile)
+            };
+            if !meta.description_data.is_empty()
+                || meta.grade.is_some()
+                || meta.class_code.is_some()
+            {
+                entries.insert(bp_id, meta);
+            }
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(80)).await;
+    }
+
+    if let Some(path) = item_meta_index_path() {
+        let file = ItemMetaIndexFile { entries };
+        if let Ok(bytes) = serde_json::to_vec(&file) {
+            let _ = fs::write(path, bytes);
+        }
+    }
+}
+
+#[cfg(test)]
+mod item_meta_tests {
+    use super::*;
+    use crate::scripts::blueprint_family::BlueprintFamily;
+
+    #[test]
+    fn list_badges_match_detail_when_description_data_present() {
+        let rows = vec![
+            DescriptionDataRow {
+                name: "Grade".into(),
+                value: "B".into(),
+            },
+            DescriptionDataRow {
+                name: "Class".into(),
+                value: "Industrial".into(),
+            },
+            DescriptionDataRow {
+                name: "Size".into(),
+                value: "2".into(),
+            },
+        ];
+        let list = build_summary_badges(
+            BlueprintFamily::ShipComponent,
+            Some("Shield"),
+            Some("Shield Generator"),
+            None,
+            Some(2),
+            super::super::blueprint_family::SummaryBadgeContext {
+                grade: Some("B"),
+                class_code: Some("indu"),
+                manufacturer_name: None,
+            },
+        );
+        let detail = build_catalog_badges(
+            BlueprintFamily::ShipComponent,
+            Some("Shield"),
+            Some("Shield Generator"),
+            None,
+            Some(2),
+            &rows,
+        );
+        for badge in &list {
+            assert!(
+                detail.iter().any(|d| d.kind == badge.kind && d.label == badge.label),
+                "badge liste {} / {} absent du détail",
+                badge.kind,
+                badge.label
+            );
+        }
+    }
 }

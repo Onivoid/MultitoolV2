@@ -10,6 +10,7 @@ const OWNED_FILTER_OPTIONS: { value: BlueprintOwnedFilter; label: string }[] = [
   { value: "all", label: "Tous les blueprints" },
   { value: "owned", label: "Débloqués (journal)" },
   { value: "not_owned", label: "Non débloqués" },
+  { value: "wishlist", label: "Wishlist" },
 ];
 
 export interface BlueprintsCatalogToolbarProps {

@@ -46,6 +46,7 @@ import type { BlueprintOwnedFilter } from "@/features/blueprints/blueprints.cata
 import { useBlueprints } from "@/features/blueprints/useBlueprints";
 import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
 import { useBlueprintsCatalog } from "@/features/blueprints/useBlueprintsCatalog";
+import { useBlueprintWishlist } from "@/features/blueprints/hooks/useBlueprintWishlist";
 import { cn } from "@/lib/utils";
 
 export default function BlueprintsPage() {
@@ -69,6 +70,7 @@ export default function BlueprintsPage() {
   const uniqueOwners = useMemo(() => getUniqueOwners(vm.blueprints), [vm.blueprints]);
 
   const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set());
+  const { wishlistIds, toggleWishlist, isWishlisted } = useBlueprintWishlist(ownedIds);
   const [unlockDates, setUnlockDates] = useState<Map<string, number>>(new Map());
   const [matchStats, setMatchStats] = useState<{
     journalProducts: number;
@@ -157,12 +159,14 @@ export default function BlueprintsPage() {
       ownedIds,
       missionFilter?.blueprintIds ?? null,
       unlockDates,
+      wishlistIds,
     );
   }, [
     catalogVm.catalog,
     catalogSearch,
     ownedFilter,
     ownedIds,
+    wishlistIds,
     unlockDates,
     filterState,
     missionFilter,
@@ -338,6 +342,8 @@ export default function BlueprintsPage() {
                       item={item}
                       selected={catalogVm.selectedBlueprintId === item.blueprintId}
                       isOwned={ownedIds.has(item.blueprintId)}
+                      isWishlisted={isWishlisted(item.blueprintId)}
+                      onToggleWishlist={() => void toggleWishlist(item.blueprintId)}
                       unlockedAt={unlockDates.get(item.blueprintId)}
                       filterState={filterState}
                       onSelect={() => catalogVm.selectBlueprint(item.blueprintId)}
@@ -361,6 +367,16 @@ export default function BlueprintsPage() {
                 catalogVm.selectedBlueprintId != null &&
                 ownedIds.has(catalogVm.selectedBlueprintId)
               }
+              isWishlisted={
+                catalogVm.selectedBlueprintId != null &&
+                isWishlisted(catalogVm.selectedBlueprintId)
+              }
+              onToggleWishlist={
+                catalogVm.selectedBlueprintId
+                  ? () => void toggleWishlist(catalogVm.selectedBlueprintId!)
+                  : undefined
+              }
+              ownedIds={ownedIds}
               unlockDate={
                 catalogVm.selectedBlueprintId != null
                   ? (unlockDates.get(catalogVm.selectedBlueprintId) ?? null)

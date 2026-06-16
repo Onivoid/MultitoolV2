@@ -48,6 +48,9 @@ pub fn classify_output_type(output_type: Option<&str>) -> BlueprintFamily {
     if t == "DockingCollar" {
         return BlueprintFamily::Refuel;
     }
+    if t == "Misc" {
+        return BlueprintFamily::Other;
+    }
     if matches!(
         t,
         "PowerPlant"
@@ -169,6 +172,9 @@ pub fn build_catalog_badges(
             }
         }
         BlueprintFamily::ShipComponent => {
+            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
+                push(&mut out, "type", label, "output_type");
+            }
             if let Some(grade) = desc_value(description_data, "Grade") {
                 push(&mut out, "grade", grade, "grade");
             }
@@ -215,6 +221,25 @@ pub fn build_catalog_badges(
     out
 }
 
+/// Champs déjà résolus dans `summary_from_wiki` (sans `description_data` item).
+#[derive(Clone, Copy, Default)]
+pub struct SummaryBadgeContext<'a> {
+    pub grade: Option<&'a str>,
+    pub class_code: Option<&'a str>,
+    pub manufacturer_name: Option<&'a str>,
+}
+
+fn class_code_display_label(code: &str) -> Option<&'static str> {
+    match code.trim().to_ascii_lowercase().as_str() {
+        "civi" => Some("Civilian"),
+        "mili" => Some("Military"),
+        "indu" => Some("Industrial"),
+        "stlh" => Some("Stealth"),
+        "comp" => Some("Competition"),
+        _ => None,
+    }
+}
+
 /// Badges catalogue légers (sans appel item) pour la liste.
 pub fn build_summary_badges(
     family: BlueprintFamily,
@@ -222,8 +247,79 @@ pub fn build_summary_badges(
     output_type_label: Option<&str>,
     sub_type: Option<&str>,
     size: Option<u64>,
+    ctx: SummaryBadgeContext<'_>,
 ) -> Vec<CatalogBadge> {
-    build_catalog_badges(family, output_type, output_type_label, sub_type, size, &[])
+    let mut out = Vec::new();
+    let push = |out: &mut Vec<CatalogBadge>, key: &str, label: &str, kind: &str| {
+        if label.trim().is_empty() {
+            return;
+        }
+        out.push(CatalogBadge {
+            key: key.to_string(),
+            label: label.to_string(),
+            kind: kind.to_string(),
+        });
+    };
+
+    match family {
+        BlueprintFamily::Armor => {
+            if let Some(slot) = output_type.and_then(armor_slot_label) {
+                push(&mut out, "slot", slot, "slot");
+            }
+            if let Some(st) = is_useful_sub_type(sub_type) {
+                push(&mut out, "armor-class", &st, "armor_class");
+            }
+        }
+        BlueprintFamily::FpsWeapon => {
+            if let Some(sz) = size_label(&[], size) {
+                push(&mut out, "size", &sz, "size");
+            }
+        }
+        BlueprintFamily::ShipComponent => {
+            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
+                push(&mut out, "type", label, "output_type");
+            }
+            if let Some(grade) = ctx.grade {
+                push(&mut out, "grade", grade, "grade");
+            }
+            if let Some(sz) = size_label(&[], size) {
+                push(&mut out, "size", &sz, "size");
+            }
+            if let Some(code) = ctx.class_code.and_then(class_code_display_label) {
+                push(&mut out, "class", code, "component_class");
+            }
+            if let Some(mfg) = ctx.manufacturer_name.filter(|s| !s.is_empty()) {
+                push(&mut out, "mfg", mfg, "manufacturer");
+            }
+        }
+        BlueprintFamily::ShipWeapon => {
+            if let Some(sz) = size_label(&[], size) {
+                push(&mut out, "size", &sz, "size");
+            }
+            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
+                push(&mut out, "type", label, "output_type");
+            }
+        }
+        BlueprintFamily::Mining => {
+            if let Some(sz) = size_label(&[], size) {
+                push(&mut out, "size", &sz, "size");
+            }
+            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
+                push(&mut out, "type", label, "output_type");
+            }
+        }
+        BlueprintFamily::Refuel => {
+            if let Some(mfg) = ctx.manufacturer_name.filter(|s| !s.is_empty()) {
+                push(&mut out, "mfg", mfg, "manufacturer");
+            }
+        }
+        BlueprintFamily::Other => {
+            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
+                push(&mut out, "type", label, "output_type");
+            }
+        }
+    }
+    out
 }
 
 pub fn build_hero_stats(
@@ -267,7 +363,15 @@ fn size_label(
     size: Option<u64>,
 ) -> Option<String> {
     desc_value(description_data, "Size")
-        .map(|s| s.to_string())
+        .and_then(|s| {
+            if let Ok(n) = s.parse::<u64>() {
+                Some(format!("S{n}"))
+            } else if s.starts_with('S') || s.starts_with('s') {
+                Some(s.to_string())
+            } else {
+                Some(s.to_string())
+            }
+        })
         .or_else(|| size.map(|n| format!("S{n}")))
 }
 
@@ -287,6 +391,14 @@ fn armor_slot_label(output_type: &str) -> Option<&'static str> {
 mod tests {
     use super::*;
     use crate::scripts::blueprints_item_profile::DescriptionDataRow;
+
+    #[test]
+    fn classifies_misc_as_other() {
+        assert_eq!(
+            classify_output_type(Some("Misc")),
+            BlueprintFamily::Other
+        );
+    }
 
     #[test]
     fn classifies_armor_and_ship_component() {
@@ -321,5 +433,37 @@ mod tests {
             &rows,
         );
         assert!(badges.iter().any(|b| b.label == "A" && b.kind == "grade"));
+        assert!(badges.iter().any(|b| b.label == "Power Plant" && b.kind == "output_type"));
+    }
+
+    #[test]
+    fn ship_component_summary_badges_citadel_like() {
+        let badges = build_summary_badges(
+            BlueprintFamily::ShipComponent,
+            Some("Shield"),
+            Some("Shield Generator"),
+            None,
+            Some(2),
+            SummaryBadgeContext {
+                grade: Some("B"),
+                class_code: Some("indu"),
+                manufacturer_name: Some("Basilisk"),
+            },
+        );
+        let kinds: Vec<_> = badges.iter().map(|b| b.kind.as_str()).collect();
+        assert_eq!(
+            kinds,
+            vec![
+                "output_type",
+                "grade",
+                "size",
+                "component_class",
+                "manufacturer"
+            ]
+        );
+        assert!(badges.iter().any(|b| b.label == "Shield Generator"));
+        assert!(badges.iter().any(|b| b.label == "B"));
+        assert!(badges.iter().any(|b| b.label == "S2"));
+        assert!(badges.iter().any(|b| b.label == "Industrial"));
     }
 }

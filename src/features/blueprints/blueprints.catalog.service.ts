@@ -14,6 +14,7 @@ import type {
   BlueprintCatalogSummary,
   IngredientLocationPreview,
   MissionDetailResult,
+  WikiItemsFilters,
 } from "@/features/blueprints/blueprints.catalog.types";
 import {
   invalidateSessionCatalog,
@@ -80,6 +81,9 @@ export const blueprintsCatalogService = {
   filters: () =>
     invokeCommand<BlueprintCatalogFilters>(TAURI_COMMANDS.blueprintsCatalogFilters),
 
+  wikiItemsFilters: (category: string) =>
+    invokeCommand<WikiItemsFilters>(TAURI_COMMANDS.wikiItemsFilters, { category }),
+
   missionDetail: async (missionUuid: string, directUnlockBlueprintId?: string) => {
     const raw = await invokeCommand<MissionDetailResult>(
       TAURI_COMMANDS.blueprintsMissionDetail,
@@ -92,6 +96,18 @@ export const blueprintsCatalogService = {
       ...raw,
       starSystems: ensureStringArray(raw.starSystems),
       jurisdictions: ensureStringArray(raw.jurisdictions),
+      shareable: typeof raw.shareable === "boolean" ? raw.shareable : null,
+      rankIndex: typeof raw.rankIndex === "number" ? raw.rankIndex : null,
+      minStandingName: raw.minStandingName ?? null,
+      minStandingReputation:
+        typeof raw.minStandingReputation === "number"
+          ? raw.minStandingReputation
+          : null,
+      missionType: raw.missionType ?? null,
+      timeToCompleteMinutes:
+        typeof raw.timeToCompleteMinutes === "number"
+          ? raw.timeToCompleteMinutes
+          : null,
       blueprintRewards: raw.blueprintRewards ?? [],
     };
   },

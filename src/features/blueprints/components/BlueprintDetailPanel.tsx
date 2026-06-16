@@ -20,8 +20,11 @@ export interface BlueprintDetailPanelProps {
   isLoading: boolean;
   error: string | null;
   isOwned: boolean;
+  isWishlisted?: boolean;
+  onToggleWishlist?: () => void;
   selectedId: string | null;
   unlockDate?: number | null;
+  ownedIds?: Set<string>;
   onFilterByResource?: (ids: string[], label: string) => void;
   onFilterMission?: (
     missionUuid: string,
@@ -40,8 +43,11 @@ export function BlueprintDetailPanel({
   isLoading,
   error,
   isOwned,
+  isWishlisted,
+  onToggleWishlist,
   selectedId,
   unlockDate,
+  ownedIds,
   onFilterByResource,
   onFilterMission,
   onSelectBlueprint,
@@ -115,10 +121,17 @@ export function BlueprintDetailPanel({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3 pb-2 space-y-3">
-        <BlueprintHeroCard detail={detail} isOwned={isOwned} unlockDate={unlockDate} />
+        <BlueprintHeroCard
+          detail={detail}
+          isOwned={isOwned}
+          isWishlisted={isWishlisted}
+          onToggleWishlist={onToggleWishlist}
+          unlockDate={unlockDate}
+        />
         <BlueprintDetailTabs
           detail={detail}
           selectedId={selectedId}
+          ownedIds={ownedIds}
           qualityBySlot={qualityBySlot}
           onQualityChange={(slotKey, value) =>
             setQualityBySlot((prev) => ({ ...prev, [slotKey]: value }))

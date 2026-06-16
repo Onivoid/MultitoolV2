@@ -132,6 +132,46 @@ describe("applyCatalogFilters", () => {
     expect(out[0].blueprintId).toBe("bp_craft_test_a");
   });
 
+  it("filters by contractor and mission type", () => {
+    const catalog: BlueprintCatalogSummary[] = [
+      {
+        ...sample[0],
+        blueprintId: "bp_a",
+        unlockContractors: ["Foxwell"],
+        unlockMissionTypes: ["Cargo"],
+        unlockLawful: [true],
+      },
+      {
+        ...sample[1],
+        blueprintId: "bp_b",
+        unlockContractors: ["Wikelo"],
+        unlockMissionTypes: ["Mercenary"],
+        unlockLawful: [false],
+      },
+    ];
+    const byContractor = applyCatalogFilters(
+      catalog,
+      { ...DEFAULT_CATALOG_FILTER_STATE, contractors: ["Foxwell"] },
+      new Set(),
+    );
+    expect(byContractor).toHaveLength(1);
+    expect(byContractor[0].blueprintId).toBe("bp_a");
+
+    const byType = applyCatalogFilters(
+      catalog,
+      { ...DEFAULT_CATALOG_FILTER_STATE, missionTypes: ["Mercenary"] },
+      new Set(),
+    );
+    expect(byType[0].blueprintId).toBe("bp_b");
+
+    const byLegal = applyCatalogFilters(
+      catalog,
+      { ...DEFAULT_CATALOG_FILTER_STATE, lawful: "illegal" },
+      new Set(),
+    );
+    expect(byLegal[0].blueprintId).toBe("bp_b");
+  });
+
   it("filters by star system", () => {
     const state = {
       ...DEFAULT_CATALOG_FILTER_STATE,

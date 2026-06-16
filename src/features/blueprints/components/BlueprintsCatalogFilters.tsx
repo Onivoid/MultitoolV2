@@ -1,5 +1,5 @@
 import { SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 import { BlueprintFilterSelect } from "@/features/blueprints/components/BlueprintFilterSelect";
 import {
   CLASS_LABEL_FR,
+  filterValueToString,
   type CatalogSummaryFacets,
 } from "@/features/blueprints/blueprints.catalog.lib";
 import {
@@ -23,9 +24,11 @@ import type {
   BlueprintCatalogFilters,
   BlueprintClassCode,
   CatalogSortKey,
+  WikiItemsFilters,
 } from "@/features/blueprints/blueprints.catalog.types";
-import { filterValueToString } from "@/features/blueprints/blueprints.catalog.lib";
+import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
 import type { BlueprintFamily } from "@/features/blueprints/blueprints.taxonomy";
+import { wikiItemsCategoryForFamily } from "@/features/blueprints/blueprints.taxonomy";
 import { bpFilterChip } from "@/features/blueprints/blueprints.ui";
 import { cn } from "@/lib/utils";
 
@@ -109,30 +112,46 @@ function ActiveFilterChip({ label, onClear }: { label: string; onClear: () => vo
   );
 }
 
+function familyShowsOutputTypeLabels(family: BlueprintFamily | "all"): boolean {
+  return family === "ship_component";
+}
+
 function AdvancedFiltersBody({
   state,
   onChange,
   facets,
   summaryFacets,
+  wikiItemsFilters,
   resourceSelectOptions,
   toggleOutputType,
+  toggleOutputTypeLabel,
   toggleClass,
   toggleSize,
   toggleGrade,
   toggleManufacturer,
   toggleIdToken,
+  toggleStarSystem,
+  toggleJurisdiction,
+  toggleContractor,
+  toggleMissionType,
 }: {
   state: BlueprintCatalogFilterState;
   onChange: (s: BlueprintCatalogFilterState) => void;
   facets: BlueprintCatalogFilters | null;
   summaryFacets: CatalogSummaryFacets | null;
+  wikiItemsFilters: WikiItemsFilters | null;
   resourceSelectOptions: { value: string; label: string }[];
   toggleOutputType: (value: string) => void;
+  toggleOutputTypeLabel: (label: string) => void;
   toggleClass: (code: BlueprintClassCode) => void;
   toggleSize: (n: number) => void;
   toggleGrade: (letter: string) => void;
   toggleManufacturer: (code: string) => void;
   toggleIdToken: (token: string) => void;
+  toggleStarSystem: (name: string) => void;
+  toggleJurisdiction: (name: string) => void;
+  toggleContractor: (name: string) => void;
+  toggleMissionType: (name: string) => void;
 }) {
   const family = state.family;
   const armorOutputTypes =
@@ -254,9 +273,14 @@ function AdvancedFiltersBody({
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">
             Type d&apos;objet
+            {wikiItemsFilters && (
+              <span className="ml-1 normal-case text-muted-foreground/80">
+                (réf. Wiki : {wikiItemsFilters.type.length} types)
+              </span>
+            )}
           </p>
-          <div className="flex flex-wrap gap-1">
-            {facets.outputType.slice(0, 12).map((f) => {
+          <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            {facets.outputType.map((f) => {
               const val = filterValueToString(f.value);
               const activeType = state.outputTypes.includes(val);
               return (
@@ -273,6 +297,26 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
+      {familyShowsOutputTypeLabels(family) &&
+        (summaryFacets?.outputTypeLabels.length ?? 0) > 0 && (
+          <div>
+            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+              Type affiché
+            </p>
+            <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+              {summaryFacets!.outputTypeLabels.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => toggleOutputTypeLabel(String(f.value))}
+                  className={bpFilterChip(state.outputTypeLabels.includes(String(f.value)))}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       {familyShowsGrade(family) && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Grade</p>
@@ -330,16 +374,32 @@ function AdvancedFiltersBody({
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Classe</p>
           <div className="flex flex-wrap gap-1">
-            {CLASS_OPTIONS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => toggleClass(c)}
-                className={bpFilterChip(state.classCodes.includes(c))}
-              >
-                {CLASS_LABEL_FR[c]}
-              </button>
-            ))}
+            {CLASS_OPTIONS.map((c) => {
+              const facet = summaryFacets?.classCodes.find((f) => f.value === c);
+              const count = facet?.count ?? 0;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleClass(c)}
+                  disabled={summaryFacets != null && count === 0}
+                  className={cn(
+                    bpFilterChip(state.classCodes.includes(c)),
+                    summaryFacets != null && count === 0 && "opacity-40",
+                  )}
+                  title={
+                    summaryFacets != null && count === 0
+                      ? "Aucun blueprint avec cette classe dans le catalogue"
+                      : undefined
+                  }
+                >
+                  {CLASS_LABEL_FR[c]}
+                  {summaryFacets != null && count > 0 && (
+                    <span className="ml-0.5 tabular-nums opacity-80">({count})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -381,6 +441,88 @@ function AdvancedFiltersBody({
           />
         </div>
       )}
+      {(summaryFacets?.starSystems.length ?? 0) > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Système</p>
+          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            {summaryFacets!.starSystems.map((f) => (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => toggleStarSystem(String(f.value))}
+                className={bpFilterChip(state.starSystems.includes(String(f.value)))}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {(summaryFacets?.jurisdictions.length ?? 0) > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Statut UEE</p>
+          <div className="flex flex-wrap gap-1">
+            {summaryFacets!.jurisdictions.map((f) => (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => toggleJurisdiction(String(f.value))}
+                className={bpFilterChip(state.jurisdictions.includes(String(f.value)))}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div>
+        <p className="mb-1 text-[10px] uppercase text-muted-foreground">Légalité mission</p>
+        <BlueprintFilterSelect
+          value={state.lawful}
+          onValueChange={(v) =>
+            onChange({ ...state, lawful: v as "all" | "legal" | "illegal" })
+          }
+          options={[
+            { value: "all", label: "Toutes" },
+            { value: "legal", label: "Légal" },
+            { value: "illegal", label: "Illégal" },
+          ]}
+        />
+      </div>
+      {(summaryFacets?.contractors.length ?? 0) > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Contractor</p>
+          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            {summaryFacets!.contractors.map((f) => (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => toggleContractor(String(f.value))}
+                className={bpFilterChip(state.contractors.includes(String(f.value)))}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {(summaryFacets?.missionTypes.length ?? 0) > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Type de mission</p>
+          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            {summaryFacets!.missionTypes.map((f) => (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => toggleMissionType(String(f.value))}
+                className={bpFilterChip(state.missionTypes.includes(String(f.value)))}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <Button
         type="button"
         variant="ghost"
@@ -412,7 +554,32 @@ export function BlueprintsCatalogFilters({
   onClearMissionFilter,
 }: BlueprintsCatalogFiltersProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [wikiItemsFilters, setWikiItemsFilters] = useState<WikiItemsFilters | null>(null);
   const active = countActiveFilters(state);
+
+  const itemsFilterCategory = useMemo(() => {
+    if (state.family === "all") return null;
+    return wikiItemsCategoryForFamily(state.family);
+  }, [state.family]);
+
+  useEffect(() => {
+    if (!itemsFilterCategory) {
+      setWikiItemsFilters(null);
+      return;
+    }
+    let cancelled = false;
+    void blueprintsCatalogService
+      .wikiItemsFilters(itemsFilterCategory)
+      .then((data) => {
+        if (!cancelled) setWikiItemsFilters(data);
+      })
+      .catch(() => {
+        if (!cancelled) setWikiItemsFilters(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [itemsFilterCategory]);
 
   const resourceSelectOptions = useMemo(() => {
     if (!facets) return [];
@@ -440,6 +607,13 @@ export function BlueprintsCatalogFilters({
     if (set.has(value)) set.delete(value);
     else set.add(value);
     onChange({ ...state, outputTypes: [...set] });
+  };
+
+  const toggleOutputTypeLabel = (label: string) => {
+    const set = new Set(state.outputTypeLabels);
+    if (set.has(label)) set.delete(label);
+    else set.add(label);
+    onChange({ ...state, outputTypeLabels: [...set].sort() });
   };
 
   const toggleClass = (code: BlueprintClassCode) => {
@@ -479,18 +653,52 @@ export function BlueprintsCatalogFilters({
     onChange({ ...state, idTokens: [...set] });
   };
 
+  const toggleStarSystem = (name: string) => {
+    const set = new Set(state.starSystems);
+    if (set.has(name)) set.delete(name);
+    else set.add(name);
+    onChange({ ...state, starSystems: [...set].sort() });
+  };
+
+  const toggleJurisdiction = (name: string) => {
+    const set = new Set(state.jurisdictions);
+    if (set.has(name)) set.delete(name);
+    else set.add(name);
+    onChange({ ...state, jurisdictions: [...set].sort() });
+  };
+
+  const toggleContractor = (name: string) => {
+    const set = new Set(state.contractors);
+    if (set.has(name)) set.delete(name);
+    else set.add(name);
+    onChange({ ...state, contractors: [...set].sort() });
+  };
+
+  const toggleMissionType = (name: string) => {
+    const set = new Set(state.missionTypes);
+    if (set.has(name)) set.delete(name);
+    else set.add(name);
+    onChange({ ...state, missionTypes: [...set].sort() });
+  };
+
   const panelProps = {
     state,
     onChange,
     facets,
     summaryFacets,
+    wikiItemsFilters,
     resourceSelectOptions,
     toggleOutputType,
+    toggleOutputTypeLabel,
     toggleClass,
     toggleSize,
     toggleGrade,
     toggleManufacturer,
     toggleIdToken,
+    toggleStarSystem,
+    toggleJurisdiction,
+    toggleContractor,
+    toggleMissionType,
   };
 
   return (

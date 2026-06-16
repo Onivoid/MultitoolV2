@@ -68,4 +68,34 @@ describe("catalogRowBadges", () => {
     });
     expect(badges.map((b) => b.label)).toContain("Helmet (Armor)");
   });
+
+  it("badges Citadel-like : shield, grade B, industrial, S2", () => {
+    const badges = catalogRowBadges({
+      ...base,
+      blueprintId: "bp_craft_shld_basl_citadel_01_s2",
+      nameEn: "Citadel",
+      outputType: "Shield",
+      family: "ship_component",
+      classCode: "indu",
+      grade: "B",
+      size: 2,
+      outputTypeLabel: "Shield Generator",
+      summaryBadges: [
+        { key: "type", label: "Shield Generator", kind: "output_type" },
+        { key: "grade", label: "B", kind: "grade" },
+        { key: "size", label: "S2", kind: "size" },
+        { key: "class", label: "Industrial", kind: "component_class" },
+        { key: "mfg", label: "Basilisk", kind: "manufacturer" },
+      ],
+    });
+    const labels = badges.map((b) => b.label);
+    expect(labels).toContain("Shield Generator");
+    expect(labels).toContain("B");
+    expect(labels).toContain("S2");
+    expect(labels).toContain("Industrial");
+    const industrial = badges.find((b) => b.label === "Industrial");
+    expect(industrial?.filter).toEqual({ type: "class", code: "indu" });
+    const grade = badges.find((b) => b.label === "B");
+    expect(grade?.filter).toEqual({ type: "grade", letter: "B" });
+  });
 });
