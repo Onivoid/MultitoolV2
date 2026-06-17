@@ -17,6 +17,10 @@ import {
   classifyBlueprintFamily,
   type BlueprintFamily,
 } from "@/features/blueprints/blueprints.taxonomy";
+import {
+  isUsefulOutputTypeLabel,
+  isUsefulSubTypeLabel,
+} from "@/features/blueprints/blueprints.taxonomy.reference";
 
 export function formatCraftDuration(totalSeconds: number | null | undefined): string {
   if (totalSeconds == null) return "—";
@@ -567,9 +571,7 @@ export function normalizeCatalogSummary(
     unlockJurisdictions: ensureStringArray(
       b.unlockJurisdictions ?? raw.unlock_jurisdictions,
     ),
-    unlockContractors: ensureStringArray(
-      b.unlockContractors ?? raw.unlock_contractors,
-    ),
+    unlockContractors: ensureStringArray(b.unlockContractors ?? raw.unlock_contractors),
     unlockMissionTypes: ensureStringArray(
       b.unlockMissionTypes ?? raw.unlock_mission_types,
     ),
@@ -644,11 +646,6 @@ function normalizeItemProfile(raw: unknown): BlueprintItemProfile | null {
     ),
     itemTypeLabel: nullIfEmptyString(p.itemTypeLabel ?? p.item_type_label),
   };
-}
-
-function isUsefulSubType(subType: string): boolean {
-  const l = subType.trim().toLowerCase();
-  return l.length > 1 && !["default", "standard", "none", "normal"].includes(l);
 }
 
 export interface CatalogRowBadge {
@@ -760,17 +757,18 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
 
   const family = summary.family ?? classifyBlueprintFamily(summary.outputType);
   const out: CatalogRowBadge[] = [];
-  if (summary.outputTypeLabel) {
+  if (summary.outputTypeLabel && isUsefulOutputTypeLabel(summary.outputTypeLabel)) {
+    const label = outputTypeLabelEn(summary.outputTypeLabel) ?? summary.outputTypeLabel;
     out.push({
       key: `family-${family}`,
-      label: summary.outputTypeLabel,
+      label,
       kind: "category",
       filter: summary.outputType
         ? { type: "outputType", value: summary.outputType }
         : null,
     });
   }
-  if (summary.subType && isUsefulSubType(summary.subType)) {
+  if (family === "armor" && summary.subType && isUsefulSubTypeLabel(summary.subType)) {
     out.push({
       key: `subtype-${summary.subType}`,
       label: summary.subType,

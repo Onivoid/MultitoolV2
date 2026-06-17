@@ -28,33 +28,6 @@ export function formatJournalBlueprintName(
   return entry.productName.trim();
 }
 
-/** @deprecated Préférer `resolveOwnedBlueprintIds` (matching Rust + global.ini). */
-export function matchProductName(
-  productName: string,
-  catalog: BlueprintCatalogSummary[],
-): string | null {
-  const target = normalizeBlueprintName(productName);
-  if (!target) return null;
-
-  for (const b of catalog) {
-    if (
-      normalizeBlueprintName(b.nameFr) === target ||
-      normalizeBlueprintName(b.nameEn) === target
-    ) {
-      return b.blueprintId;
-    }
-  }
-
-  for (const b of catalog) {
-    const fr = normalizeBlueprintName(b.nameFr);
-    const en = normalizeBlueprintName(b.nameEn);
-    if (fr && (fr.includes(target) || target.includes(fr))) return b.blueprintId;
-    if (en && (en.includes(target) || target.includes(en))) return b.blueprintId;
-  }
-
-  return null;
-}
-
 function filterJournalEntries(
   entries: BlueprintEntry[],
   ownerFilter?: string,
@@ -90,7 +63,7 @@ function resolveProductToBlueprintId(
 
 /**
  * Résout les schémas du journal vers des `blueprintId` via le moteur Rust
- * (alias catalogue + index global.ini + tokens), avec IDs déjà persistés.
+ * (alias catalogue + index global.ini), avec IDs déjà persistés.
  */
 /** Plusieurs noms journal pointent vers le même `bp_craft_*` (souvent matching incorrect). */
 export interface JournalAmbiguousLink {
@@ -172,14 +145,20 @@ export async function resolveOwnedBlueprints(
   if (uniqueNames.length > 0) {
     const result = await blueprintsCatalogService.matchProducts(uniqueNames);
     matchMap = result.matches;
+    const ambiguousSet = new Set(result.ambiguous ?? []);
     if (options?.persistMatches !== false && Object.keys(matchMap).length > 0) {
-      try {
-        persistedEntryCount = await blueprintsService.saveCatalogMatches(
-          matchMap,
-          true,
-        );
-      } catch {
-        /* persistance best-effort */
+      const toPersist = Object.fromEntries(
+        Object.entries(matchMap).filter(([name]) => !ambiguousSet.has(name)),
+      );
+      if (Object.keys(toPersist).length > 0) {
+        try {
+          persistedEntryCount = await blueprintsService.saveCatalogMatches(
+            toPersist,
+            true,
+          );
+        } catch {
+          /* persistance best-effort */
+        }
       }
     }
   }
@@ -250,7 +229,10 @@ export async function buildOwnedUnlockDates(
   let matchMap: Record<string, string> = {};
   if (names.length > 0) {
     const result = await blueprintsCatalogService.matchProducts(names);
-    matchMap = result.matches;
+    const ambiguousSet = new Set(result.ambiguous ?? []);
+    matchMap = Object.fromEntries(
+      Object.entries(result.matches).filter(([name]) => !ambiguousSet.has(name)),
+    );
     if (Object.keys(matchMap).length > 0) {
       try {
         await blueprintsService.saveCatalogMatches(matchMap, true);

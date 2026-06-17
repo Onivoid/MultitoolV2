@@ -309,7 +309,9 @@ function AdvancedFiltersBody({
                   key={f.value}
                   type="button"
                   onClick={() => toggleOutputTypeLabel(String(f.value))}
-                  className={bpFilterChip(state.outputTypeLabels.includes(String(f.value)))}
+                  className={bpFilterChip(
+                    state.outputTypeLabels.includes(String(f.value)),
+                  )}
                 >
                   {f.label} ({f.count})
                 </button>
@@ -476,7 +478,9 @@ function AdvancedFiltersBody({
         </div>
       )}
       <div>
-        <p className="mb-1 text-[10px] uppercase text-muted-foreground">Légalité mission</p>
+        <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+          Légalité mission
+        </p>
         <BlueprintFilterSelect
           value={state.lawful}
           onValueChange={(v) =>
@@ -508,7 +512,9 @@ function AdvancedFiltersBody({
       )}
       {(summaryFacets?.missionTypes.length ?? 0) > 0 && (
         <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Type de mission</p>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+            Type de mission
+          </p>
           <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
             {summaryFacets!.missionTypes.map((f) => (
               <button
@@ -554,7 +560,9 @@ export function BlueprintsCatalogFilters({
   onClearMissionFilter,
 }: BlueprintsCatalogFiltersProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [wikiItemsFilters, setWikiItemsFilters] = useState<WikiItemsFilters | null>(null);
+  const [wikiItemsFilters, setWikiItemsFilters] = useState<WikiItemsFilters | null>(
+    null,
+  );
   const active = countActiveFilters(state);
 
   const itemsFilterCategory = useMemo(() => {

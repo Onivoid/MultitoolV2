@@ -65,6 +65,7 @@ export const blueprintsCatalogService = {
   matchProducts: (productNames: string[]) =>
     invokeCommand<{
       matches: Record<string, string>;
+      ambiguous: string[];
       matchedCount: number;
       requestedCount: number;
     }>(TAURI_COMMANDS.blueprintsCatalogMatchProducts, { productNames }),

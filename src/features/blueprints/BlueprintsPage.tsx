@@ -2,12 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PageMotion from "@/shared/components/PageMotion";
 import { DOCK_SAFE_PADDING, PAGE_CENTER } from "@/shared/components/pageStyles";
 import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
@@ -58,6 +53,12 @@ export default function BlueprintsPage() {
   const [filterState, setFilterState] = useState<BlueprintCatalogFilterState>(
     DEFAULT_CATALOG_FILTER_STATE,
   );
+
+  useEffect(() => {
+    if (filterState.family === "other") {
+      setFilterState((s) => ({ ...s, family: "all" }));
+    }
+  }, [filterState.family]);
   const [missionFilter, setMissionFilter] = useState<{
     uuid: string;
     title: string;

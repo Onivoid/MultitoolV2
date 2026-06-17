@@ -143,7 +143,10 @@ export function MissionExplorerBody({
               >
                 <p className="text-sm font-semibold leading-snug">
                   {owned && (
-                    <Check className="mr-1 inline h-3.5 w-3.5 text-primary" aria-hidden />
+                    <Check
+                      className="mr-1 inline h-3.5 w-3.5 text-primary"
+                      aria-hidden
+                    />
                   )}
                   {bp.nameFr || bp.nameEn}
                   {bp.isDirectUnlock && (

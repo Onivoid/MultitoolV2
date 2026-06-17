@@ -350,11 +350,8 @@ fn summary_needs_item_meta(summary: &BlueprintSummary) -> bool {
     if summary.family.as_deref() != Some("ship_component") {
         return false;
     }
-    let has_grade = summary.grade.is_some()
-        || summary
-            .summary_badges
-            .iter()
-            .any(|b| b.kind == "grade");
+    let has_grade =
+        summary.grade.is_some() || summary.summary_badges.iter().any(|b| b.kind == "grade");
     let has_class = summary.class_code.is_some()
         || summary
             .summary_badges
@@ -529,7 +526,9 @@ mod item_meta_tests {
         );
         for badge in &list {
             assert!(
-                detail.iter().any(|d| d.kind == badge.kind && d.label == badge.label),
+                detail
+                    .iter()
+                    .any(|d| d.kind == badge.kind && d.label == badge.label),
                 "badge liste {} / {} absent du détail",
                 badge.kind,
                 badge.label

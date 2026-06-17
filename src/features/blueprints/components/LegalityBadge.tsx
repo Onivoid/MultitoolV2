@@ -19,7 +19,10 @@ export function LegalityBadge({ lawful, illegal, className }: LegalityBadgeProps
     <BlueprintMetaBadge
       variant="jurisdiction"
       icon={Scale}
-      className={cn(legalityBadgeClass(lawful ?? (illegal != null ? !illegal : null)), className)}
+      className={cn(
+        legalityBadgeClass(lawful ?? (illegal != null ? !illegal : null)),
+        className,
+      )}
     >
       {label}
     </BlueprintMetaBadge>

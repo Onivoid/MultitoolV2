@@ -29,7 +29,10 @@ fn load_wishlist<R: Runtime>(resolver: &PathResolver<R>) -> Result<WishlistFile,
     serde_json::from_slice(&bytes).map_err(|e| e.to_string())
 }
 
-fn save_wishlist<R: Runtime>(resolver: &PathResolver<R>, file: &WishlistFile) -> Result<(), String> {
+fn save_wishlist<R: Runtime>(
+    resolver: &PathResolver<R>,
+    file: &WishlistFile,
+) -> Result<(), String> {
     let path = wishlist_path(resolver)?;
     let bytes = serde_json::to_vec_pretty(file).map_err(|e| e.to_string())?;
     fs::write(path, bytes).map_err(|e| e.to_string())
@@ -42,7 +45,10 @@ pub fn blueprint_wishlist_get(app: AppHandle) -> Result<Vec<String>, String> {
 }
 
 #[command]
-pub fn blueprint_wishlist_toggle(app: AppHandle, blueprint_id: String) -> Result<Vec<String>, String> {
+pub fn blueprint_wishlist_toggle(
+    app: AppHandle,
+    blueprint_id: String,
+) -> Result<Vec<String>, String> {
     let id = blueprint_id.trim().to_ascii_lowercase();
     if id.is_empty() {
         return Err("ID blueprint invalide".to_string());

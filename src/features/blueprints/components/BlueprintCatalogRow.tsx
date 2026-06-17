@@ -92,7 +92,9 @@ export function BlueprintCatalogRow({
           <button
             type="button"
             className="mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            aria-label={isWishlisted ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
+            aria-label={
+              isWishlisted ? "Retirer de la wishlist" : "Ajouter à la wishlist"
+            }
             aria-pressed={isWishlisted}
             onClick={(e) => {
               e.stopPropagation();
@@ -156,7 +158,9 @@ export function BlueprintCatalogRow({
               })}
             </div>
           )}
-          {(systems.length > 0 || (item.unlockJurisdictions?.length ?? 0) > 0 || classCode) && (
+          {(systems.length > 0 ||
+            (item.unlockJurisdictions?.length ?? 0) > 0 ||
+            classCode) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {systems.map((s) => (
                 <SystemBadge key={s} name={s} />

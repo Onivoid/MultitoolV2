@@ -359,10 +359,7 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
             .get("min_standing")
             .and_then(|m| m.get("min_reputation"))
             .and_then(|v| v.as_i64())
-            .or_else(|| {
-                data.get("min_standing_reputation")
-                    .and_then(|v| v.as_i64())
-            }),
+            .or_else(|| data.get("min_standing_reputation").and_then(|v| v.as_i64())),
         mission_type: data
             .get("mission_type")
             .and_then(|v| v.as_str())
@@ -855,10 +852,7 @@ pub async fn fetch_mission_detail(
         rank_index: cached.rank_index,
         min_standing_name: cached.min_standing_name,
         min_standing_reputation: cached.min_standing_reputation,
-        mission_type: cached
-            .reward_scope
-            .clone()
-            .or(cached.mission_type.clone()),
+        mission_type: cached.reward_scope.clone().or(cached.mission_type.clone()),
         time_to_complete_minutes: cached.time_to_complete_minutes,
         blueprint_rewards,
     })

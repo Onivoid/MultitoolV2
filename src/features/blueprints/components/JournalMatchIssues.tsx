@@ -38,9 +38,12 @@ export function JournalMatchIssuesBanner({
 
   const parts: string[] = [];
   if (hasUnmatched) parts.push(`${unmatchedProductNames.length} sans ID`);
-  if (surplusNames > 0) parts.push(`${surplusNames} doublon${surplusNames > 1 ? "s" : ""}`);
+  if (surplusNames > 0)
+    parts.push(`${surplusNames} doublon${surplusNames > 1 ? "s" : ""}`);
   if (hasAmbiguous)
-    parts.push(`${ambiguousLinks.length} ID ambigu${ambiguousLinks.length > 1 ? "s" : ""}`);
+    parts.push(
+      `${ambiguousLinks.length} ID ambigu${ambiguousLinks.length > 1 ? "s" : ""}`,
+    );
 
   return (
     <div
@@ -103,8 +106,8 @@ export function JournalMatchIssues({
         Les noms du Game.log peuvent être en{" "}
         <strong className="text-foreground/90">français</strong> (jeu traduit) ou en{" "}
         <strong className="text-foreground/90">anglais</strong> (jeu non traduit) : les
-        deux passent par PolyTool (<code className="text-[10px]">global.ini</code> FR/EN)
-        puis le catalogue Wiki.
+        deux passent par PolyTool (<code className="text-[10px]">global.ini</code>{" "}
+        FR/EN) puis le catalogue Wiki.
         {journalProductCount > 0 && uniqueBlueprintIdCount > 0 && (
           <>
             <br />
@@ -117,12 +120,12 @@ export function JournalMatchIssues({
             {surplusNames > 0 && (
               <>
                 {" "}
-                Écart de <strong className="text-amber-200">{surplusNames}</strong> : dans{" "}
-                <code className="text-[10px]">gamelog_blueprints.json</code>, plusieurs
-                noms FR partagent le même{" "}
+                Écart de <strong className="text-amber-200">{surplusNames}</strong> :
+                dans <code className="text-[10px]">gamelog_blueprints.json</code>,
+                plusieurs noms FR partagent le même{" "}
                 <code className="text-[10px]">catalogBlueprintId</code> (ancien matching
-                trop large). Rechargez la page : matching via PolyTool (FR → EN) puis noms
-                anglais du catalogue Wiki, avec réécriture des liaisons.
+                trop large). Rechargez la page : matching via PolyTool (FR → EN) puis
+                noms anglais du catalogue Wiki, avec réécriture des liaisons.
               </>
             )}
           </>
@@ -147,8 +150,8 @@ export function JournalMatchIssues({
         <div>
           <p className="mb-1 font-medium text-foreground/90">
             {ambiguousLinks.length} ID partagé
-            {ambiguousLinks.length > 1 ? "s" : ""} par plusieurs noms ({ambiguousNameCount}{" "}
-            entrées) — à vérifier :
+            {ambiguousLinks.length > 1 ? "s" : ""} par plusieurs noms (
+            {ambiguousNameCount} entrées) — à vérifier :
           </p>
           <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
             {ambiguousLinks.map((group) => (

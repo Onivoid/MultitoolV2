@@ -98,4 +98,26 @@ describe("catalogRowBadges", () => {
     const grade = badges.find((b) => b.label === "B");
     expect(grade?.filter).toEqual({ type: "grade", letter: "B" });
   });
+
+  it("n'affiche pas un outputTypeLabel générique (ex. Medium) en fallback", () => {
+    const badges = catalogRowBadges({
+      ...base,
+      summaryBadges: [],
+      outputType: "WeaponGun",
+      family: "ship_weapon",
+      outputTypeLabel: "Medium",
+    });
+    expect(badges.map((b) => b.label)).not.toContain("Medium");
+  });
+
+  it("n'affiche pas subType hors armure en fallback", () => {
+    const badges = catalogRowBadges({
+      ...base,
+      summaryBadges: [],
+      outputType: "WeaponGun",
+      family: "ship_weapon",
+      subType: "Gun",
+    });
+    expect(badges.map((b) => b.label)).not.toContain("Gun");
+  });
 });

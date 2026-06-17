@@ -67,7 +67,9 @@ export function BlueprintHeroCard({
             <button
               type="button"
               className="rounded p-1 text-muted-foreground hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              aria-label={isWishlisted ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
+              aria-label={
+                isWishlisted ? "Retirer de la wishlist" : "Ajouter à la wishlist"
+              }
               aria-pressed={isWishlisted}
               onClick={() => onToggleWishlist()}
               data-no-window-drag

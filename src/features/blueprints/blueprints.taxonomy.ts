@@ -9,6 +9,7 @@ export type BlueprintFamily =
   | "refuel"
   | "other";
 
+/** Familles affichées dans le rail (hors « Autre » — ces items restent sous Tous). */
 export const BLUEPRINT_FAMILIES: BlueprintFamily[] = [
   "armor",
   "fps_weapon",
@@ -16,7 +17,6 @@ export const BLUEPRINT_FAMILIES: BlueprintFamily[] = [
   "ship_weapon",
   "mining",
   "refuel",
-  "other",
 ];
 
 export const FAMILY_LABEL_FR: Record<BlueprintFamily, string> = {
@@ -67,13 +67,11 @@ export function resolveItemFamily(
   item: Pick<BlueprintCatalogSummary, "family" | "outputType" | "category">,
 ): BlueprintFamily {
   const raw = (item.family ?? "").trim() as BlueprintFamily;
-  if (BLUEPRINT_FAMILIES.includes(raw)) return raw;
+  if (raw === "other" || BLUEPRINT_FAMILIES.includes(raw)) return raw;
   return classifyBlueprintFamily(item.outputType ?? item.category);
 }
 
-export function wikiItemsCategoryForFamily(
-  family: BlueprintFamily,
-): string | null {
+export function wikiItemsCategoryForFamily(family: BlueprintFamily): string | null {
   switch (family) {
     case "ship_component":
       return "vehicle-components";

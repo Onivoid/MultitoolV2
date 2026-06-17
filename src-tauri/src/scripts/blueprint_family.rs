@@ -172,8 +172,8 @@ pub fn build_catalog_badges(
             }
         }
         BlueprintFamily::ShipComponent => {
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
+            if let Some(label) = output_type_label {
+                push_output_type_badge(&mut out, label);
             }
             if let Some(grade) = desc_value(description_data, "Grade") {
                 push(&mut out, "grade", grade, "grade");
@@ -192,16 +192,13 @@ pub fn build_catalog_badges(
             if let Some(sz) = size_label(description_data, size) {
                 push(&mut out, "size", &sz, "size");
             }
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
-            }
         }
         BlueprintFamily::Mining => {
             if let Some(sz) = size_label(description_data, size) {
                 push(&mut out, "size", &sz, "size");
             }
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
+            if let Some(label) = output_type_label {
+                push_output_type_badge(&mut out, label);
             }
         }
         BlueprintFamily::Refuel => {
@@ -212,11 +209,7 @@ pub fn build_catalog_badges(
                 push(&mut out, "mfg", mfg, "manufacturer");
             }
         }
-        BlueprintFamily::Other => {
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
-            }
-        }
+        BlueprintFamily::Other => {}
     }
     out
 }
@@ -238,6 +231,56 @@ fn class_code_display_label(code: &str) -> Option<&'static str> {
         "comp" => Some("Competition"),
         _ => None,
     }
+}
+
+/// Libellés Wiki trop génériques pour un badge utile (ex. « Medium », « Gun »).
+fn is_generic_output_type_label(label: &str) -> bool {
+    let lower = label.trim().to_ascii_lowercase();
+    if lower.len() < 3 {
+        return true;
+    }
+    matches!(
+        lower.as_str(),
+        "gun"
+            | "medium"
+            | "light"
+            | "heavy"
+            | "weapon gun"
+            | "weapon"
+            | "misc"
+            | "undefined"
+            | "null"
+            | "none"
+            | "standard"
+            | "normal"
+            | "default"
+            | "personal"
+            | "vehicle"
+    )
+}
+
+fn map_output_type_badge_label(label: &str) -> String {
+    match label.trim() {
+        "Weapon Gun" => "Weapon".to_string(),
+        "WeaponPersonal" => "Personal weapon".to_string(),
+        "WeaponAttachment" => "Weapon attachment".to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn push_output_type_badge(out: &mut Vec<CatalogBadge>, label: &str) {
+    if is_generic_output_type_label(label) {
+        return;
+    }
+    let mapped = map_output_type_badge_label(label);
+    if mapped.trim().is_empty() {
+        return;
+    }
+    out.push(CatalogBadge {
+        key: "type".to_string(),
+        label: mapped,
+        kind: "output_type".to_string(),
+    });
 }
 
 /// Badges catalogue légers (sans appel item) pour la liste.
@@ -276,8 +319,8 @@ pub fn build_summary_badges(
             }
         }
         BlueprintFamily::ShipComponent => {
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
+            if let Some(label) = output_type_label {
+                push_output_type_badge(&mut out, label);
             }
             if let Some(grade) = ctx.grade {
                 push(&mut out, "grade", grade, "grade");
@@ -296,16 +339,13 @@ pub fn build_summary_badges(
             if let Some(sz) = size_label(&[], size) {
                 push(&mut out, "size", &sz, "size");
             }
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
-            }
         }
         BlueprintFamily::Mining => {
             if let Some(sz) = size_label(&[], size) {
                 push(&mut out, "size", &sz, "size");
             }
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
+            if let Some(label) = output_type_label {
+                push_output_type_badge(&mut out, label);
             }
         }
         BlueprintFamily::Refuel => {
@@ -313,11 +353,7 @@ pub fn build_summary_badges(
                 push(&mut out, "mfg", mfg, "manufacturer");
             }
         }
-        BlueprintFamily::Other => {
-            if let Some(label) = output_type_label.filter(|s| !s.is_empty()) {
-                push(&mut out, "type", label, "output_type");
-            }
-        }
+        BlueprintFamily::Other => {}
     }
     out
 }
@@ -363,13 +399,11 @@ fn size_label(
     size: Option<u64>,
 ) -> Option<String> {
     desc_value(description_data, "Size")
-        .and_then(|s| {
+        .map(|s| {
             if let Ok(n) = s.parse::<u64>() {
-                Some(format!("S{n}"))
-            } else if s.starts_with('S') || s.starts_with('s') {
-                Some(s.to_string())
+                format!("S{n}")
             } else {
-                Some(s.to_string())
+                s.to_string()
             }
         })
         .or_else(|| size.map(|n| format!("S{n}")))
@@ -394,10 +428,7 @@ mod tests {
 
     #[test]
     fn classifies_misc_as_other() {
-        assert_eq!(
-            classify_output_type(Some("Misc")),
-            BlueprintFamily::Other
-        );
+        assert_eq!(classify_output_type(Some("Misc")), BlueprintFamily::Other);
     }
 
     #[test]
@@ -433,7 +464,9 @@ mod tests {
             &rows,
         );
         assert!(badges.iter().any(|b| b.label == "A" && b.kind == "grade"));
-        assert!(badges.iter().any(|b| b.label == "Power Plant" && b.kind == "output_type"));
+        assert!(badges
+            .iter()
+            .any(|b| b.label == "Power Plant" && b.kind == "output_type"));
     }
 
     #[test]
@@ -465,5 +498,47 @@ mod tests {
         assert!(badges.iter().any(|b| b.label == "B"));
         assert!(badges.iter().any(|b| b.label == "S2"));
         assert!(badges.iter().any(|b| b.label == "Industrial"));
+    }
+
+    #[test]
+    fn generic_output_type_labels_are_omitted_from_badges() {
+        let badges = build_summary_badges(
+            BlueprintFamily::ShipWeapon,
+            Some("WeaponGun"),
+            Some("Medium"),
+            Some("Gun"),
+            Some(2),
+            SummaryBadgeContext::default(),
+        );
+        assert!(!badges.iter().any(|b| b.kind == "output_type"));
+        assert!(badges.iter().any(|b| b.label == "S2"));
+    }
+
+    #[test]
+    fn generic_weapon_gun_label_omitted_from_badges() {
+        let badges = build_summary_badges(
+            BlueprintFamily::ShipComponent,
+            Some("WeaponGun"),
+            Some("Weapon Gun"),
+            None,
+            Some(1),
+            SummaryBadgeContext::default(),
+        );
+        assert!(!badges.iter().any(|b| b.kind == "output_type"));
+    }
+
+    #[test]
+    fn laser_cannon_label_kept_for_ship_component() {
+        let badges = build_summary_badges(
+            BlueprintFamily::ShipComponent,
+            Some("WeaponGun"),
+            Some("Laser Cannon"),
+            None,
+            Some(1),
+            SummaryBadgeContext::default(),
+        );
+        assert!(badges
+            .iter()
+            .any(|b| b.label == "Laser Cannon" && b.kind == "output_type"));
     }
 }

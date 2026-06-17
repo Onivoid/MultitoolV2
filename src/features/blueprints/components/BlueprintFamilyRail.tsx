@@ -87,7 +87,13 @@ export function BlueprintFamilyRail({
             <button
               key={item.id}
               type="button"
-              onClick={() => onChange(item.id)}
+              onClick={() => {
+                if (active && item.id !== "all") {
+                  onChange("all");
+                } else {
+                  onChange(item.id);
+                }
+              }}
               className={cn(bpFilterChip(active), "shrink-0 whitespace-nowrap")}
             >
               {item.label}

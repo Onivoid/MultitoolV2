@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -740,11 +740,10 @@ static LOC_CACHE: Mutex<LocCache> = Mutex::new(LocCache {
 #[derive(Clone)]
 struct EnLabelPair {
     norm: String,
-    raw: String,
 }
 
 struct CatalogMatchIndex {
-    /// normalized display string → blueprint_id (first alias wins).
+    /// normalized display string → blueprint_id (unique keys only).
     exact: HashMap<String, String>,
     /// normalized global.ini item display value → blueprint_id.
     ini_value_to_id: HashMap<String, String>,
@@ -752,10 +751,8 @@ struct CatalogMatchIndex {
     fr_display_to_en: HashMap<String, Vec<EnLabelPair>>,
     /// Noms anglais catalogue uniquement (Wiki `output_name` / name_en).
     en_exact: HashMap<String, String>,
-    /// (blueprint_id, alias EN) pour scoring token journal→EN→catalogue.
-    en_entries: Vec<(String, Vec<String>)>,
-    /// (blueprint_id, alias list) pour token / partial scoring (FR + EN).
-    entries: Vec<(String, Vec<String>)>,
+    /// Clés normalisées avec plusieurs `blueprint_id` candidats — refus de matcher.
+    ambiguous_keys: HashSet<String>,
 }
 
 static MATCH_INDEX: Mutex<Option<CatalogMatchIndex>> = Mutex::new(None);
@@ -849,7 +846,6 @@ fn build_fr_display_to_en(
         }
         let pair = EnLabelPair {
             norm: normalize_match_key(en_trim),
-            raw: en_trim.to_string(),
         };
         let list = out.entry(fr_norm).or_default();
         if !list.iter().any(|p| p.norm == pair.norm) {
@@ -859,78 +855,65 @@ fn build_fr_display_to_en(
     out
 }
 
-/// Index EN-only du catalogue (prioritaire après le pont PolyTool).
-fn build_en_catalog_exact(summaries: &[BlueprintSummary]) -> HashMap<String, String> {
-    let mut lookup = HashMap::with_capacity(summaries.len() * 2);
-    for s in summaries {
-        let stripped = strip_class_size_prefix(&s.name_en);
-        for name in [s.name_en.as_str(), stripped.as_str()] {
-            let norm = normalize_match_key(name);
-            if norm.len() >= 3 {
-                lookup.entry(norm).or_insert_with(|| s.blueprint_id.clone());
-            }
+fn insert_unique_match_key(
+    map: &mut HashMap<String, String>,
+    ambiguous: &mut HashSet<String>,
+    key: String,
+    id: String,
+) {
+    if key.len() < 2 || ambiguous.contains(&key) {
+        return;
+    }
+    match map.get(&key) {
+        Some(existing) if existing == &id => {}
+        Some(_) => {
+            ambiguous.insert(key.clone());
+            map.remove(&key);
+        }
+        None => {
+            map.insert(key, id);
         }
     }
-    lookup
 }
 
-fn token_overlap_threshold(token_count: usize) -> f64 {
-    if token_count >= 4 {
-        0.5
-    } else if token_count >= 3 {
-        0.62
+fn normalized_match_target(product_name: &str) -> String {
+    let product_name = normalize_log_product_name(product_name);
+    let stripped = strip_class_size_prefix(product_name);
+    let name = if stripped != product_name.trim() {
+        stripped
     } else {
-        0.75
-    }
+        product_name.to_string()
+    };
+    normalize_match_key(&name)
 }
 
-fn best_token_match(target_tokens: &[String], entries: &[(String, Vec<String>)]) -> Option<String> {
-    if target_tokens.len() < 2 {
+fn is_ambiguous_product_name(product_name: &str) -> bool {
+    let target = normalized_match_target(product_name);
+    if target.len() < 2 {
+        return false;
+    }
+    MATCH_INDEX
+        .lock()
+        .unwrap()
+        .as_ref()
+        .is_some_and(|i| i.ambiguous_keys.contains(&target))
+}
+
+/// Journal FR → libellés EN (ini) → correspondance exacte sur le catalogue EN.
+fn match_via_en_bridge(target_fr_norm: &str, index: &CatalogMatchIndex) -> Option<String> {
+    if index.ambiguous_keys.contains(target_fr_norm) {
         return None;
     }
-    let threshold = token_overlap_threshold(target_tokens.len());
-    let mut best: Option<(f64, String)> = None;
-    for (id, aliases) in entries {
-        for alias in aliases {
-            let score = token_overlap_score(target_tokens, &tokenize_words(alias));
-            if score >= threshold && best.as_ref().map(|(b, _)| score > *b).unwrap_or(true) {
-                best = Some((score, id.clone()));
-            }
-        }
-    }
-    best.map(|(_, id)| id)
-}
-
-/// Journal FR → libellés EN (ini) → correspondance exacte ou token sur le catalogue EN.
-fn match_via_en_bridge(target_fr_norm: &str, index: &CatalogMatchIndex) -> Option<String> {
     let en_labels = index.fr_display_to_en.get(target_fr_norm)?;
     for label in en_labels {
+        if index.ambiguous_keys.contains(&label.norm) {
+            continue;
+        }
         if let Some(id) = index.en_exact.get(&label.norm) {
             return Some(id.clone());
         }
     }
-    for label in en_labels {
-        let tokens = tokenize_words(&label.raw);
-        if let Some(id) = best_token_match(&tokens, &index.en_entries) {
-            return Some(id);
-        }
-    }
     None
-}
-
-fn token_overlap_score(target_tokens: &[String], candidate_tokens: &[String]) -> f64 {
-    if target_tokens.is_empty() {
-        return 0.0;
-    }
-    let hits = target_tokens
-        .iter()
-        .filter(|t| {
-            candidate_tokens
-                .iter()
-                .any(|c| c.contains(t.as_str()) || t.contains(c.as_str()))
-        })
-        .count();
-    hits as f64 / target_tokens.len() as f64
 }
 
 fn push_alias(aliases: &mut Vec<String>, value: Option<String>) {
@@ -1043,7 +1026,7 @@ fn find_blueprint_for_item_suffix(item: &str, summaries: &[BlueprintSummary]) ->
             .blueprint_id
             .strip_prefix("bp_craft_")
             .unwrap_or(&s.blueprint_id);
-        if stem == item_lower || stem.contains(&item_lower) || item_lower.contains(stem) {
+        if stem == item_lower {
             return Some(s.blueprint_id.clone());
         }
     }
@@ -1083,39 +1066,12 @@ fn resolve_item_suffix_to_blueprint(
     find_blueprint_for_item_suffix(item_suffix, summaries)
 }
 
-/// Index O(1) libellé normalisé → blueprint (évite de scanner tout le catalogue par clé ini).
-fn build_display_name_lookup(summaries: &[BlueprintSummary]) -> HashMap<String, String> {
-    let mut lookup = HashMap::with_capacity(summaries.len() * 3);
-    for s in summaries {
-        let mut names: Vec<String> = vec![s.name_en.clone()];
-        if let Some(fr) = s.name_fr.as_deref() {
-            names.push(fr.to_string());
-            let stripped_fr = strip_class_size_prefix(fr);
-            if stripped_fr != fr {
-                names.push(stripped_fr);
-            }
-        }
-        let stripped = strip_class_size_prefix(&s.name_en);
-        if stripped != s.name_en {
-            names.push(stripped);
-        }
-        for name in names {
-            let norm = normalize_match_key(&name);
-            if norm.len() >= 3 {
-                lookup.entry(norm).or_insert_with(|| s.blueprint_id.clone());
-            }
-        }
-    }
-    lookup
-}
-
 /// Builds the journal ↔ catalogue match index (lazy — not on list load).
 fn rebuild_match_index(summaries: &[BlueprintSummary]) {
     let suffix_lookup = build_suffix_lookup(summaries);
-    let display_lookup = build_display_name_lookup(summaries);
+    let mut ambiguous_keys = HashSet::new();
     let mut exact = HashMap::with_capacity(summaries.len() * 4);
     let mut ini_value_to_id = HashMap::with_capacity(40_000);
-    let mut entries = Vec::with_capacity(summaries.len());
 
     // Ne pas garder LOC_CACHE verrouillé ici : list_full appelle lookup_fr en parallèle.
     let loc_maps: [Option<HashMap<String, String>>; 2] = {
@@ -1134,11 +1090,11 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
             if norm.len() < 3 || !has_distinctive_token(value) {
                 continue;
             }
-            let id = resolve_item_suffix_to_blueprint(item_suffix, &suffix_lookup, summaries)
-                .or_else(|| display_lookup.get(&norm).cloned());
-            if let Some(id) = id {
-                ini_value_to_id.entry(norm).or_insert(id);
-            }
+            let Some(id) = resolve_item_suffix_to_blueprint(item_suffix, &suffix_lookup, summaries)
+            else {
+                continue;
+            };
+            insert_unique_match_key(&mut ini_value_to_id, &mut ambiguous_keys, norm, id);
         }
     }
 
@@ -1146,8 +1102,7 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
         (Some(fr), Some(en)) => build_fr_display_to_en(fr, en),
         _ => HashMap::new(),
     };
-    let en_exact = build_en_catalog_exact(summaries);
-    let mut en_entries = Vec::with_capacity(summaries.len());
+    let mut en_exact = HashMap::with_capacity(summaries.len() * 2);
 
     for s in summaries {
         let stem = s
@@ -1174,23 +1129,23 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
             }
         }
 
-        let mut normalized_aliases = Vec::new();
-        let mut normalized_en = Vec::new();
         for a in &aliases {
             let n = normalize_match_key(a);
             if n.len() >= 3 {
-                normalized_aliases.push(n.clone());
-                exact.entry(n).or_insert_with(|| s.blueprint_id.clone());
+                insert_unique_match_key(&mut exact, &mut ambiguous_keys, n, s.blueprint_id.clone());
             }
         }
         for a in &en_only {
             let n = normalize_match_key(a);
             if n.len() >= 3 {
-                normalized_en.push(n.clone());
+                insert_unique_match_key(
+                    &mut en_exact,
+                    &mut ambiguous_keys,
+                    n,
+                    s.blueprint_id.clone(),
+                );
             }
         }
-        entries.push((s.blueprint_id.clone(), normalized_aliases));
-        en_entries.push((s.blueprint_id.clone(), normalized_en));
     }
 
     let mut guard = MATCH_INDEX.lock().unwrap();
@@ -1199,8 +1154,7 @@ fn rebuild_match_index(summaries: &[BlueprintSummary]) {
         ini_value_to_id,
         fr_display_to_en,
         en_exact,
-        en_entries,
-        entries,
+        ambiguous_keys,
     });
 }
 
@@ -1221,25 +1175,24 @@ fn ensure_match_index_built() -> Result<(), String> {
 
 /// Résout un nom de produit issu du Game.log vers un `bp_craft_*`.
 ///
-/// Le log peut être en **français** (client traduit) ou en **anglais** (jeu non traduit) :
-/// - FR : alias catalogue FR, valeurs `global.ini` FR, pont FR→EN PolyTool, puis catalogue EN.
-/// - EN : alias / `name_en` Wiki, valeurs `global_en.ini` (indexées dans `ini_value_to_id`), tokens EN.
+/// Cascade **déterministe uniquement** (pas de fuzzy / tokens) :
+/// 1. Exact normalisé (alias catalogue FR/EN + ini)
+/// 2. Strip préfixe classe/taille + exact
+/// 3. Pont FR→EN via clé ini identique → exact EN
+///
+/// Retourne `None` si la clé est ambiguë (plusieurs `blueprint_id` candidats).
 fn match_product_to_blueprint(product_name: &str) -> Option<String> {
-    let product_name = normalize_log_product_name(product_name);
-    let stripped = strip_class_size_prefix(product_name);
-    let product_name = if stripped != product_name.trim() {
-        stripped.as_str()
-    } else {
-        product_name
-    };
-    let target = normalize_match_key(product_name);
+    let target = normalized_match_target(product_name);
     if target.len() < 2 {
         return None;
     }
     let index = MATCH_INDEX.lock().unwrap();
     let index = index.as_ref()?;
 
-    // Catalogue Wiki (name_fr + name_en) et libellés ini FR + EN normalisés.
+    if index.ambiguous_keys.contains(&target) {
+        return None;
+    }
+
     if let Some(id) = index.exact.get(&target) {
         return Some(id.clone());
     }
@@ -1250,17 +1203,7 @@ fn match_product_to_blueprint(product_name: &str) -> Option<String> {
         return Some(id.clone());
     }
 
-    // Journal FR : valeur affichée FR → clé ini → libellé EN → catalogue EN.
-    if let Some(id) = match_via_en_bridge(&target, index) {
-        return Some(id);
-    }
-
-    let target_tokens = tokenize_words(product_name);
-    // Journal EN ou FR : scoring prioritaire sur les alias anglais du catalogue.
-    if let Some(id) = best_token_match(&target_tokens, &index.en_entries) {
-        return Some(id);
-    }
-    best_token_match(&target_tokens, &index.entries)
+    match_via_en_bridge(&target, index)
 }
 
 fn pick_live_install_path() -> Option<PathBuf> {
@@ -2353,6 +2296,8 @@ pub async fn blueprint_catalog_detail(blueprint_id: String) -> Result<BlueprintD
 pub struct MatchProductsResult {
     /// product_name (journal) → blueprint_id
     pub matches: HashMap<String, String>,
+    /// Noms dont la clé normalisée est ambiguë (plusieurs candidats) — non persistés.
+    pub ambiguous: Vec<String>,
     pub matched_count: usize,
     pub requested_count: usize,
 }
@@ -2366,6 +2311,7 @@ fn match_products_sync(product_names: Vec<String>) -> Result<MatchProductsResult
     }
     ensure_match_index_built()?;
     let mut matches = HashMap::new();
+    let mut ambiguous = Vec::new();
     for name in &product_names {
         let trimmed = name.trim();
         if trimmed.is_empty() {
@@ -2373,12 +2319,17 @@ fn match_products_sync(product_names: Vec<String>) -> Result<MatchProductsResult
         }
         if let Some(id) = match_product_to_blueprint(trimmed) {
             matches.insert(trimmed.to_string(), id);
+        } else if is_ambiguous_product_name(trimmed) {
+            ambiguous.push(trimmed.to_string());
         }
     }
+    ambiguous.sort();
+    ambiguous.dedup();
     Ok(MatchProductsResult {
         matched_count: matches.len(),
         requested_count: product_names.len(),
         matches,
+        ambiguous,
     })
 }
 
@@ -2471,36 +2422,7 @@ mod tests {
                 }
             }
         }
-
-        let display_stripped = strip_class_size_prefix(display);
-        let display = if display_stripped != display.trim() {
-            display_stripped.as_str()
-        } else {
-            display
-        };
-        let target_tokens = tokenize_words(display);
-        if target_tokens.len() < 2 {
-            return None;
-        }
-        let mut best: Option<(f64, String)> = None;
-        for s in summaries {
-            let stripped = strip_class_size_prefix(&s.name_en);
-            let mut candidates: Vec<String> = vec![s.name_en.clone(), stripped];
-            if let Some(fr) = s.name_fr.as_deref() {
-                candidates.push(fr.to_string());
-                let stripped_fr = strip_class_size_prefix(fr);
-                if stripped_fr != fr {
-                    candidates.push(stripped_fr);
-                }
-            }
-            for cand in &candidates {
-                let score = token_overlap_score(&target_tokens, &tokenize_words(cand));
-                if score >= 0.55 && best.as_ref().map(|(b, _)| score > *b).unwrap_or(true) {
-                    best = Some((score, s.blueprint_id.clone()));
-                }
-            }
-        }
-        best.map(|(_, id)| id)
+        None
     }
 
     /// Nécessite le réseau — vérifie l’API Wiki réelle.
@@ -2556,99 +2478,99 @@ mod tests {
     #[test]
     fn match_journal_english_from_en_ini_and_catalog() {
         with_catalog_test_lock(|| {
-        let fr = HashMap::new();
-        let en = HashMap::from([(
-            "item_nameksar_rifle_energy_01_mag".to_string(),
-            "Karna Rifle Magazine (30 cap)".to_string(),
-        )]);
-        {
-            let mut cache = LOC_CACHE.lock().unwrap();
-            cache.fr = Some(fr);
-            cache.en = Some(en);
-            cache.classes = Some(HashMap::new());
-            cache.version = Some("test".to_string());
-        }
+            let fr = HashMap::new();
+            let en = HashMap::from([(
+                "item_nameksar_rifle_energy_01_mag".to_string(),
+                "Karna Rifle Magazine (30 cap)".to_string(),
+            )]);
+            {
+                let mut cache = LOC_CACHE.lock().unwrap();
+                cache.fr = Some(fr);
+                cache.en = Some(en);
+                cache.classes = Some(HashMap::new());
+                cache.version = Some("test".to_string());
+            }
 
-        let summaries = vec![BlueprintSummary {
-            wiki_uuid: "a".to_string(),
-            blueprint_id: "bp_craft_ksar_rifle_energy_01_mag".to_string(),
-            name_en: "Karna Rifle Magazine (30 cap)".to_string(),
-            name_fr: None,
-            internal_name: Some("ksar_rifle_energy_01_mag".to_string()),
-            ..BlueprintSummary::default()
-        }];
-        *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
-        *MATCH_INDEX.lock().unwrap() = None;
-        rebuild_match_index(&summaries);
+            let summaries = vec![BlueprintSummary {
+                wiki_uuid: "a".to_string(),
+                blueprint_id: "bp_craft_ksar_rifle_energy_01_mag".to_string(),
+                name_en: "Karna Rifle Magazine (30 cap)".to_string(),
+                name_fr: None,
+                internal_name: Some("ksar_rifle_energy_01_mag".to_string()),
+                ..BlueprintSummary::default()
+            }];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
 
-        assert_eq!(
-            match_product_to_blueprint("Karna Rifle Magazine (30 cap)").as_deref(),
-            Some("bp_craft_ksar_rifle_energy_01_mag")
-        );
+            assert_eq!(
+                match_product_to_blueprint("Karna Rifle Magazine (30 cap)").as_deref(),
+                Some("bp_craft_ksar_rifle_energy_01_mag")
+            );
         });
     }
 
     #[test]
     fn match_journal_fr_via_polytool_en_bridge() {
         with_catalog_test_lock(|| {
-        let fr = HashMap::from([
-            (
-                "item_nameksar_rifle_energy_01_mag".to_string(),
-                "Chargeur Karna (30 cap)".to_string(),
-            ),
-            (
-                "item_namegmni_shotgun_ballistic_01_mag".to_string(),
-                "Chargeur R97 (10 cap)".to_string(),
-            ),
-        ]);
-        let en = HashMap::from([
-            (
-                "item_nameksar_rifle_energy_01_mag".to_string(),
-                "Karna Rifle Magazine (30 cap)".to_string(),
-            ),
-            (
-                "item_namegmni_shotgun_ballistic_01_mag".to_string(),
-                "R97 Shotgun Magazine (10 cap)".to_string(),
-            ),
-        ]);
-        {
-            let mut cache = LOC_CACHE.lock().unwrap();
-            cache.fr = Some(fr);
-            cache.en = Some(en);
-            cache.classes = Some(HashMap::new());
-            cache.version = Some("test".to_string());
-        }
+            let fr = HashMap::from([
+                (
+                    "item_nameksar_rifle_energy_01_mag".to_string(),
+                    "Chargeur Karna (30 cap)".to_string(),
+                ),
+                (
+                    "item_namegmni_shotgun_ballistic_01_mag".to_string(),
+                    "Chargeur R97 (10 cap)".to_string(),
+                ),
+            ]);
+            let en = HashMap::from([
+                (
+                    "item_nameksar_rifle_energy_01_mag".to_string(),
+                    "Karna Rifle Magazine (30 cap)".to_string(),
+                ),
+                (
+                    "item_namegmni_shotgun_ballistic_01_mag".to_string(),
+                    "R97 Shotgun Magazine (10 cap)".to_string(),
+                ),
+            ]);
+            {
+                let mut cache = LOC_CACHE.lock().unwrap();
+                cache.fr = Some(fr);
+                cache.en = Some(en);
+                cache.classes = Some(HashMap::new());
+                cache.version = Some("test".to_string());
+            }
 
-        let summaries = vec![
-            BlueprintSummary {
-                wiki_uuid: "a".to_string(),
-                blueprint_id: "bp_craft_ksar_rifle_energy_01_mag".to_string(),
-                name_en: "Karna Rifle Magazine (30 cap)".to_string(),
-                name_fr: Some("Chargeur Karna (30 cap)".to_string()),
-                internal_name: Some("ksar_rifle_energy_01_mag".to_string()),
-                ..BlueprintSummary::default()
-            },
-            BlueprintSummary {
-                wiki_uuid: "b".to_string(),
-                blueprint_id: "bp_craft_gmni_shotgun_ballistic_01_mag".to_string(),
-                name_en: "R97 Shotgun Magazine (10 cap)".to_string(),
-                name_fr: Some("Chargeur R97 (10 cap)".to_string()),
-                internal_name: Some("gmni_shotgun_ballistic_01_mag".to_string()),
-                ..BlueprintSummary::default()
-            },
-        ];
-        *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
-        *MATCH_INDEX.lock().unwrap() = None;
-        rebuild_match_index(&summaries);
+            let summaries = vec![
+                BlueprintSummary {
+                    wiki_uuid: "a".to_string(),
+                    blueprint_id: "bp_craft_ksar_rifle_energy_01_mag".to_string(),
+                    name_en: "Karna Rifle Magazine (30 cap)".to_string(),
+                    name_fr: Some("Chargeur Karna (30 cap)".to_string()),
+                    internal_name: Some("ksar_rifle_energy_01_mag".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    wiki_uuid: "b".to_string(),
+                    blueprint_id: "bp_craft_gmni_shotgun_ballistic_01_mag".to_string(),
+                    name_en: "R97 Shotgun Magazine (10 cap)".to_string(),
+                    name_fr: Some("Chargeur R97 (10 cap)".to_string()),
+                    internal_name: Some("gmni_shotgun_ballistic_01_mag".to_string()),
+                    ..BlueprintSummary::default()
+                },
+            ];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
 
-        assert_eq!(
-            match_product_to_blueprint("Chargeur Karna (30 cap)").as_deref(),
-            Some("bp_craft_ksar_rifle_energy_01_mag")
-        );
-        assert_eq!(
-            match_product_to_blueprint("Chargeur R97 (10 cap)").as_deref(),
-            Some("bp_craft_gmni_shotgun_ballistic_01_mag")
-        );
+            assert_eq!(
+                match_product_to_blueprint("Chargeur Karna (30 cap)").as_deref(),
+                Some("bp_craft_ksar_rifle_energy_01_mag")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Chargeur R97 (10 cap)").as_deref(),
+                Some("bp_craft_gmni_shotgun_ballistic_01_mag")
+            );
         });
     }
 
@@ -2747,82 +2669,83 @@ mod tests {
     #[test]
     fn match_fuel_nozzle_short_names_via_name_suffix_keys() {
         with_catalog_test_lock(|| {
-        let fr = HashMap::from([
-            (
-                "nozzle_fuelgiver_grin_nozzlesecure_name".to_string(),
-                "Marlin".to_string(),
-            ),
-            (
-                "nozzle_fuelgiver_grin_nozzleveryfast_name".to_string(),
-                "Lindstrom".to_string(),
-            ),
-            (
-                "nozzle_fuelgiver_shin_nozzleexpensivefast_name".to_string(),
-                "Bendix".to_string(),
-            ),
-            (
-                "nozzle_fuelgiver_shin_nozzleexpensivesecure_name".to_string(),
-                "Torrez".to_string(),
-            ),
-        ]);
-        {
-            let mut cache = LOC_CACHE.lock().unwrap();
-            cache.fr = Some(fr);
-            cache.en = Some(HashMap::new());
-            cache.classes = Some(HashMap::new());
-            cache.version = Some("test".to_string());
-        }
+            let fr = HashMap::from([
+                (
+                    "nozzle_fuelgiver_grin_nozzlesecure_name".to_string(),
+                    "Marlin".to_string(),
+                ),
+                (
+                    "nozzle_fuelgiver_grin_nozzleveryfast_name".to_string(),
+                    "Lindstrom".to_string(),
+                ),
+                (
+                    "nozzle_fuelgiver_shin_nozzleexpensivefast_name".to_string(),
+                    "Bendix".to_string(),
+                ),
+                (
+                    "nozzle_fuelgiver_shin_nozzleexpensivesecure_name".to_string(),
+                    "Torrez".to_string(),
+                ),
+            ]);
+            {
+                let mut cache = LOC_CACHE.lock().unwrap();
+                cache.fr = Some(fr);
+                cache.en = Some(HashMap::new());
+                cache.classes = Some(HashMap::new());
+                cache.version = Some("test".to_string());
+            }
 
-        let summaries = vec![
-            BlueprintSummary {
-                blueprint_id: "bp_craft_nozzle_fuelgiver_grin_nozzlesecure".to_string(),
-                name_en: "Marlin".to_string(),
-                name_fr: Some("Marlin".to_string()),
-                internal_name: Some("nozzle_fuelgiver_grin_nozzlesecure".to_string()),
-                ..BlueprintSummary::default()
-            },
-            BlueprintSummary {
-                blueprint_id: "bp_craft_nozzle_fuelgiver_grin_nozzleveryfast".to_string(),
-                name_en: "Lindstrom".to_string(),
-                name_fr: Some("Lindstrom".to_string()),
-                internal_name: Some("nozzle_fuelgiver_grin_nozzleveryfast".to_string()),
-                ..BlueprintSummary::default()
-            },
-            BlueprintSummary {
-                blueprint_id: "bp_craft_nozzle_fuelgiver_shin_nozzleexpensivefast".to_string(),
-                name_en: "Bendix".to_string(),
-                name_fr: Some("Bendix".to_string()),
-                internal_name: Some("nozzle_fuelgiver_shin_nozzleexpensivefast".to_string()),
-                ..BlueprintSummary::default()
-            },
-            BlueprintSummary {
-                blueprint_id: "bp_craft_nozzle_fuelgiver_shin_nozzleexpensivesecure".to_string(),
-                name_en: "Torrez".to_string(),
-                name_fr: Some("Torrez".to_string()),
-                internal_name: Some("nozzle_fuelgiver_shin_nozzleexpensivesecure".to_string()),
-                ..BlueprintSummary::default()
-            },
-        ];
-        *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
-        *MATCH_INDEX.lock().unwrap() = None;
-        rebuild_match_index(&summaries);
+            let summaries = vec![
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_nozzle_fuelgiver_grin_nozzlesecure".to_string(),
+                    name_en: "Marlin".to_string(),
+                    name_fr: Some("Marlin".to_string()),
+                    internal_name: Some("nozzle_fuelgiver_grin_nozzlesecure".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_nozzle_fuelgiver_grin_nozzleveryfast".to_string(),
+                    name_en: "Lindstrom".to_string(),
+                    name_fr: Some("Lindstrom".to_string()),
+                    internal_name: Some("nozzle_fuelgiver_grin_nozzleveryfast".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_nozzle_fuelgiver_shin_nozzleexpensivefast".to_string(),
+                    name_en: "Bendix".to_string(),
+                    name_fr: Some("Bendix".to_string()),
+                    internal_name: Some("nozzle_fuelgiver_shin_nozzleexpensivefast".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_nozzle_fuelgiver_shin_nozzleexpensivesecure"
+                        .to_string(),
+                    name_en: "Torrez".to_string(),
+                    name_fr: Some("Torrez".to_string()),
+                    internal_name: Some("nozzle_fuelgiver_shin_nozzleexpensivesecure".to_string()),
+                    ..BlueprintSummary::default()
+                },
+            ];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
 
-        assert_eq!(
-            match_product_to_blueprint("Marlin").as_deref(),
-            Some("bp_craft_nozzle_fuelgiver_grin_nozzlesecure")
-        );
-        assert_eq!(
-            match_product_to_blueprint("Lindstrom").as_deref(),
-            Some("bp_craft_nozzle_fuelgiver_grin_nozzleveryfast")
-        );
-        assert_eq!(
-            match_product_to_blueprint("Bendix").as_deref(),
-            Some("bp_craft_nozzle_fuelgiver_shin_nozzleexpensivefast")
-        );
-        assert_eq!(
-            match_product_to_blueprint("Torres").as_deref(),
-            Some("bp_craft_nozzle_fuelgiver_shin_nozzleexpensivesecure")
-        );
+            assert_eq!(
+                match_product_to_blueprint("Marlin").as_deref(),
+                Some("bp_craft_nozzle_fuelgiver_grin_nozzlesecure")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Lindstrom").as_deref(),
+                Some("bp_craft_nozzle_fuelgiver_grin_nozzleveryfast")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Bendix").as_deref(),
+                Some("bp_craft_nozzle_fuelgiver_shin_nozzleexpensivefast")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Torres").as_deref(),
+                Some("bp_craft_nozzle_fuelgiver_shin_nozzleexpensivesecure")
+            );
         });
     }
 
@@ -2836,44 +2759,152 @@ mod tests {
     #[test]
     fn match_ship_component_french_translated_log_name() {
         with_catalog_test_lock(|| {
-        let summaries = vec![
-            BlueprintSummary {
-                blueprint_id: "bp_craft_cooler_aegs_cirrus_s01".to_string(),
-                name_en: "Mil/2/D Cirrus".to_string(),
-                name_fr: Some("Sth/2/C Cirrus".to_string()),
-                ..BlueprintSummary::default()
-            },
-            BlueprintSummary {
-                blueprint_id: "bp_craft_cooler_aegs_other_s01".to_string(),
-                name_en: "Mil/2/D Other".to_string(),
-                name_fr: Some("Sth/2/C Other".to_string()),
-                ..BlueprintSummary::default()
-            },
-        ];
-        *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
-        *MATCH_INDEX.lock().unwrap() = None;
-        rebuild_match_index(&summaries);
+            let summaries = vec![
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_cooler_aegs_cirrus_s01".to_string(),
+                    name_en: "Mil/2/D Cirrus".to_string(),
+                    name_fr: Some("Sth/2/C Cirrus".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    blueprint_id: "bp_craft_cooler_aegs_other_s01".to_string(),
+                    name_en: "Mil/2/D Other".to_string(),
+                    name_fr: Some("Sth/2/C Other".to_string()),
+                    ..BlueprintSummary::default()
+                },
+            ];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
 
-        assert_eq!(
-            match_product_to_blueprint("Sth/2/C Cirrus").as_deref(),
-            Some("bp_craft_cooler_aegs_cirrus_s01")
-        );
-        assert_eq!(
-            match_product_to_blueprint("Mil/2/D Cirrus").as_deref(),
-            Some("bp_craft_cooler_aegs_cirrus_s01")
-        );
+            assert_eq!(
+                match_product_to_blueprint("Sth/2/C Cirrus").as_deref(),
+                Some("bp_craft_cooler_aegs_cirrus_s01")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Mil/2/D Cirrus").as_deref(),
+                Some("bp_craft_cooler_aegs_cirrus_s01")
+            );
         });
     }
 
     #[test]
-    fn find_blueprint_by_french_log_name_against_english_catalog() {
+    fn ambiguous_normalized_key_refuses_match() {
+        with_catalog_test_lock(|| {
+            {
+                let mut cache = LOC_CACHE.lock().unwrap();
+                cache.fr = Some(HashMap::new());
+                cache.en = Some(HashMap::new());
+                cache.classes = Some(HashMap::new());
+                cache.version = Some("test".to_string());
+            }
+
+            let summaries = vec![
+                BlueprintSummary {
+                    wiki_uuid: "a".to_string(),
+                    blueprint_id: "bp_craft_alpha_item".to_string(),
+                    name_en: "Shared Name".to_string(),
+                    name_fr: None,
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    wiki_uuid: "b".to_string(),
+                    blueprint_id: "bp_craft_beta_item".to_string(),
+                    name_en: "Shared Name".to_string(),
+                    name_fr: None,
+                    ..BlueprintSummary::default()
+                },
+            ];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
+
+            assert_eq!(match_product_to_blueprint("Shared Name"), None);
+            assert!(is_ambiguous_product_name("Shared Name"));
+        });
+    }
+
+    #[test]
+    fn similar_charger_names_do_not_fuzzy_cross_match() {
+        with_catalog_test_lock(|| {
+            let fr = HashMap::from([
+                (
+                    "item_nameksar_rifle_energy_01_mag".to_string(),
+                    "Chargeur Karna (30 cap)".to_string(),
+                ),
+                (
+                    "item_namegmni_shotgun_ballistic_01_mag".to_string(),
+                    "Chargeur R97 (10 cap)".to_string(),
+                ),
+            ]);
+            let en = HashMap::from([
+                (
+                    "item_nameksar_rifle_energy_01_mag".to_string(),
+                    "Karna Rifle Magazine (30 cap)".to_string(),
+                ),
+                (
+                    "item_namegmni_shotgun_ballistic_01_mag".to_string(),
+                    "R97 Shotgun Magazine (10 cap)".to_string(),
+                ),
+            ]);
+            {
+                let mut cache = LOC_CACHE.lock().unwrap();
+                cache.fr = Some(fr);
+                cache.en = Some(en);
+                cache.classes = Some(HashMap::new());
+                cache.version = Some("test".to_string());
+            }
+
+            let summaries = vec![
+                BlueprintSummary {
+                    wiki_uuid: "a".to_string(),
+                    blueprint_id: "bp_craft_ksar_rifle_energy_01_mag".to_string(),
+                    name_en: "Karna Rifle Magazine (30 cap)".to_string(),
+                    name_fr: Some("Chargeur Karna (30 cap)".to_string()),
+                    internal_name: Some("ksar_rifle_energy_01_mag".to_string()),
+                    ..BlueprintSummary::default()
+                },
+                BlueprintSummary {
+                    wiki_uuid: "b".to_string(),
+                    blueprint_id: "bp_craft_gmni_shotgun_ballistic_01_mag".to_string(),
+                    name_en: "R97 Shotgun Magazine (10 cap)".to_string(),
+                    name_fr: Some("Chargeur R97 (10 cap)".to_string()),
+                    internal_name: Some("gmni_shotgun_ballistic_01_mag".to_string()),
+                    ..BlueprintSummary::default()
+                },
+            ];
+            *CATALOG_SUMMARIES.lock().unwrap() = Some(summaries.clone());
+            *MATCH_INDEX.lock().unwrap() = None;
+            rebuild_match_index(&summaries);
+
+            assert_eq!(
+                match_product_to_blueprint("Chargeur Karna (30 cap)").as_deref(),
+                Some("bp_craft_ksar_rifle_energy_01_mag")
+            );
+            assert_eq!(
+                match_product_to_blueprint("Chargeur R97 (10 cap)").as_deref(),
+                Some("bp_craft_gmni_shotgun_ballistic_01_mag")
+            );
+            assert_ne!(
+                match_product_to_blueprint("Chargeur Karna (30 cap)").as_deref(),
+                match_product_to_blueprint("Chargeur R97 (10 cap)").as_deref()
+            );
+        });
+    }
+
+    #[test]
+    fn find_blueprint_by_display_name_exact_only() {
         let summaries = vec![BlueprintSummary {
             wiki_uuid: String::new(),
             blueprint_id: "bp_craft_lawson_mininglaser_s1".to_string(),
             name_en: "Lawson Mining Laser".to_string(),
             ..BlueprintSummary::default()
         }];
-        let id = find_blueprint_by_display_name("Laser de minage Lawson", &summaries);
+        let id = find_blueprint_by_display_name("Lawson Mining Laser", &summaries);
         assert_eq!(id.as_deref(), Some("bp_craft_lawson_mininglaser_s1"));
+        assert_eq!(
+            find_blueprint_by_display_name("Laser de minage Lawson", &summaries),
+            None
+        );
     }
 }
