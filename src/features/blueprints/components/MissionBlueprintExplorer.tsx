@@ -8,6 +8,7 @@ import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catal
 import {
   BP_ACTION_BTN,
   bpCatalogRow,
+  bpCatalogRowContext,
   bpSheetPanel,
 } from "@/features/blueprints/blueprints.ui";
 import type { MissionDetailResult } from "@/features/blueprints/blueprints.catalog.types";
@@ -111,10 +112,15 @@ export function MissionExplorerBody({
       )}
       <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
         {rankLabel && <span>Rang requis : {rankLabel}</span>}
-        {detail.shareable != null && (
+        {detail.shareable != null ? (
           <span className="inline-flex items-center gap-1">
             <Users className="h-3 w-3" />
             Partageable : {detail.shareable ? "Oui" : "Non"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-muted-foreground/80">
+            <Users className="h-3 w-3" />
+            Partageable : Inconnu
           </span>
         )}
         {detail.missionType && <span>Type : {detail.missionType}</span>}
@@ -131,6 +137,12 @@ export function MissionExplorerBody({
             const id = bp.blueprintId;
             if (!id) return null;
             const owned = ownedIds?.has(id) ?? false;
+            const isContext = bp.isDirectUnlock;
+            const rowClass = owned
+              ? bpCatalogRow(true)
+              : isContext
+                ? bpCatalogRowContext()
+                : bpCatalogRow(false);
             return (
               <button
                 key={`${id}-${i}`}
@@ -139,7 +151,7 @@ export function MissionExplorerBody({
                   onSelectBlueprint(id);
                   onClose?.();
                 }}
-                className={bpCatalogRow(bp.isDirectUnlock || owned)}
+                className={rowClass}
               >
                 <p className="text-sm font-semibold leading-snug">
                   {owned && (
@@ -149,11 +161,6 @@ export function MissionExplorerBody({
                     />
                   )}
                   {bp.nameFr || bp.nameEn}
-                  {bp.isDirectUnlock && (
-                    <span className="ml-1.5 text-[10px] font-normal text-primary">
-                      unlock direct
-                    </span>
-                  )}
                   {owned && (
                     <span className="ml-1.5 text-[10px] font-normal text-primary">
                       possédé

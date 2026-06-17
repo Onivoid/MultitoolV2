@@ -7,11 +7,13 @@ import {
   snapshotHasHomeStats,
 } from "@/features/game-stats/gameStats.lib";
 import { useGameStats } from "@/features/game-stats/useGameStats";
+import { useJournalOwnedBlueprintCount } from "@/features/game-stats/useJournalOwnedBlueprintCount";
 
 export function GameStatsWidgetContent() {
   const { snapshot, status, error, progress, operationStartedAt, sync, isBusy } =
     useGameStats();
-  const items = getHomeSummaryItems(snapshot);
+  const journalBlueprintCount = useJournalOwnedBlueprintCount();
+  const items = getHomeSummaryItems(snapshot, journalBlueprintCount);
   const showSkeleton = status === "loading" && !snapshot;
 
   return (
@@ -27,11 +29,13 @@ export function GameStatsWidgetContent() {
         <p className="px-3 py-2 text-xs text-destructive">{error}</p>
       )}
 
-      {!error && !showSkeleton && !snapshotHasHomeStats(snapshot) && (
-        <p className="px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-          Aucune statistique détectée dans les logs. Lancez le jeu puis synchronisez.
-        </p>
-      )}
+      {!error &&
+        !showSkeleton &&
+        !snapshotHasHomeStats(snapshot, journalBlueprintCount) && (
+          <p className="px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+            Aucune statistique détectée dans les logs. Lancez le jeu puis synchronisez.
+          </p>
+        )}
 
       {!showSkeleton && items.length > 0 && (
         <>

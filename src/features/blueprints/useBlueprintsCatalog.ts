@@ -82,7 +82,13 @@ export function useBlueprintsCatalog() {
     setDetailError(null);
     setDetail(null);
     try {
-      const d = await blueprintsCatalogService.detail(summary.blueprintId);
+      let d = await blueprintsCatalogService.detail(summary.blueprintId);
+      const needsMissionRefresh =
+        (d.missions?.length ?? 0) > 0 && d.missions.some((m) => m.shareable == null);
+      if (needsMissionRefresh) {
+        await blueprintsCatalogService.revalidate();
+        d = await blueprintsCatalogService.detail(summary.blueprintId);
+      }
       setDetail(d);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

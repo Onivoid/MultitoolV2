@@ -9,12 +9,14 @@ import { GameStatsProgressDisplay } from "@/features/game-stats/components/GameS
 import { StatsPageToolbar } from "@/features/game-stats/components/StatsPageToolbar";
 import { snapshotHasHomeStats } from "@/features/game-stats/gameStats.lib";
 import { useGameStats } from "@/features/game-stats/useGameStats";
+import { useJournalOwnedBlueprintCount } from "@/features/game-stats/useJournalOwnedBlueprintCount";
 
 export default function StatisticsPage() {
   const { snapshot, status, error, progress, operationStartedAt, sync, isBusy } =
     useGameStats();
+  const journalBlueprintCount = useJournalOwnedBlueprintCount();
   const showSkeleton = status === "loading" && !snapshot;
-  const hasStats = snapshotHasHomeStats(snapshot);
+  const hasStats = snapshotHasHomeStats(snapshot, journalBlueprintCount);
 
   return (
     <PageMotion className="flex h-full min-h-0 flex-1 flex-col overflow-hidden px-4 pt-2 pb-20">
@@ -59,7 +61,10 @@ export default function StatisticsPage() {
         )}
 
         {!showSkeleton && hasStats && snapshot && (
-          <StatsBentoGrid snapshot={snapshot} />
+          <StatsBentoGrid
+            snapshot={snapshot}
+            journalUniqueCount={journalBlueprintCount}
+          />
         )}
       </div>
     </PageMotion>

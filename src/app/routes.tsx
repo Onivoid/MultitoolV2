@@ -12,6 +12,9 @@ import PatchNotesPage from "@/features/patchnotes/PatchNotesPage";
 import NewsPage from "@/features/news/NewsPage";
 import Ships3DPage from "@/features/ships3d/Ships3DPage";
 import BlueprintsPage from "@/features/blueprints/BlueprintsPage";
+import PaintsPage from "@/features/paints/PaintsPage";
+import HangarExecPage from "@/features/hangar-exec/HangarExecPage";
+import FeaturesHubPage from "@/features/features-hub/FeaturesHubPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import StatisticsPage from "@/features/game-stats/StatisticsPage";
 import { OnboardingGate } from "@/features/onboarding/OnboardingGate";
@@ -45,6 +48,9 @@ const AppRouter = () => (
             <Route path="/ships3d" element={<Ships3DPage />} />
             <Route path="/blueprints" element={<BlueprintsPage />} />
             <Route path="/statistiques" element={<StatisticsPage />} />
+            <Route path="/peintures" element={<PaintsPage />} />
+            <Route path="/hangar-exec" element={<HangarExecPage />} />
+            <Route path="/fonctionnalites" element={<FeaturesHubPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </div>

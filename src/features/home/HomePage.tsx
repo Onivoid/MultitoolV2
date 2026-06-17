@@ -9,7 +9,7 @@ export default function HomePage() {
   const logoRef = useRef<HTMLDivElement>(null);
 
   return (
-    <PageMotion className={`${PAGE_CENTER} relative`}>
+    <PageMotion entrance="fade" className={`${PAGE_CENTER} relative`}>
       <div ref={logoRef} className="relative z-0 flex flex-col items-center gap-5">
         <img
           src={logoDark}

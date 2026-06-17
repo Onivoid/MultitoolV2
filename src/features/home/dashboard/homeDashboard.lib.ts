@@ -6,6 +6,8 @@ import type {
 } from "@/features/home/dashboard/homeDashboard.types";
 
 export const DEFAULT_WIDGET_WIDTH_PX = 280;
+export const MIN_WIDGET_WIDTH_PX = 220;
+export const MAX_WIDGET_WIDTH_PX = 480;
 export const LOGO_COLLISION_PADDING_PX = 24;
 
 export function createWidgetId(): string {
@@ -14,20 +16,27 @@ export function createWidgetId(): string {
 
 export function defaultDashboardLayout(): HomeDashboardLayout {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     widgets: [
       {
         id: createWidgetId(),
         type: "top_routes",
         xPercent: 2,
-        yPercent: 42,
+        yPercent: 38,
         widthPx: DEFAULT_WIDGET_WIDTH_PX,
       },
       {
         id: createWidgetId(),
-        type: "game_stats",
-        xPercent: 72,
-        yPercent: 42,
+        type: "blueprints",
+        xPercent: 36,
+        yPercent: 38,
+        widthPx: 300,
+      },
+      {
+        id: createWidgetId(),
+        type: "sc_versions",
+        xPercent: 70,
+        yPercent: 38,
         widthPx: DEFAULT_WIDGET_WIDTH_PX,
       },
     ],
@@ -36,10 +45,13 @@ export function defaultDashboardLayout(): HomeDashboardLayout {
 
 export function normalizeLayout(layout: HomeDashboardLayout): HomeDashboardLayout {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     widgets: layout.widgets.map((w) => ({
       ...w,
-      widthPx: w.widthPx || DEFAULT_WIDGET_WIDTH_PX,
+      widthPx: Math.max(
+        MIN_WIDGET_WIDTH_PX,
+        Math.min(MAX_WIDGET_WIDTH_PX, w.widthPx || DEFAULT_WIDGET_WIDTH_PX),
+      ),
       xPercent: Math.max(0, Math.min(100, w.xPercent)),
       yPercent: Math.max(0, Math.min(100, w.yPercent)),
     })),

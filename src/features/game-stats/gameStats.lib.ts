@@ -82,7 +82,34 @@ function hasMissionStats(missions: GameStatsSnapshot["missions"]): boolean {
   return missions.completed > 0 || missions.abandoned > 0 || missions.failed > 0;
 }
 
-export function snapshotHasHomeStats(snapshot: GameStatsSnapshot | null): boolean {
+export function resolveBlueprintUnlockedStat(
+  snapshot: GameStatsSnapshot | null,
+  journalUniqueCount?: number | null,
+): StatSummaryItem | null {
+  if (journalUniqueCount != null && journalUniqueCount > 0) {
+    return {
+      label: "Schémas débloqués",
+      value: String(journalUniqueCount),
+      hint: "Nombre d’IDs catalogue uniques : journal Multitool + marquages manuels (prioritaire sur l’estimation extraite des logs).",
+    };
+  }
+  if (snapshot && snapshot.blueprints.totalUnlocked > 0) {
+    return {
+      label: "Schémas débloqués",
+      value: String(snapshot.blueprints.totalUnlocked),
+      hint: "Estimation extraite des logs Game.log (journal Multitool vide ou indisponible).",
+    };
+  }
+  return null;
+}
+
+export function snapshotHasHomeStats(
+  snapshot: GameStatsSnapshot | null,
+  journalBlueprintCount?: number | null,
+): boolean {
+  if (journalBlueprintCount != null && journalBlueprintCount > 0) {
+    return true;
+  }
   if (!snapshot) {
     return false;
   }
@@ -103,9 +130,18 @@ export function snapshotHasHomeStats(snapshot: GameStatsSnapshot | null): boolea
 /** Résumé affiché sur l'encart accueil (extensible). */
 export function getHomeSummaryItems(
   snapshot: GameStatsSnapshot | null,
+  journalUniqueCount?: number | null,
 ): StatSummaryItem[] {
-  if (!snapshotHasHomeStats(snapshot) || !snapshot) {
+  if (!snapshotHasHomeStats(snapshot, journalUniqueCount) && !snapshot) {
     return [];
+  }
+  if (!snapshotHasHomeStats(snapshot, journalUniqueCount)) {
+    const bpOnly = resolveBlueprintUnlockedStat(snapshot, journalUniqueCount);
+    return bpOnly ? [bpOnly] : [];
+  }
+  if (!snapshot) {
+    const bpOnly = resolveBlueprintUnlockedStat(null, journalUniqueCount);
+    return bpOnly ? [bpOnly] : [];
   }
 
   const items: StatSummaryItem[] = [];
@@ -139,11 +175,9 @@ export function getHomeSummaryItems(
     }
   }
 
-  if (snapshot.blueprints.totalUnlocked > 0) {
-    items.push({
-      label: "Schémas débloqués",
-      value: String(snapshot.blueprints.totalUnlocked),
-    });
+  const blueprintStat = resolveBlueprintUnlockedStat(snapshot, journalUniqueCount);
+  if (blueprintStat) {
+    items.push(blueprintStat);
   }
 
   if (snapshot.vehicles.favorite && snapshot.vehicles.favoriteCount > 0) {

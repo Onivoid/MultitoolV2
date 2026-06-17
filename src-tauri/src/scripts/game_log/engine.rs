@@ -174,7 +174,10 @@ pub fn run_scan(
         },
     );
 
-    let files = list_game_log_files()?;
+    let files = match &app {
+        Some(handle) => list_game_log_files(handle)?,
+        None => return Err("AppHandle requis pour lister les logs de jeu".to_string()),
+    };
     let files_total = files.len() as u32;
 
     GameStatsScanProgress::emit(

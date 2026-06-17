@@ -1,4 +1,5 @@
 import {
+  Archive,
   FileDown,
   Hammer,
   Loader2,
@@ -16,6 +17,11 @@ import type { GamelogWatcherStatus } from "@/features/blueprints/blueprints.serv
 import type { BlueprintsImportProgress } from "@/features/blueprints/blueprints.import.types";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import {
+  gamelogArchiveService,
+  type GamelogArchiveStatus,
+} from "@/features/blueprints/gamelogArchive.service";
 
 interface BlueprintsStatusPanelProps {
   status: GamelogWatcherStatus | null;
@@ -91,6 +97,35 @@ export function BlueprintsStatusPanel({
   onStopWatch,
 }: BlueprintsStatusPanelProps) {
   const logPath = status?.logPath;
+  const [archiveStatus, setArchiveStatus] = useState<GamelogArchiveStatus | null>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const refreshArchiveStatus = async () => {
+    try {
+      const data = await gamelogArchiveService.getStatus();
+      setArchiveStatus(data);
+    } catch {
+      setArchiveStatus(null);
+    }
+  };
+
+  useEffect(() => {
+    void refreshArchiveStatus();
+  }, []);
+
+  const handleArchiveSync = async () => {
+    setIsArchiving(true);
+    try {
+      await gamelogArchiveService.sync();
+      await refreshArchiveStatus();
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const archiveChannels = archiveStatus?.channels.length
+    ? archiveStatus.channels.join(" + ")
+    : null;
 
   return (
     <section
@@ -122,9 +157,30 @@ export function BlueprintsStatusPanel({
               />
               {watching ? "Surveillance active" : "Surveillance arrêtée"}
             </Badge>
+            {archiveStatus && (
+              <Badge
+                variant="outline"
+                className="gap-1 px-2 py-0.5 text-[10px] font-medium"
+              >
+                <Archive className="h-3 w-3 text-primary" />
+                Archive LIVE+HOTFIX
+              </Badge>
+            )}
             <span className="text-sm text-muted-foreground">
               {blueprintCount} schéma{blueprintCount !== 1 ? "s" : ""}
             </span>
+            {archiveStatus && archiveStatus.totalArchivedFiles > 0 && (
+              <span className="text-xs text-muted-foreground">
+                · {archiveStatus.totalArchivedFiles} session
+                {archiveStatus.totalArchivedFiles !== 1 ? "s" : ""} archivée
+                {archiveStatus.totalArchivedFiles !== 1 ? "s" : ""}
+                {archiveStatus.deletedFromGameCount > 0 &&
+                  ` · ${archiveStatus.deletedFromGameCount} log retiré${
+                    archiveStatus.deletedFromGameCount !== 1 ? "s" : ""
+                  } du jeu`}
+                {archiveChannels && ` · ${archiveChannels}`}
+              </span>
+            )}
           </div>
         </TooltipTrigger>
         {logPath && (
@@ -152,6 +208,18 @@ export function BlueprintsStatusPanel({
           <RefreshCw
             className={cn("h-4 w-4 shrink-0", isRefreshing && "animate-spin")}
           />
+        </ActionButton>
+
+        <ActionButton
+          label="Archiver logs"
+          onClick={() => void handleArchiveSync()}
+          disabled={isArchiving || isLoading}
+        >
+          {isArchiving ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+          ) : (
+            <Archive className="h-4 w-4 shrink-0" />
+          )}
         </ActionButton>
 
         <ActionButton

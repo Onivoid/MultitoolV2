@@ -5,6 +5,7 @@ use scripts::background_service::{
     set_background_service_config, start_background_service, start_background_service_internal,
     stop_background_service, BackgroundServiceState,
 };
+use scripts::blueprint_manual_owned::{manual_owned_blueprint_toggle, manual_owned_blueprints_get};
 use scripts::blueprint_wishlist::{
     blueprint_wishlist_get, blueprint_wishlist_prune, blueprint_wishlist_toggle,
 };
@@ -14,7 +15,8 @@ use scripts::blueprints_catalog::{
     blueprints_catalog_supplement_ids,
 };
 use scripts::blueprints_wiki_extended::{
-    blueprints_catalog_filters, blueprints_mission_detail, ingredient_locations, wiki_items_filters,
+    blueprints_catalog_filters, blueprints_mission_detail, blueprints_unlock_index_status,
+    ingredient_locations, wiki_items_filters,
 };
 use scripts::cache_functions::{
     clear_cache, delete_folder, get_cache_informations, open_cache_folder,
@@ -24,14 +26,20 @@ use scripts::game_log::{
     get_cached_game_stats, get_game_stats, get_game_stats_scan_status, sync_game_stats,
     GameStatsScanState,
 };
-use scripts::gamelog_watcher::load_gamelog_watcher_config_sync;
+use scripts::gamelog_archive::{
+    get_gamelog_archive_status, load_gamelog_archive_config, save_gamelog_archive_config,
+    sync_gamelog_archive,
+};
 use scripts::gamelog_watcher::{
     export_gamelog_blueprints, get_gamelog_watcher_status, import_blueprints_from_logbackups,
-    load_gamelog_blueprints, load_gamelog_watcher_config, save_gamelog_blueprint_catalog_matches,
-    save_gamelog_watcher_config, start_gamelog_watcher, start_gamelog_watcher_internal,
-    stop_gamelog_watcher, GamelogWatcherState,
+    load_gamelog_blueprints, load_gamelog_watcher_config, load_gamelog_watcher_config_sync,
+    save_gamelog_blueprint_catalog_matches, save_gamelog_watcher_config, start_gamelog_watcher,
+    start_gamelog_watcher_internal, stop_gamelog_watcher, GamelogWatcherState,
 };
 use scripts::gamepath::{get_live_game_log_path, get_star_citizen_versions};
+use scripts::hangar_exec::{
+    hangar_exec_fetch_status, hangar_exec_get_timers, hangar_exec_start_timer,
+};
 use scripts::home_dashboard::{get_home_dashboard, save_home_dashboard};
 use scripts::local_characters_functions::{
     delete_character, download_character, duplicate_character, get_character_informations,
@@ -40,6 +48,7 @@ use scripts::local_characters_functions::{
 use scripts::onboarding::{
     complete_onboarding, get_onboarding_state, record_onboarding_attempt, reset_onboarding,
 };
+use scripts::paints_catalog::paints_catalog_list;
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
 use scripts::recent_routes::{get_top_routes, record_page_visit};
@@ -146,6 +155,26 @@ pub fn run() {
             app.manage(gamelog_watcher_state);
             app.manage(GameStatsScanState::default());
 
+            // Sync initiale des logbackups vers l'archive locale.
+            let app_for_archive = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let app_clone = app_for_archive;
+                match tokio::task::spawn_blocking(move || {
+                    scripts::gamelog_archive::sync_logbackups_archive_sync(&app_clone)
+                })
+                .await
+                {
+                    Ok(Ok(summary)) => {
+                        eprintln!(
+                            "[gamelog_archive] sync initiale: {} archivés, {} supprimés",
+                            summary.archived, summary.deleted_from_game
+                        );
+                    }
+                    Ok(Err(e)) => eprintln!("Échec sync archive gamelog: {e}"),
+                    Err(e) => eprintln!("Échec tâche sync archive gamelog: {e}"),
+                }
+            });
+
             if let Err(e) = setup_system_tray(app.handle()) {
                 eprintln!("Échec de la configuration du system tray: {e}");
             }
@@ -218,6 +247,10 @@ pub fn run() {
             stop_gamelog_watcher,
             export_gamelog_blueprints,
             import_blueprints_from_logbackups,
+            load_gamelog_archive_config,
+            save_gamelog_archive_config,
+            sync_gamelog_archive,
+            get_gamelog_archive_status,
             record_page_visit,
             get_top_routes,
             get_home_dashboard,
@@ -238,10 +271,17 @@ pub fn run() {
             blueprints_catalog_filters,
             wiki_items_filters,
             blueprints_mission_detail,
+            blueprints_unlock_index_status,
             ingredient_locations,
             blueprint_wishlist_get,
             blueprint_wishlist_toggle,
             blueprint_wishlist_prune,
+            manual_owned_blueprints_get,
+            manual_owned_blueprint_toggle,
+            paints_catalog_list,
+            hangar_exec_fetch_status,
+            hangar_exec_start_timer,
+            hangar_exec_get_timers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

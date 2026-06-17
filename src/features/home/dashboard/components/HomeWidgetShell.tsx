@@ -10,36 +10,58 @@ import type { HomeWidgetInstance } from "@/features/home/dashboard/homeDashboard
 import { getWidgetDefinition } from "@/features/home/dashboard/homeDashboard.registry";
 import {
   clampWidgetPosition,
+  MAX_WIDGET_WIDTH_PX,
+  MIN_WIDGET_WIDTH_PX,
   resolveWidgetPosition,
   widgetIntersectsLogo,
 } from "@/features/home/dashboard/homeDashboard.lib";
+import { useStaggeredWidgetMount } from "@/features/home/dashboard/useStaggeredWidgetMount";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export interface HomeWidgetShellProps {
   instance: HomeWidgetInstance;
+  mountOrder: number;
   editMode: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   logoRef: React.RefObject<HTMLElement | null>;
-  onPositionChange: (id: string, xPercent: number, yPercent: number) => void;
+  onPositionChange: (
+    id: string,
+    xPercent: number,
+    yPercent: number,
+    options?: { persist?: boolean },
+  ) => void;
+  onWidthChange: (id: string, widthPx: number) => void;
   onRemove: (id: string) => void;
 }
 
 export function HomeWidgetShell({
   instance,
+  mountOrder,
   editMode,
   containerRef,
   logoRef,
   onPositionChange,
+  onWidthChange,
   onRemove,
 }: HomeWidgetShellProps) {
   const definition = getWidgetDefinition(instance.type);
+  const contentReady = useStaggeredWidgetMount(mountOrder);
   const widgetRef = useRef<HTMLDivElement>(null);
+  const autoResolvedRef = useRef(false);
   const dragRef = useRef<{
     offsetX: number;
     offsetY: number;
   } | null>(null);
+  const resizeRef = useRef<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
 
   useEffect(() => {
+    if (!contentReady || autoResolvedRef.current) {
+      return;
+    }
     const frame = requestAnimationFrame(() => {
       const container = containerRef.current;
       const widgetEl = widgetRef.current;
@@ -63,15 +85,18 @@ export function HomeWidgetShell({
         containerRect,
         logoRect,
       );
+      autoResolvedRef.current = true;
       if (
         Math.abs(resolved.xPercent - instance.xPercent) > 0.01 ||
         Math.abs(resolved.yPercent - instance.yPercent) > 0.01
       ) {
-        onPositionChange(instance.id, resolved.xPercent, resolved.yPercent);
+        onPositionChange(instance.id, resolved.xPercent, resolved.yPercent, {
+          persist: false,
+        });
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [instance.id]);
+  }, [contentReady, instance.id]);
 
   const handleGripPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>) => {
@@ -158,6 +183,43 @@ export function HomeWidgetShell({
     [containerRef, logoRef, instance.id, instance.widthPx, onPositionChange],
   );
 
+  const handleResizePointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!editMode) return;
+      e.preventDefault();
+      e.stopPropagation();
+      resizeRef.current = {
+        startX: e.clientX,
+        startWidth: instance.widthPx,
+      };
+      const handleEl = e.currentTarget;
+      handleEl.setPointerCapture(e.pointerId);
+
+      const onMove = (ev: PointerEvent) => {
+        if (!resizeRef.current) return;
+        const delta = ev.clientX - resizeRef.current.startX;
+        const next = Math.max(
+          MIN_WIDGET_WIDTH_PX,
+          Math.min(MAX_WIDGET_WIDTH_PX, resizeRef.current.startWidth + delta),
+        );
+        onWidthChange(instance.id, next);
+      };
+
+      const onUp = (ev: PointerEvent) => {
+        if (handleEl.hasPointerCapture(ev.pointerId)) {
+          handleEl.releasePointerCapture(ev.pointerId);
+        }
+        resizeRef.current = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [editMode, instance.id, instance.widthPx, onWidthChange],
+  );
+
   if (!definition) {
     return null;
   }
@@ -211,7 +273,22 @@ export function HomeWidgetShell({
             definition.headerRoute && <WidgetHeaderLink to={definition.headerRoute} />
           )}
         </header>
-        <Content />
+        {contentReady ? (
+          <Content />
+        ) : (
+          <div className="flex flex-col gap-2 px-3 py-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        )}
+        {editMode && (
+          <button
+            type="button"
+            className="absolute bottom-2 right-1 z-20 h-8 w-3 cursor-ew-resize rounded-sm border border-primary/20 bg-background/80 hover:bg-primary/10"
+            aria-label={`Redimensionner le widget ${definition.label}`}
+            onPointerDown={handleResizePointerDown}
+          />
+        )}
       </div>
     </div>
   );

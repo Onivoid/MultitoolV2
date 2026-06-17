@@ -195,6 +195,60 @@ fn get_launcher_release_version(log_lines: &[String], channel: &str) -> Option<S
     None
 }
 
+/// Dernier numéro de build (changelist P4) vu dans les logs RSI pour un canal.
+fn get_launcher_release_build_number(log_lines: &[String], channel: &str) -> Option<String> {
+    let escaped_channel = regex::escape(channel);
+    let patterns = [
+        format!(
+            r"(?i)\bSC\s+{escaped_channel}\b[^\n]*?(?:change(?:list)?|build|changelist)\s*[#:=]?\s*(\d{{5,}})"
+        ),
+        format!(
+            r"(?i)\bStar Citizen\s+{escaped_channel}\b[^\n]*?(?:change(?:list)?|build|changelist)\s*[#:=]?\s*(\d{{5,}})"
+        ),
+        format!(r"(?i)\bSC\s+{escaped_channel}\b[^\n]*?\b(\d{{6,}})\b"),
+    ];
+    let regexes: Vec<Regex> = patterns
+        .iter()
+        .filter_map(|pattern| Regex::new(pattern).ok())
+        .collect();
+
+    for line in log_lines.iter().rev() {
+        for re in &regexes {
+            if let Some(cap) = re.captures(line) {
+                if let Some(build) = cap.get(1) {
+                    let build = build.as_str().trim();
+                    if !build.is_empty() {
+                        return Some(build.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn parse_semver_triple(value: &str) -> Option<(u32, u32, u32)> {
+    let token = normalize_sc_version_token(value);
+    let mut parts = token.split('.');
+    let major = parts.next()?.parse().ok()?;
+    let minor = parts.next()?.parse().ok()?;
+    let patch_part = parts.next()?;
+    let patch: String = patch_part
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    let patch = patch.parse().ok()?;
+    Some((major, minor, patch))
+}
+
+fn installed_not_behind_release(installed: &str, latest: &str) -> bool {
+    match (parse_semver_triple(installed), parse_semver_triple(latest)) {
+        (Some(a), Some(b)) => a >= b,
+        _ => false,
+    }
+}
+
 /// État de mise à jour du jeu (patch RSI) pour un canal installé.
 #[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -224,28 +278,65 @@ fn sc_versions_match(installed: &str, latest: &str) -> bool {
 fn compute_game_update_status(
     release_version: &Option<String>,
     game_version: &Option<String>,
+    build_number: &Option<String>,
+    launcher_build_number: &Option<String>,
 ) -> GameUpdateStatus {
+    let has_install = game_version
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .is_some()
+        || build_number
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .is_some();
+
     let Some(latest) = release_version
         .as_ref()
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
     else {
+        if has_install {
+            return GameUpdateStatus::UpToDate;
+        }
         return GameUpdateStatus::Unknown;
     };
 
-    let Some(installed) = game_version
+    let installed = game_version
         .as_ref()
         .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-    else {
-        return GameUpdateStatus::Unknown;
-    };
+        .filter(|s| !s.is_empty());
 
-    if sc_versions_match(installed, latest) {
-        GameUpdateStatus::UpToDate
-    } else {
-        GameUpdateStatus::Outdated
+    if let Some(installed) = installed {
+        if sc_versions_match(installed, latest) {
+            return GameUpdateStatus::UpToDate;
+        }
+        if installed_not_behind_release(installed, latest) {
+            return GameUpdateStatus::UpToDate;
+        }
     }
+
+    if let (Some(installed_bn), Some(launcher_bn)) = (
+        build_number
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty()),
+        launcher_build_number
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty()),
+    ) {
+        if installed_bn == launcher_bn {
+            return GameUpdateStatus::UpToDate;
+        }
+    }
+
+    if !has_install {
+        return GameUpdateStatus::Unknown;
+    }
+
+    GameUpdateStatus::Outdated
 }
 
 /// Informations sur une version installée de Star Citizen.
@@ -288,7 +379,13 @@ pub fn get_star_citizen_versions_sync() -> VersionPaths {
         // Fusionne les alias (ex. clé « StarCitizen/LIVE ») vers la clé canonique LIVE.
         let (build_number, game_version, branch) = read_build_manifest_info(&normalized_path);
         let release_version = get_launcher_release_version(&log_lines, &version);
-        let game_update_status = compute_game_update_status(&release_version, &game_version);
+        let launcher_build_number = get_launcher_release_build_number(&log_lines, &version);
+        let game_update_status = compute_game_update_status(
+            &release_version,
+            &game_version,
+            &build_number,
+            &launcher_build_number,
+        );
         let up_to_date = game_update_status == GameUpdateStatus::UpToDate;
         let info = VersionInfo {
             path: normalized_path.clone(),
@@ -461,16 +558,44 @@ mod tests {
     #[test]
     fn game_update_status_matches_normalized_versions() {
         assert_eq!(
-            compute_game_update_status(&Some("4.0.1".to_string()), &Some("4.0.1-LIVE".to_string()),),
+            compute_game_update_status(
+                &Some("4.0.1".to_string()),
+                &Some("4.0.1-LIVE".to_string()),
+                &None,
+                &None,
+            ),
             GameUpdateStatus::UpToDate
         );
         assert_eq!(
-            compute_game_update_status(&Some("4.0.2".to_string()), &Some("4.0.1".to_string()),),
+            compute_game_update_status(
+                &Some("4.0.2".to_string()),
+                &Some("4.0.1".to_string()),
+                &None,
+                &None,
+            ),
             GameUpdateStatus::Outdated
         );
         assert_eq!(
-            compute_game_update_status(&None, &Some("4.0.1".to_string())),
-            GameUpdateStatus::Unknown
+            compute_game_update_status(&None, &Some("4.0.1".to_string()), &None, &None),
+            GameUpdateStatus::UpToDate
+        );
+        assert_eq!(
+            compute_game_update_status(
+                &Some("4.0.1".to_string()),
+                &Some("4.0.1-LIVE".to_string()),
+                &Some("12345".to_string()),
+                &Some("12345".to_string()),
+            ),
+            GameUpdateStatus::UpToDate
+        );
+        assert_eq!(
+            compute_game_update_status(
+                &Some("4.0.2".to_string()),
+                &Some("4.0.2-HOTFIX".to_string()),
+                &None,
+                &None,
+            ),
+            GameUpdateStatus::UpToDate
         );
     }
 

@@ -1,4 +1,4 @@
-import { ExternalLink, Star } from "lucide-react";
+import { ExternalLink, Star, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
 import type {
@@ -22,8 +22,10 @@ import { cn } from "@/lib/utils";
 export interface BlueprintHeroCardProps {
   detail: BlueprintCatalogDetail;
   isOwned: boolean;
+  isManualOwned?: boolean;
   isWishlisted?: boolean;
   onToggleWishlist?: () => void;
+  onToggleManualOwned?: () => void;
   unlockDate?: number | null;
 }
 
@@ -38,8 +40,10 @@ function formatUnlockDate(ts: number): string {
 export function BlueprintHeroCard({
   detail,
   isOwned,
+  isManualOwned = false,
   isWishlisted = false,
   onToggleWishlist,
+  onToggleManualOwned,
   unlockDate,
 }: BlueprintHeroCardProps) {
   const family = resolveItemFamily(detail);
@@ -63,6 +67,29 @@ export function BlueprintHeroCard({
           {showEn && <p className="text-xs text-muted-foreground">{nameEn}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {onToggleManualOwned && (
+            <button
+              type="button"
+              className={cn(
+                "rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                isManualOwned
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary",
+              )}
+              aria-label={
+                isManualOwned
+                  ? "Retirer la possession manuelle"
+                  : "Marquer comme possédé manuellement"
+              }
+              aria-pressed={isManualOwned}
+              onClick={() => onToggleManualOwned()}
+              data-no-window-drag
+            >
+              <UserCheck
+                className={cn("h-4 w-4", isManualOwned && "fill-primary/20")}
+              />
+            </button>
+          )}
           {onToggleWishlist && (
             <button
               type="button"
@@ -99,6 +126,7 @@ export function BlueprintHeroCard({
             className="border-primary/35 bg-primary/10 text-primary"
           >
             Possédé
+            {isManualOwned && !unlockDate ? " · manuel" : ""}
             {unlockDate != null && ` · ${formatUnlockDate(unlockDate)}`}
           </BlueprintMetaBadge>
         )}

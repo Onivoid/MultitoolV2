@@ -1,19 +1,8 @@
 import { useLocation } from "react-router-dom";
-import { Newspaper, Settings } from "lucide-react";
+import { LayoutGrid, Settings } from "lucide-react";
 import { IconHome } from "@tabler/icons-react";
-import {
-  Dock,
-  DockDivider,
-  DockDropdownGroup,
-  DockDropdownItem,
-  DockIcon,
-  DockItem,
-} from "@/components/dock";
-import {
-  featuresRouteGroups,
-  infoRoutes,
-  newsRoute,
-} from "@/components/navigation/navigation.config";
+import { Dock, DockDivider, DockIcon } from "@/components/dock";
+import { featuresHubRoute } from "@/components/navigation/navigation.config";
 
 export function AppDock() {
   const location = useLocation();
@@ -32,40 +21,11 @@ export function AppDock() {
 
       <DockDivider />
 
-      <DockItem label="Fonctionnalités" id="fonctionnalites">
-        {featuresRouteGroups.map((group) => (
-          <DockDropdownGroup key={group.label} label={group.label}>
-            {group.routes.map((route) => (
-              <DockDropdownItem
-                key={route.path}
-                href={route.path}
-                label={route.label}
-                description={route.description}
-                icon={route.icon}
-              />
-            ))}
-          </DockDropdownGroup>
-        ))}
-      </DockItem>
-
-      <DockDivider />
-
       <DockIcon
-        href={newsRoute.path}
-        ariaLabel={newsRoute.label}
-        icon={<Newspaper size={20} className="text-foreground" />}
+        href={featuresHubRoute.path}
+        ariaLabel="Applications"
+        icon={<LayoutGrid size={20} className="text-foreground" />}
       />
-      <DockItem label="Informations" id="informations">
-        {infoRoutes.map((route) => (
-          <DockDropdownItem
-            key={route.path}
-            href={route.path}
-            label={route.label}
-            description={route.description}
-            icon={route.icon}
-          />
-        ))}
-      </DockItem>
 
       <DockDivider />
 

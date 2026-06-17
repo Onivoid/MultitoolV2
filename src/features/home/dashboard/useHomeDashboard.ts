@@ -68,12 +68,36 @@ export function useHomeDashboard() {
   }, [load]);
 
   const updateWidgetPosition = useCallback(
-    (id: string, xPercent: number, yPercent: number) => {
+    (
+      id: string,
+      xPercent: number,
+      yPercent: number,
+      options?: { persist?: boolean },
+    ) => {
+      setLayout((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const next = normalizeLayout({
+          ...prev,
+          widgets: prev.widgets.map((w) =>
+            w.id === id ? { ...w, xPercent, yPercent } : w,
+          ),
+        });
+        if (options?.persist !== false) {
+          persist(next);
+        }
+        return next;
+      });
+    },
+    [persist],
+  );
+
+  const updateWidgetWidth = useCallback(
+    (id: string, widthPx: number) => {
       updateLayout((prev) => ({
         ...prev,
-        widgets: prev.widgets.map((w) =>
-          w.id === id ? { ...w, xPercent, yPercent } : w,
-        ),
+        widgets: prev.widgets.map((w) => (w.id === id ? { ...w, widthPx } : w)),
       }));
     },
     [updateLayout],
@@ -116,6 +140,7 @@ export function useHomeDashboard() {
     editMode,
     setEditMode,
     updateWidgetPosition,
+    updateWidgetWidth,
     removeWidget,
     addWidget,
     setWidgets,

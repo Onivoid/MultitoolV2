@@ -36,7 +36,10 @@ export function HomeDashboardEditBar({
         type="button"
         variant={editMode ? "default" : "outline"}
         size="sm"
-        className="h-8 gap-1.5 text-xs"
+        className={cn(
+          "h-9 gap-2 px-4 text-xs shadow-md",
+          !editMode && "border-primary/30 bg-background/90 backdrop-blur-sm",
+        )}
         aria-pressed={editMode}
         onClick={onToggleEditMode}
       >

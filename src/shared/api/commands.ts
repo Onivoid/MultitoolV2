@@ -70,6 +70,17 @@ export const TAURI_COMMANDS = {
   getSystemMetrics: "get_system_metrics",
   listGameConfigBackupTargets: "list_game_config_backup_targets",
   exportGameConfigBackup: "export_game_config_backup",
+  paintsCatalogList: "paints_catalog_list",
+  hangarExecFetchStatus: "hangar_exec_fetch_status",
+  hangarExecStartTimer: "hangar_exec_start_timer",
+  hangarExecGetTimers: "hangar_exec_get_timers",
+  syncGamelogArchive: "sync_gamelog_archive",
+  getGamelogArchiveStatus: "get_gamelog_archive_status",
+  loadGamelogArchiveConfig: "load_gamelog_archive_config",
+  saveGamelogArchiveConfig: "save_gamelog_archive_config",
+  manualOwnedBlueprintsGet: "manual_owned_blueprints_get",
+  manualOwnedBlueprintToggle: "manual_owned_blueprint_toggle",
+  blueprintsUnlockIndexStatus: "blueprints_unlock_index_status",
 } as const;
 
 export type TauriCommand = (typeof TAURI_COMMANDS)[keyof typeof TAURI_COMMANDS];

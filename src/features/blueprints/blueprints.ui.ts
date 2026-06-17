@@ -54,6 +54,15 @@ export function bpCatalogRow(selected: boolean): string {
   );
 }
 
+/** Surbrillance contextuelle (BP d'origine dans l'explorateur mission) — distinct du style « possédé ». */
+export function bpCatalogRowContext(): string {
+  return cn(
+    "w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+    "border-amber-500/35 bg-amber-500/8 shadow-[inset_3px_0_0_0_hsl(var(--amber-500)/0.5)]",
+    "hover:border-amber-500/45 hover:bg-amber-500/12",
+  );
+}
+
 export function bpDetailBlock(): string {
   return "rounded-md border border-border/40 bg-background/15 px-2.5 py-2";
 }

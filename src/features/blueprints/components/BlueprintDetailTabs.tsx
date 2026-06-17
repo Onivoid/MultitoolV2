@@ -174,10 +174,15 @@ export function BlueprintDetailTabs({
                       {m.contractor && <span>· {m.contractor}</span>}
                       {m.missionType && <span>· {m.missionType}</span>}
                       {m.minStandingName && <span>· Rang : {m.minStandingName}</span>}
-                      {m.shareable != null && (
+                      {m.shareable != null ? (
                         <span className="inline-flex items-center gap-0.5">
                           <Users className="h-3 w-3" />
                           {m.shareable ? "Partageable" : "Solo"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 text-muted-foreground/80">
+                          <Users className="h-3 w-3" />
+                          Partageable : Inconnu
                         </span>
                       )}
                       {m.dropChance && <span>· {m.dropChance}</span>}

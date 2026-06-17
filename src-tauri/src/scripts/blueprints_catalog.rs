@@ -1631,8 +1631,23 @@ pub(crate) fn summary_from_wiki(bp: &WikiBlueprint) -> BlueprintSummary {
     }
 }
 
+fn is_placeholder_blueprint(bp: &WikiBlueprint) -> bool {
+    let key = bp.key.to_ascii_uppercase();
+    let output = bp.output_name.as_deref().unwrap_or("").to_ascii_uppercase();
+    for s in [key.as_str(), output.as_str()] {
+        if s.contains("PLACEHOLDER") || s.contains("<= PLACEHOLDER =>") {
+            return true;
+        }
+    }
+    false
+}
+
 fn build_summaries_from_wiki(blueprints: &[WikiBlueprint]) -> Vec<BlueprintSummary> {
-    let mut out: Vec<BlueprintSummary> = blueprints.iter().map(summary_from_wiki).collect();
+    let mut out: Vec<BlueprintSummary> = blueprints
+        .iter()
+        .filter(|b| !is_placeholder_blueprint(b))
+        .map(summary_from_wiki)
+        .collect();
     out.sort_by(|a, b| a.blueprint_id.cmp(&b.blueprint_id));
     *CATALOG_SUMMARIES.lock().unwrap() = Some(out.clone());
     store_uuid_index(&out);
@@ -2141,6 +2156,11 @@ pub async fn blueprints_catalog_list_full() -> Result<Vec<BlueprintSummary>, Str
     let mut list = load_wiki_catalog_summaries().await?;
     super::blueprints_wiki_extended::merge_unlock_index(&mut list);
     super::blueprints_item_profile::merge_item_meta_index(&mut list);
+    if super::blueprints_wiki_extended::unlock_index_is_stale() {
+        tauri::async_runtime::spawn(async {
+            super::blueprints_wiki_extended::build_unlock_index_background().await;
+        });
+    }
     Ok(list)
 }
 

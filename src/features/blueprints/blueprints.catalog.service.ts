@@ -82,6 +82,11 @@ export const blueprintsCatalogService = {
   filters: () =>
     invokeCommand<BlueprintCatalogFilters>(TAURI_COMMANDS.blueprintsCatalogFilters),
 
+  unlockIndexStatus: () =>
+    invokeCommand<{ exists: boolean; stale: boolean }>(
+      TAURI_COMMANDS.blueprintsUnlockIndexStatus,
+    ),
+
   wikiItemsFilters: (category: string) =>
     invokeCommand<WikiItemsFilters>(TAURI_COMMANDS.wikiItemsFilters, { category }),
 

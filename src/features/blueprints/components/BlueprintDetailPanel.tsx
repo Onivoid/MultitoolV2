@@ -20,8 +20,10 @@ export interface BlueprintDetailPanelProps {
   isLoading: boolean;
   error: string | null;
   isOwned: boolean;
+  isManualOwned?: boolean;
   isWishlisted?: boolean;
   onToggleWishlist?: () => void;
+  onToggleManualOwned?: () => void;
   selectedId: string | null;
   unlockDate?: number | null;
   ownedIds?: Set<string>;
@@ -43,8 +45,10 @@ export function BlueprintDetailPanel({
   isLoading,
   error,
   isOwned,
+  isManualOwned,
   isWishlisted,
   onToggleWishlist,
+  onToggleManualOwned,
   selectedId,
   unlockDate,
   ownedIds,
@@ -124,8 +128,10 @@ export function BlueprintDetailPanel({
         <BlueprintHeroCard
           detail={detail}
           isOwned={isOwned}
+          isManualOwned={isManualOwned}
           isWishlisted={isWishlisted}
           onToggleWishlist={onToggleWishlist}
+          onToggleManualOwned={onToggleManualOwned}
           unlockDate={unlockDate}
         />
         <BlueprintDetailTabs

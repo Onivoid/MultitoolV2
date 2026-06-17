@@ -151,6 +151,33 @@ fn unlock_index_path() -> Option<PathBuf> {
     wiki_data_dir().map(|d| d.join("wiki_bp_unlock_index.json"))
 }
 
+/// Indique si l'index unlock doit être (re)construit.
+pub fn unlock_index_is_stale() -> bool {
+    let Some(path) = unlock_index_path() else {
+        return true;
+    };
+    is_cache_stale(&path, 7)
+}
+
+pub fn unlock_index_exists() -> bool {
+    unlock_index_path().map(|p| p.is_file()).unwrap_or(false)
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnlockIndexStatus {
+    pub exists: bool,
+    pub stale: bool,
+}
+
+#[command]
+pub fn blueprints_unlock_index_status() -> UnlockIndexStatus {
+    UnlockIndexStatus {
+        exists: unlock_index_exists(),
+        stale: unlock_index_is_stale(),
+    }
+}
+
 pub fn merge_unlock_index(summaries: &mut [BlueprintSummary]) {
     let Some(path) = unlock_index_path() else {
         return;
@@ -343,7 +370,17 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         blueprint_keys,
-        shareable: data.get("shareable").and_then(|v| v.as_bool()),
+        shareable: data
+            .get("shareable")
+            .and_then(|v| v.as_bool())
+            .or_else(|| data.get("is_shareable").and_then(|v| v.as_bool()))
+            .or_else(|| data.get("coop_mission").and_then(|v| v.as_bool()))
+            .or_else(|| data.get("is_coop").and_then(|v| v.as_bool()))
+            .or_else(|| {
+                data.get("mission_flags")
+                    .and_then(|f| f.get("shareable"))
+                    .and_then(|v| v.as_bool())
+            }),
         rank_index: data.get("rank_index").and_then(|v| v.as_i64()),
         min_standing_name: data
             .get("min_standing")

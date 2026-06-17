@@ -8,16 +8,26 @@ const defaultTransition = {
   ease: [0, 0.71, 0.2, 1.01] as const,
 };
 
+const fadeTransition = {
+  duration: 0.35,
+  ease: [0.25, 0.1, 0.25, 1] as const,
+};
+
+type PageMotionEntrance = "default" | "fade";
+
 export default function PageMotion({
   children,
   className,
+  entrance = "default",
   ...props
-}: HTMLMotionProps<"div">) {
+}: HTMLMotionProps<"div"> & { entrance?: PageMotionEntrance }) {
+  const isFade = entrance === "fade";
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={defaultTransition}
+      initial={isFade ? { opacity: 0 } : { opacity: 0, x: 100 }}
+      animate={isFade ? { opacity: 1 } : { opacity: 1, x: 0 }}
+      transition={isFade ? fadeTransition : defaultTransition}
       className={cn(PAGE_ROOT, className)}
       {...props}
     >

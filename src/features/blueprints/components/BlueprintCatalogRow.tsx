@@ -1,4 +1,4 @@
-import { Check, Star } from "lucide-react";
+import { Check, Star, UserCheck } from "lucide-react";
 import { BlueprintMetaBadge } from "@/features/blueprints/components/BlueprintMetaBadge";
 import { JurisdictionBadge } from "@/features/blueprints/components/JurisdictionBadge";
 import { SystemBadge } from "@/features/blueprints/components/SystemBadge";
@@ -23,8 +23,10 @@ export interface BlueprintCatalogRowProps {
   item: BlueprintCatalogSummary;
   selected: boolean;
   isOwned: boolean;
+  isManualOwned?: boolean;
   isWishlisted?: boolean;
   onToggleWishlist?: () => void;
+  onToggleManualOwned?: () => void;
   unlockedAt?: number;
   filterState?: BlueprintCatalogFilterState;
   onSelect: () => void;
@@ -45,8 +47,10 @@ export function BlueprintCatalogRow({
   item,
   selected,
   isOwned,
+  isManualOwned = false,
   isWishlisted = false,
   onToggleWishlist,
+  onToggleManualOwned,
   unlockedAt,
   filterState,
   onSelect,
@@ -87,6 +91,32 @@ export function BlueprintCatalogRow({
             className="mt-1 h-3.5 w-3.5 shrink-0 text-primary -ml-1"
             aria-label="Débloqué"
           />
+        )}
+        {onToggleManualOwned && (
+          <button
+            type="button"
+            className={cn(
+              "mt-0.5 shrink-0 rounded p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+              isManualOwned
+                ? "text-primary"
+                : "text-muted-foreground hover:text-primary",
+            )}
+            aria-label={
+              isManualOwned
+                ? "Retirer la possession manuelle"
+                : "Marquer comme possédé manuellement"
+            }
+            aria-pressed={isManualOwned}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleManualOwned();
+            }}
+            data-no-window-drag
+          >
+            <UserCheck
+              className={cn("h-3.5 w-3.5", isManualOwned && "fill-primary/20")}
+            />
+          </button>
         )}
         {onToggleWishlist && (
           <button

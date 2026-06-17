@@ -1,5 +1,6 @@
 use crate::scripts::game_log::parse::parse_log_timestamp;
-use crate::scripts::gamepath::get_live_game_log_path_sync;
+use crate::scripts::gamelog_archive::{list_archived_log_files, sync_logbackups_archive_sync};
+use crate::scripts::gamepath::get_star_citizen_versions_sync;
 use chrono::Utc;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -613,6 +614,11 @@ fn run_log_tailer(app: AppHandle, log_path: PathBuf, stop: Arc<AtomicBool>) {
         if rotated {
             if file.is_some() {
                 state.reset();
+                // Session précédente déplacée vers logbackups — archiver.
+                let app_sync = app.clone();
+                if let Err(e) = sync_logbackups_archive_sync(&app_sync) {
+                    eprintln!("[gamelog_watcher] archive sync after rotation: {e}");
+                }
             }
             if let Ok(content) = read_log_file_lossy(&log_path) {
                 state.set_owner_from_content(&content);
@@ -694,6 +700,65 @@ impl Default for GamelogWatcherState {
     }
 }
 
+fn run_multi_log_tailer(app: AppHandle, log_paths: Vec<PathBuf>, stop: Arc<AtomicBool>) {
+    if log_paths.is_empty() {
+        while !stop.load(Ordering::Relaxed) {
+            thread::sleep(Duration::from_secs(2));
+        }
+        return;
+    }
+    if log_paths.len() == 1 {
+        run_log_tailer(app, log_paths[0].clone(), stop);
+        return;
+    }
+
+    let mut child_stops: Vec<Arc<AtomicBool>> = Vec::new();
+    let mut handles = Vec::new();
+
+    for path in log_paths {
+        let child_stop = Arc::new(AtomicBool::new(false));
+        let child_stop_worker = Arc::clone(&child_stop);
+        let app_clone = app.clone();
+        let handle = thread::Builder::new()
+            .name("gamelog-watcher-channel".into())
+            .spawn(move || run_log_tailer(app_clone, path, child_stop_worker))
+            .ok();
+        if let Some(h) = handle {
+            child_stops.push(child_stop);
+            handles.push(h);
+        }
+    }
+
+    while !stop.load(Ordering::Relaxed) {
+        thread::sleep(Duration::from_millis(500));
+    }
+    for child_stop in &child_stops {
+        child_stop.store(true, Ordering::Relaxed);
+    }
+    for h in handles {
+        let _ = h.join();
+    }
+}
+
+fn active_game_log_paths() -> Vec<PathBuf> {
+    let versions = get_star_citizen_versions_sync();
+    let mut paths = Vec::new();
+    for channel in ["LIVE", "HOTFIX"] {
+        if let Some(info) = versions.versions.get(channel) {
+            let p = PathBuf::from(&info.path).join("Game.log");
+            if p.exists() || channel == "LIVE" {
+                paths.push(p);
+            }
+        }
+    }
+    if paths.is_empty() {
+        if let Ok(live) = crate::scripts::gamepath::get_live_game_log_path_sync() {
+            paths.push(live);
+        }
+    }
+    paths
+}
+
 pub fn start_gamelog_watcher_internal(
     state: &GamelogWatcherState,
     app: AppHandle,
@@ -705,14 +770,26 @@ pub fn start_gamelog_watcher_internal(
         }
     }
 
-    let log_path = get_live_game_log_path_sync()?;
+    // Sync initial des logbackups avant de démarrer le tail.
+    if let Err(e) = sync_logbackups_archive_sync(&app) {
+        eprintln!("[gamelog_watcher] initial archive sync: {e}");
+    }
+
+    let log_paths = active_game_log_paths();
+    if log_paths.is_empty() {
+        return Err(
+            "Aucun Game.log détecté (canaux LIVE/HOTFIX). Vérifiez l'installation Star Citizen."
+                .to_string(),
+        );
+    }
+
     let stop = Arc::new(AtomicBool::new(false));
     let stop_clone = Arc::clone(&stop);
     let app_clone = app.clone();
 
     let handle = thread::Builder::new()
         .name("gamelog-watcher".into())
-        .spawn(move || run_log_tailer(app_clone, log_path, stop_clone))
+        .spawn(move || run_multi_log_tailer(app_clone, log_paths, stop_clone))
         .map_err(|e| e.to_string())?;
 
     {
@@ -817,9 +894,15 @@ pub fn get_gamelog_watcher_status(
         .lock()
         .map(|r| *r)
         .map_err(|e| e.to_string())?;
-    let log_path = get_live_game_log_path_sync()
-        .ok()
-        .map(|p| p.to_string_lossy().into_owned());
+    let log_paths: Vec<String> = active_game_log_paths()
+        .iter()
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect();
+    let log_path = if log_paths.is_empty() {
+        None
+    } else {
+        Some(log_paths.join(" | "))
+    };
     let store = load_blueprint_store_sync(&app)?;
     Ok(GamelogWatcherStatus {
         watching,
@@ -888,40 +971,33 @@ fn import_blueprints_from_logbackups_sync(
         },
     );
 
-    let game_log = get_live_game_log_path_sync()?;
-    let game_log_path = game_log.display().to_string();
-    let logbackups = game_log.parent().unwrap().join("logbackups");
-    if !logbackups.is_dir() {
-        return Err(format!(
-            "Dossier logbackups introuvable : {}",
-            logbackups.display()
-        ));
+    // Sync archive depuis logbackups jeu puis lire le corpus mergé.
+    let _ = sync_logbackups_archive_sync(app);
+
+    let mut files: Vec<PathBuf> = list_archived_log_files(app)?
+        .into_iter()
+        .map(|f| f.path)
+        .collect();
+
+    if include_current {
+        for live in crate::scripts::gamelog_archive::list_live_session_game_logs() {
+            if live.path.is_file() && !files.iter().any(|p| p == &live.path) {
+                files.push(live.path);
+            }
+        }
     }
 
-    let mut files: Vec<PathBuf> = fs::read_dir(&logbackups)
-        .map_err(|e| e.to_string())?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.is_file()
-                && p.extension()
-                    .and_then(|e| e.to_str())
-                    .map(|e| e.eq_ignore_ascii_case("log"))
-                    .unwrap_or(false)
-        })
-        .collect();
     files.sort();
 
-    if include_current && game_log.is_file() && !files.iter().any(|p| p == &game_log) {
-        files.push(game_log.clone());
-    }
+    let game_log_path = active_game_log_paths()
+        .first()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "archive".to_string());
 
     if files.is_empty() {
-        return Err(format!(
-            "Aucun fichier .log dans logbackups ({}) ni Game.log ({})",
-            logbackups.display(),
-            game_log_path
-        ));
+        return Err(
+            "Aucun fichier log archivé ni Game.log de session trouvé (LIVE/HOTFIX).".to_string(),
+        );
     }
 
     let files_total = files.len() as u32;
@@ -1035,7 +1111,7 @@ fn import_blueprints_from_logbackups_sync(
         files_with_matches,
         unique_products_found,
         files_failed,
-        log_directory: logbackups.display().to_string(),
+        log_directory: "gamelog_archive (mergé LIVE+HOTFIX)".to_string(),
         game_log_path,
         read_errors: read_errors.into_iter().take(5).collect(),
         removed_without_owner,
@@ -1059,6 +1135,7 @@ pub async fn import_blueprints_from_logbackups(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::scripts::gamepath::get_live_game_log_path_sync;
 
     #[test]
     fn extract_log_owner_from_legacy_login_line() {
@@ -1252,6 +1329,10 @@ mod tests {
                         .unwrap_or(false)
             })
             .collect();
+        if entries.is_empty() {
+            eprintln!("skip: logbackups LIVE vide");
+            return;
+        }
         for path in &entries {
             if let Ok(found) = scan_file_for_blueprints(path) {
                 if !found.is_empty() {

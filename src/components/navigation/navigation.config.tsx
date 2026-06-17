@@ -7,8 +7,11 @@ import {
   Download,
   HardDrive,
   Languages,
+  LayoutGrid,
   Newspaper,
   Package,
+  Palette,
+  Radio,
   ScrollText,
   Users,
 } from "lucide-react";
@@ -85,6 +88,18 @@ export const featuresRouteGroups: NavRouteGroup[] = [
         description: "Catalogue et journal Game.log",
       },
       {
+        path: "/peintures",
+        label: "Peintures",
+        icon: Palette,
+        description: "Encyclopédie des skins vaisseaux",
+      },
+      {
+        path: "/hangar-exec",
+        label: "Hangar Executive",
+        icon: Radio,
+        description: "Minuteurs PYAM et terminaux Pyro",
+      },
+      {
         path: "/statistiques",
         label: "Statistiques",
         icon: BarChart3,
@@ -103,6 +118,13 @@ export const featuresRouteGroups: NavRouteGroup[] = [
 export const featuresRoutes: NavRoute[] = featuresRouteGroups.flatMap(
   (group) => group.routes,
 );
+
+export const featuresHubRoute: NavRoute = {
+  path: "/fonctionnalites",
+  label: "Fonctionnalités",
+  icon: LayoutGrid,
+  description: "Toutes les applications Multitool",
+};
 
 export const homeVisitEligibleRoutes: NavRoute[] = featuresRoutes;
 
@@ -138,6 +160,13 @@ export const infoRoutes: NavRoute[] = [
   },
 ];
 
+export const allAppRoutes: NavRoute[] = [
+  ...featuresRoutes,
+  featuresHubRoute,
+  ...newsRoutes,
+  ...infoRoutes,
+];
+
 export const allDockRoutes: NavRoute[] = [
   ...featuresRoutes,
   ...newsRoutes,
@@ -146,6 +175,7 @@ export const allDockRoutes: NavRoute[] = [
 
 const routeTitleByPath: Record<string, string> = {
   ...Object.fromEntries(allDockRoutes.map((route) => [route.path, route.label])),
+  [featuresHubRoute.path]: featuresHubRoute.label,
   "/settings": "Paramètres",
 };
 

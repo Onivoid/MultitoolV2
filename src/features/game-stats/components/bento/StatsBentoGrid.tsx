@@ -6,10 +6,11 @@ import type { GameStatsSnapshot } from "@/features/game-stats/gameStats.types";
 
 export interface StatsBentoGridProps {
   snapshot: GameStatsSnapshot;
+  journalUniqueCount?: number | null;
 }
 
-export function StatsBentoGrid({ snapshot }: StatsBentoGridProps) {
-  const kpiItems = getStatsPageKpiItems(snapshot);
+export function StatsBentoGrid({ snapshot, journalUniqueCount }: StatsBentoGridProps) {
+  const kpiItems = getStatsPageKpiItems(snapshot, journalUniqueCount);
 
   return (
     <div

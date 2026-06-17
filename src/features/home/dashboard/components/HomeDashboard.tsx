@@ -18,6 +18,7 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
     editMode,
     setEditMode,
     updateWidgetPosition,
+    updateWidgetWidth,
     removeWidget,
     addWidget,
   } = useHomeDashboard();
@@ -41,7 +42,7 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
             />
           ))}
 
-        {layout?.widgets.map((instance) => {
+        {layout?.widgets.map((instance, index) => {
           if (!getWidgetDefinition(instance.type)) {
             return null;
           }
@@ -49,10 +50,12 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
             <HomeWidgetShell
               key={instance.id}
               instance={instance}
+              mountOrder={index}
               editMode={editMode}
               containerRef={containerRef}
               logoRef={logoRef}
               onPositionChange={updateWidgetPosition}
+              onWidthChange={updateWidgetWidth}
               onRemove={removeWidget}
             />
           );
@@ -60,7 +63,7 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
       </div>
 
       <HomeDashboardEditBar
-        className="absolute bottom-[22%] left-1/2 z-20 hidden -translate-x-1/2 md:flex"
+        className="absolute bottom-[18%] left-1/2 z-20 hidden -translate-x-1/2 md:flex"
         editMode={editMode}
         onToggleEditMode={() => setEditMode((v) => !v)}
         widgets={layout?.widgets ?? []}

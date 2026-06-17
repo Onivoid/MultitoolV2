@@ -9,6 +9,7 @@ import {
   Server,
   Sparkles,
   Gamepad2,
+  Radio,
 } from "lucide-react";
 import type { HomeWidgetType } from "@/features/home/dashboard/homeDashboard.types";
 import { GameStatsWidgetContent } from "@/features/home/dashboard/widgets/GameStatsWidgetContent";
@@ -20,6 +21,7 @@ import { PerformanceWidgetContent } from "@/features/home/dashboard/widgets/Perf
 import { NewsWidgetContent } from "@/features/home/dashboard/widgets/NewsWidgetContent";
 import { RsiStatusWidgetContent } from "@/features/home/dashboard/widgets/RsiStatusWidgetContent";
 import { ScVersionsWidgetContent } from "@/features/home/dashboard/widgets/ScVersionsWidgetContent";
+import { HangarExecWidgetContent } from "@/features/hangar-exec/components/HangarExecWidgetContent";
 
 export interface HomeWidgetDefinition {
   type: HomeWidgetType;
@@ -99,6 +101,14 @@ export const HOME_WIDGET_REGISTRY: HomeWidgetDefinition[] = [
     description: "État des mises à jour jeu par canal (RSI Launcher).",
     icon: Gamepad2,
     Content: ScVersionsWidgetContent,
+  },
+  {
+    type: "hangar_exec",
+    label: "Hangar Executive",
+    description: "Statut PYAM en temps réel et compte à rebours.",
+    icon: Radio,
+    Content: HangarExecWidgetContent,
+    headerRoute: "/hangar-exec",
   },
 ];
 

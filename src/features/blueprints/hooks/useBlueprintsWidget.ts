@@ -53,7 +53,8 @@ export function useBlueprintsWidget() {
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
+
+    const loadCatalogStats = async () => {
       try {
         const catalog = await blueprintsCatalogService.listFull();
         if (cancelled) return;
@@ -64,9 +65,24 @@ export function useBlueprintsWidget() {
       } catch {
         if (!cancelled) setCatalogTotal(null);
       }
-    })();
+    };
+
+    const schedule = () => {
+      if (!cancelled) void loadCatalogStats();
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      const idleId = requestIdleCallback(schedule, { timeout: 2500 });
+      return () => {
+        cancelled = true;
+        cancelIdleCallback(idleId);
+      };
+    }
+
+    const timerId = window.setTimeout(schedule, 500);
     return () => {
       cancelled = true;
+      window.clearTimeout(timerId);
     };
   }, [blueprints]);
 

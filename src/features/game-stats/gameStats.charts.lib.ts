@@ -5,6 +5,7 @@ import {
   formatPilotingSharePercent,
   formatPlaytime,
   formatVehicleTypeLabel,
+  resolveBlueprintUnlockedStat,
 } from "@/features/game-stats/gameStats.lib";
 import { formatShopDisplayName } from "@/features/game-stats/gameStats.spending.lib";
 import type { StatSummaryItem } from "@/features/game-stats/gameStats.types";
@@ -259,6 +260,7 @@ export function buildRadarCategoryResult(
 /** Tuiles KPI détaillées pour la page (inclut missions séparées même à 0 si d'autres stats existent). */
 export function getStatsPageKpiItems(
   snapshot: GameStatsSnapshot | null,
+  journalUniqueCount?: number | null,
 ): StatSummaryItem[] {
   if (!snapshot) {
     return [];
@@ -285,11 +287,9 @@ export function getStatsPageKpiItems(
     });
   }
 
-  if (snapshot.blueprints.totalUnlocked > 0) {
-    items.push({
-      label: "Schémas débloqués",
-      value: String(snapshot.blueprints.totalUnlocked),
-    });
+  const blueprintStat = resolveBlueprintUnlockedStat(snapshot, journalUniqueCount);
+  if (blueprintStat) {
+    items.push(blueprintStat);
   }
 
   if (snapshot.vehicles.favorite && snapshot.vehicles.favoriteCount > 0) {

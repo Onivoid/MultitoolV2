@@ -93,11 +93,26 @@ export function GameStatsProvider({ children }: { children: ReactNode }) {
       if (cached) {
         setSnapshot(cached);
         snapshotRef.current = cached;
+        setStatus("idle");
+        clearBusyUi();
       }
 
       const scanStatus = await gameStatsService.checkScanStatus();
       if (scanStatus.inProgress) {
         attachToOngoingScan(scanStatus);
+        return;
+      }
+
+      const refreshInBackground = () => {
+        void runRefresh();
+      };
+
+      if (cached) {
+        if (typeof requestIdleCallback !== "undefined") {
+          requestIdleCallback(refreshInBackground, { timeout: 3000 });
+        } else {
+          window.setTimeout(refreshInBackground, 600);
+        }
         return;
       }
 

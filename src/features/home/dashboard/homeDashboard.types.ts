@@ -7,7 +7,8 @@ export type HomeWidgetType =
   | "system_performance"
   | "news"
   | "rsi_status"
-  | "sc_versions";
+  | "sc_versions"
+  | "hangar_exec";
 
 export interface HomeWidgetInstance {
   id: string;

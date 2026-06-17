@@ -743,7 +743,9 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
   const summary = normalizeCatalogSummary(item);
 
   if (summary.summaryBadges && summary.summaryBadges.length > 0) {
-    const out = summary.summaryBadges.map((b) => apiBadgeToRowBadge(b, summary));
+    const out = summary.summaryBadges
+      .map((b) => apiBadgeToRowBadge(b, summary))
+      .filter((b) => b.kind !== "manufacturer");
     if (summary.defaultOwned) {
       out.push({
         key: "default-owned",

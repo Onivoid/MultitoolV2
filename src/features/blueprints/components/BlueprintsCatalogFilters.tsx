@@ -134,6 +134,7 @@ function AdvancedFiltersBody({
   toggleJurisdiction,
   toggleContractor,
   toggleMissionType,
+  unlockIndexReady,
 }: {
   state: BlueprintCatalogFilterState;
   onChange: (s: BlueprintCatalogFilterState) => void;
@@ -152,6 +153,7 @@ function AdvancedFiltersBody({
   toggleJurisdiction: (name: string) => void;
   toggleContractor: (name: string) => void;
   toggleMissionType: (name: string) => void;
+  unlockIndexReady: boolean;
 }) {
   const family = state.family;
   const armorOutputTypes =
@@ -492,6 +494,12 @@ function AdvancedFiltersBody({
             { value: "illegal", label: "Illégal" },
           ]}
         />
+        {!unlockIndexReady && state.lawful !== "all" && (
+          <p className="mt-1.5 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+            Index de légalité en cours de construction — résultats partiels possibles.
+            Réessayez dans quelques minutes ou rafraîchissez le catalogue.
+          </p>
+        )}
       </div>
       {(summaryFacets?.contractors.length ?? 0) > 0 && (
         <div>
@@ -563,12 +571,38 @@ export function BlueprintsCatalogFilters({
   const [wikiItemsFilters, setWikiItemsFilters] = useState<WikiItemsFilters | null>(
     null,
   );
+  const [unlockIndexReady, setUnlockIndexReady] = useState(false);
   const active = countActiveFilters(state);
 
   const itemsFilterCategory = useMemo(() => {
     if (state.family === "all") return null;
     return wikiItemsCategoryForFamily(state.family);
   }, [state.family]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () => {
+      void blueprintsCatalogService
+        .unlockIndexStatus()
+        .then((status) => {
+          if (!cancelled) setUnlockIndexReady(status.exists && !status.stale);
+        })
+        .catch(() => {
+          if (!cancelled) setUnlockIndexReady(false);
+        });
+    };
+    refresh();
+    if (!unlockIndexReady && state.lawful !== "all") {
+      const timer = window.setInterval(refresh, 15_000);
+      return () => {
+        cancelled = true;
+        window.clearInterval(timer);
+      };
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [unlockIndexReady, state.lawful]);
 
   useEffect(() => {
     if (!itemsFilterCategory) {
@@ -707,6 +741,7 @@ export function BlueprintsCatalogFilters({
     toggleJurisdiction,
     toggleContractor,
     toggleMissionType,
+    unlockIndexReady,
   };
 
   return (
