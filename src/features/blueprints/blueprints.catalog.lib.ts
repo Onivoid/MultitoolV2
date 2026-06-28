@@ -741,9 +741,10 @@ function filterFromApiBadge(
 /** Badges compacts pour une ligne du catalogue (taxonomie API / backend). */
 export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge[] {
   const summary = normalizeCatalogSummary(item);
+  let out: CatalogRowBadge[];
 
   if (summary.summaryBadges && summary.summaryBadges.length > 0) {
-    const out = summary.summaryBadges
+    out = summary.summaryBadges
       .map((b) => apiBadgeToRowBadge(b, summary))
       .filter((b) => b.kind !== "manufacturer");
     if (summary.defaultOwned) {
@@ -754,39 +755,57 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
         filter: { type: "defaultOwned" },
       });
     }
-    return out.slice(0, 8);
+  } else {
+    const family = summary.family ?? classifyBlueprintFamily(summary.outputType);
+    out = [];
+    if (summary.outputTypeLabel && isUsefulOutputTypeLabel(summary.outputTypeLabel)) {
+      const label = outputTypeLabelEn(summary.outputTypeLabel) ?? summary.outputTypeLabel;
+      out.push({
+        key: `family-${family}`,
+        label,
+        kind: "category",
+        filter: summary.outputType
+          ? { type: "outputType", value: summary.outputType }
+          : null,
+      });
+    }
+    if (family === "armor" && summary.subType && isUsefulSubTypeLabel(summary.subType)) {
+      out.push({
+        key: `subtype-${summary.subType}`,
+        label: summary.subType,
+        kind: "category",
+        filter: null,
+      });
+    }
+    if (summary.defaultOwned) {
+      out.push({
+        key: "default-owned",
+        label: "Default",
+        kind: "default",
+        filter: { type: "defaultOwned" },
+      });
+    }
   }
 
-  const family = summary.family ?? classifyBlueprintFamily(summary.outputType);
-  const out: CatalogRowBadge[] = [];
-  if (summary.outputTypeLabel && isUsefulOutputTypeLabel(summary.outputTypeLabel)) {
-    const label = outputTypeLabelEn(summary.outputTypeLabel) ?? summary.outputTypeLabel;
-    out.push({
-      key: `family-${family}`,
-      label,
-      kind: "category",
-      filter: summary.outputType
-        ? { type: "outputType", value: summary.outputType }
-        : null,
+  return finalizeCatalogRowBadges(out, summary);
+}
+
+function finalizeCatalogRowBadges(
+  badges: CatalogRowBadge[],
+  summary: BlueprintCatalogSummary,
+): CatalogRowBadge[] {
+  const classCode = resolveBlueprintClass(summary);
+  const classFromApi = badges.find((b) => b.kind === "class");
+  const withoutClass = badges.filter((b) => b.kind !== "class");
+  if (classCode) {
+    withoutClass.push({
+      key: `class-${classCode}`,
+      label: classFromApi?.label ?? CLASS_LABEL_FR[classCode] ?? classCode,
+      kind: "class",
+      filter: { type: "class", code: classCode },
     });
   }
-  if (family === "armor" && summary.subType && isUsefulSubTypeLabel(summary.subType)) {
-    out.push({
-      key: `subtype-${summary.subType}`,
-      label: summary.subType,
-      kind: "category",
-      filter: null,
-    });
-  }
-  if (summary.defaultOwned) {
-    out.push({
-      key: "default-owned",
-      label: "Default",
-      kind: "default",
-      filter: { type: "defaultOwned" },
-    });
-  }
-  return out.slice(0, 5);
+  return withoutClass.slice(0, 8);
 }
 
 export function modifierEffectLabel(m: {
@@ -884,15 +903,57 @@ function asNumber(value: unknown): number | null {
   return typeof value === "number" ? value : null;
 }
 
+/** Masque les missions pas encore en jeu (API Wiki `released` / `not_for_release` / `work_in_progress`). */
+export function isMissionReleasedInGame(m: MissionInfo): boolean {
+  if (m.notForRelease === true) return false;
+  if (m.released === false) return false;
+  if (m.workInProgress === true) return false;
+  if (
+    m.released == null &&
+    m.notForRelease == null &&
+    m.workInProgress == null
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/** Libellé réputation / rang minimum pour débloquer une mission (Wiki). */
+export function formatMissionMinStanding(
+  mission: Pick<
+    MissionInfo,
+    "minStandingName" | "minStandingReputation" | "rankIndex"
+  >,
+): string | null {
+  const name =
+    mission.minStandingName?.trim() ||
+    (mission.rankIndex != null ? `Rang ${mission.rankIndex}` : null);
+  const reputation = mission.minStandingReputation;
+
+  if (name && reputation != null) {
+    return `${name} (${reputation.toLocaleString("fr-FR")})`;
+  }
+  if (name) return name;
+  if (reputation != null) return reputation.toLocaleString("fr-FR");
+  return null;
+}
+
 export function normalizeMissionInfo(m: MissionInfo): MissionInfo {
   const raw = m as MissionInfo & {
     star_systems?: string[];
     rank_index?: number | null;
     min_standing_name?: string | null;
     min_standing_reputation?: number | null;
+    work_in_progress?: boolean | null;
   };
   return {
     ...m,
+    workInProgress:
+      typeof m.workInProgress === "boolean"
+        ? m.workInProgress
+        : typeof raw.work_in_progress === "boolean"
+          ? raw.work_in_progress
+          : null,
     starSystems: ensureStringArray(m.starSystems ?? raw.star_systems),
     jurisdictions: ensureStringArray(m.jurisdictions),
     shareable: typeof m.shareable === "boolean" ? m.shareable : null,
@@ -1073,7 +1134,9 @@ export function normalizeBlueprintDetail(
     ingredients: ensureArray<IngredientGroup>(detail.ingredients).map(
       normalizeIngredientGroup,
     ),
-    missions: ensureArray<MissionInfo>(detail.missions).map(normalizeMissionInfo),
+    missions: ensureArray<MissionInfo>(detail.missions)
+      .map(normalizeMissionInfo)
+      .filter(isMissionReleasedInGame),
     itemStats: detail.itemStats ?? null,
     dismantle: detail.dismantle
       ? {

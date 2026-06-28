@@ -16,6 +16,8 @@ export interface HomeWidgetInstance {
   xPercent: number;
   yPercent: number;
   widthPx: number;
+  /** Hauteur fixe en px (schéma v3+) ; absent = hauteur auto du contenu. */
+  heightPx?: number;
 }
 
 export interface HomeDashboardLayout {

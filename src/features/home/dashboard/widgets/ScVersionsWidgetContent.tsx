@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 import { cn } from "@/lib/utils";
 
 type GameUpdateStatus = "upToDate" | "outdated" | "unknown";
@@ -111,8 +115,8 @@ export function ScVersionsWidgetContent() {
   }
 
   return (
-    <div data-no-window-drag>
-      <ul className="max-h-[120px] overflow-y-auto">
+    <div className={HOME_WIDGET_ROOT} data-no-window-drag>
+      <ul className={HOME_WIDGET_SCROLL}>
         {entries.map(([channel, info]) => {
           const installed = formatInstalledVersion(info);
           const latest = info.releaseVersion;

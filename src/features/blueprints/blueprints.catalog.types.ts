@@ -175,6 +175,8 @@ export interface MissionInfo {
   category: string | null;
   lawful: boolean | null;
   notForRelease: boolean | null;
+  released: boolean | null;
+  workInProgress?: boolean | null;
   dropChance: string | null;
   locations: string | null;
   timeToCompleteMinutes: number | null;
@@ -261,7 +263,10 @@ export type BlueprintClassCode = "civi" | "mili" | "indu" | "stlh" | "comp";
 
 export type CatalogSortKey =
   | "nameFr"
+  | "nameFrDesc"
   | "nameEn"
+  | "nameEnDesc"
+  | "category"
   | "craftTime"
   | "size"
   | "missions"

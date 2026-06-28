@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hangarExecService } from "@/features/hangar-exec/hangarExec.service";
 import { formatCountdown } from "@/features/hangar-exec/hangarExec.lib";
+import { pyamProgressPercent } from "@/features/hangar-exec/hangarExec.pyam.lib";
 import type { HangarExecStatus } from "@/features/hangar-exec/hangarExec.types";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ export function HangarExecWidgetContent() {
   const endsAt = new Date(status.nextChangeAt).getTime();
   const secondsRemaining = Math.max(0, Math.floor((endsAt - nowMs) / 1000));
   const isOnline = status.status === "ONLINE";
+  const progress = pyamProgressPercent(isOnline, secondsRemaining);
 
   return (
     <div className="px-3 py-3" data-no-window-drag>
@@ -66,12 +68,21 @@ export function HangarExecWidgetContent() {
         <span
           className={cn(
             "inline-flex h-2 w-2 rounded-full",
-            isOnline ? "bg-emerald-400" : "bg-red-400",
+            isOnline ? "bg-emerald-400 animate-pulse" : "bg-red-400",
           )}
         />
         <span className="text-ui-secondary font-medium">
           {isOnline ? "PYAM en ligne" : "PYAM hors ligne"}
         </span>
+      </div>
+      <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted/40">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-1000",
+            isOnline ? "bg-emerald-500" : "bg-red-500",
+          )}
+          style={{ width: `${progress}%` }}
+        />
       </div>
       <p className="text-ui-caption text-muted-foreground">
         Changement dans{" "}

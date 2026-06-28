@@ -5,20 +5,33 @@ import {
   featuresRouteGroups,
 } from "@/components/navigation/navigation.config";
 import type { NavRoute } from "@/components/navigation/navigation.config";
+import { useAppNotifications } from "@/shared/hooks/useAppNotifications";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
-function AppTile({ path, label, description, icon: Icon }: NavRoute) {
+function AppTile({
+  path,
+  label,
+  description,
+  icon: Icon,
+  notify,
+}: NavRoute & { notify?: boolean }) {
   return (
     <Link
       to={path}
       className={cn(
-        "settings-link-block group flex h-full items-start gap-3 rounded-lg p-3",
+        "settings-link-block group relative flex h-full items-start gap-3 rounded-lg p-3",
         "transition-all duration-200",
         "hover:shadow-[0_0_24px_hsl(var(--primary)/0.1)]",
       )}
       data-no-window-drag
     >
+      {notify ? (
+        <span
+          className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]"
+          aria-label="Mise à jour disponible"
+        />
+      ) : null}
       <div
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
@@ -47,7 +60,15 @@ function AppTile({ path, label, description, icon: Icon }: NavRoute) {
   );
 }
 
-function CategoryCell({ label, routes }: { label: string; routes: NavRoute[] }) {
+function CategoryCell({
+  label,
+  routes,
+  routeBadges,
+}: {
+  label: string;
+  routes: NavRoute[];
+  routeBadges: Record<string, boolean>;
+}) {
   if (routes.length === 0) return null;
 
   return (
@@ -61,7 +82,7 @@ function CategoryCell({ label, routes }: { label: string; routes: NavRoute[] }) 
 
       <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-3 overflow-y-auto pr-0.5">
         {routes.map((route) => (
-          <AppTile key={route.path} {...route} />
+          <AppTile key={route.path} {...route} notify={routeBadges[route.path]} />
         ))}
       </div>
     </section>
@@ -69,6 +90,7 @@ function CategoryCell({ label, routes }: { label: string; routes: NavRoute[] }) 
 }
 
 export default function FeaturesHubPage() {
+  const { routeBadges } = useAppNotifications();
   const hubSections = useMemo(() => {
     const inGroups = new Set(
       featuresRouteGroups.flatMap((g) => g.routes.map((r) => r.path)),
@@ -97,6 +119,7 @@ export default function FeaturesHubPage() {
             key={section.label}
             label={section.label}
             routes={section.routes}
+            routeBadges={routeBadges}
           />
         ))}
       </div>

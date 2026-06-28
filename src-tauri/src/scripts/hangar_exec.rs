@@ -107,8 +107,8 @@ pub fn terminal_presets() -> Vec<HangarTerminalPreset> {
         preset("obituary-7", "Obituary", "Tablette 7"),
         preset("ruin-5", "Ruin Station", "Tablette 5"),
         preset("ruin-6", "Ruin Station", "Tablette 6"),
-        preset("pyam-red-3-4", "PYAM-PUPVISR", "Carte d'accès Rouge 3-4"),
-        preset("pyam-red-3-5", "PYAM-PUPVISR", "Carte d'accès Rouge 3-5"),
+        preset("pyam-red-3-4", "PYAM-SUPVISR", "Carte d'accès Rouge 3-4"),
+        preset("pyam-red-3-5", "PYAM-SUPVISR", "Carte d'accès Rouge 3-5"),
     ]
 }
 

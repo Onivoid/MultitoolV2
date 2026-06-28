@@ -223,9 +223,10 @@ export function BlueprintsStatusPanel({
         </ActionButton>
 
         <ActionButton
-          label="Synchroniser"
+          label="Synchroniser mon journal"
           onClick={onImportHistory}
           disabled={isImporting || isLoading}
+          variant="default"
         >
           {isImporting ? (
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />

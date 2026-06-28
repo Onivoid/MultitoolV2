@@ -5,6 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCacheWidget } from "@/features/cache/hooks/useCacheWidget";
 import { CACHE_WIDGET_LIST_LIMIT } from "@/features/cache/cache.widget.lib";
 import { FeatureSearchField } from "@/shared/components/FeatureSearchField";
+import {
+  HOME_WIDGET_FOOTER,
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 
 export function CacheWidgetContent() {
   const {
@@ -37,9 +42,9 @@ export function CacheWidgetContent() {
   const showList = totalCount > 0;
 
   return (
-    <>
+    <div className={HOME_WIDGET_ROOT}>
       <div
-        className="text-ui-secondary border-b border-primary/6 px-3 py-2 text-muted-foreground"
+        className="text-ui-secondary shrink-0 border-b border-primary/6 px-3 py-2 text-muted-foreground"
         data-no-window-drag
       >
         {showList ? (
@@ -55,7 +60,7 @@ export function CacheWidgetContent() {
       </div>
 
       {showList && (
-        <div className="border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
           <FeatureSearchField
             value={searchQuery}
             onChange={setSearchQuery}
@@ -75,10 +80,7 @@ export function CacheWidgetContent() {
           Aucun résultat pour « {searchQuery.trim()} ».
         </p>
       ) : (
-        <ul
-          className="max-h-[140px] overflow-y-auto border-b border-primary/6"
-          data-no-window-drag
-        >
+        <ul className={`${HOME_WIDGET_SCROLL} border-b border-primary/6`} data-no-window-drag>
           {filteredFolders.map((folder) => (
             <li
               key={folder.path}
@@ -111,7 +113,7 @@ export function CacheWidgetContent() {
       )}
 
       <footer
-        className="settings-section-footer flex flex-wrap gap-2 px-3 py-2"
+        className={`${HOME_WIDGET_FOOTER} settings-section-footer flex flex-wrap gap-2 px-3 py-2`}
         data-no-window-drag
       >
         <Button
@@ -147,6 +149,6 @@ export function CacheWidgetContent() {
             </Link>
           </p>
         )}
-    </>
+    </div>
   );
 }

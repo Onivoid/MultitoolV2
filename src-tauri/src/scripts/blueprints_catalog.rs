@@ -467,6 +467,10 @@ pub struct MissionInfo {
     pub category: Option<String>,
     pub lawful: Option<bool>,
     pub not_for_release: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub released: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub work_in_progress: Option<bool>,
     pub drop_chance: Option<String>,
     pub locations: Option<String>,
     pub time_to_complete_minutes: Option<u64>,
@@ -483,6 +487,23 @@ pub struct MissionInfo {
     pub star_systems: Vec<String>,
     #[serde(default)]
     pub jurisdictions: Vec<String>,
+}
+
+/// Masque les missions pas encore en jeu (API Wiki `released` / `not_for_release` / `work_in_progress`).
+pub fn is_mission_released_in_game(m: &MissionInfo) -> bool {
+    if m.not_for_release == Some(true) {
+        return false;
+    }
+    if m.released == Some(false) {
+        return false;
+    }
+    if m.work_in_progress == Some(true) {
+        return false;
+    }
+    if m.released.is_none() && m.not_for_release.is_none() && m.work_in_progress.is_none() {
+        return false;
+    }
+    true
 }
 
 // --- Star Citizen Wiki API types ---
@@ -1313,7 +1334,7 @@ fn normalize_class_from_text(text: &str) -> Option<&'static str> {
 }
 
 fn ensure_loc_cache() -> Result<(), String> {
-    let cache_key = "polytool".to_string();
+    let cache_key = "polytool_scefra_v1".to_string();
 
     {
         let cache = LOC_CACHE.lock().unwrap();
@@ -1326,12 +1347,16 @@ fn ensure_loc_cache() -> Result<(), String> {
         }
     }
 
-    // 1) PolyTool global.ini (base canonique CIG, comme StarCaca).
+    // 1) PolyTool global.ini (base canonique CIG).
     let mut fr_map = load_polytool_global("fr");
     let mut en_map = load_polytool_global("en");
 
-    // 2) Fusion avec l'install locale : le FR du jeu (vanilla, etc.)
-    //    écrase PolyTool pour que le journal FR matche les mêmes libellés que les notifs.
+    // 2) Overlay SCEFRA (traduction communautaire) — priorité sur PolyTool pour le FR.
+    if let Some(scefra) = load_polytool_global("scefra_fr") {
+        fr_map = merge_loc_maps(fr_map, Some(scefra));
+    }
+
+    // 3) Fusion avec l'install locale : le FR du jeu écrase tout pour matcher les notifs in-game.
     if let Some(install) = pick_live_install_path() {
         let local_fr = parse_global_ini(&locale_file(&install, "french_(france)"));
         fr_map = merge_loc_maps(fr_map, local_fr);
@@ -1845,6 +1870,8 @@ fn map_wiki_missions(ms: Vec<WikiUnlockingMission>) -> Vec<MissionInfo> {
                 category: None,
                 lawful: None,
                 not_for_release: None,
+                released: None,
+                work_in_progress: None,
                 drop_chance: wiki_chance_label(m.chance),
                 locations: None,
                 time_to_complete_minutes: None,
@@ -2055,9 +2082,54 @@ fn load_polytool_global(suffix: &str) -> Option<HashMap<String, String>> {
     parse_global_ini(&path)
 }
 
+async fn fetch_scefra_translation_url() -> Option<String> {
+    const API_URL: &str = "https://multitool.onivoid.fr/api/translations/settings-fr";
+    let client = http_client().ok()?;
+    let response = client.get(API_URL).send().await.ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let text = response.text().await.ok()?;
+    let trimmed = text.trim();
+    if trimmed.starts_with('"') && trimmed.ends_with('"') {
+        return Some(trimmed.trim_matches('"').to_string());
+    }
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+        if let Some(link) = value.get("link").and_then(|v| v.as_str()) {
+            return Some(link.to_string());
+        }
+    }
+    if trimmed.starts_with("http") {
+        return Some(trimmed.to_string());
+    }
+    None
+}
+
+/// Télécharge le global.ini SCEFRA (traduction communautaire FR) pour le matching journal.
+async fn ensure_scefra_global() {
+    let Some(path) = polytool_global_cache_path("scefra_fr") else {
+        return;
+    };
+    if !is_cache_stale(&path, 7) {
+        return;
+    }
+    let Some(url) = fetch_scefra_translation_url().await else {
+        return;
+    };
+    match fetch_text(&url).await {
+        Ok(text) => {
+            let _ = fs::write(&path, text);
+        }
+        Err(e) => {
+            eprintln!("[blueprints] scefra global.ini fetch failed: {e}");
+        }
+    }
+}
+
 async fn prefetch_polytool_globals() {
     ensure_polytool_global("fr", POLYTOOL_GLOBAL_FR_URL).await;
     ensure_polytool_global("en", POLYTOOL_GLOBAL_EN_URL).await;
+    ensure_scefra_global().await;
 }
 
 pub(crate) fn load_wiki_catalog_from_disk() -> Result<Vec<WikiBlueprint>, String> {
@@ -2369,6 +2441,9 @@ pub async fn blueprints_catalog_refresh_localization() -> Result<(), String> {
         let _ = fs::remove_file(&p);
     }
     if let Some(p) = polytool_global_cache_path("en") {
+        let _ = fs::remove_file(&p);
+    }
+    if let Some(p) = polytool_global_cache_path("scefra_fr") {
         let _ = fs::remove_file(&p);
     }
     {

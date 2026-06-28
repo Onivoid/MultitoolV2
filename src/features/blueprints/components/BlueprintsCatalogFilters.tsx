@@ -33,8 +33,11 @@ import { bpFilterChip } from "@/features/blueprints/blueprints.ui";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS: { value: CatalogSortKey; label: string }[] = [
-  { value: "nameFr", label: "Nom (FR)" },
-  { value: "nameEn", label: "Nom (EN)" },
+  { value: "nameFr", label: "Nom (FR) A→Z" },
+  { value: "nameFrDesc", label: "Nom (FR) Z→A" },
+  { value: "nameEn", label: "Nom (EN) A→Z" },
+  { value: "nameEnDesc", label: "Nom (EN) Z→A" },
+  { value: "category", label: "Catégorie" },
   { value: "unlockDate", label: "Date déblocage" },
   { value: "craftTime", label: "Temps de craft" },
   { value: "size", label: "Taille" },
@@ -281,8 +284,14 @@ function AdvancedFiltersBody({
               </span>
             )}
           </p>
-          <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto overscroll-contain">
-            {facets.outputType.map((f) => {
+          <div className="flex flex-wrap gap-1">
+            {facets.outputType
+              .filter((f) => {
+                const val = filterValueToString(f.value).toUpperCase();
+                const label = String(f.label).toUpperCase();
+                return val !== "MISC" && !label.includes("MISC");
+              })
+              .map((f) => {
               const val = filterValueToString(f.value);
               const activeType = state.outputTypes.includes(val);
               return (
@@ -305,7 +314,7 @@ function AdvancedFiltersBody({
             <p className="mb-1 text-[10px] uppercase text-muted-foreground">
               Type affiché
             </p>
-            <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            <div className="flex flex-wrap gap-1">
               {summaryFacets!.outputTypeLabels.map((f) => (
                 <button
                   key={f.value}
@@ -354,13 +363,13 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
-      {familyShowsManufacturer(family) &&
+      {false && familyShowsManufacturer(family) &&
         (summaryFacets?.manufacturers.length ?? 0) > 0 && (
           <div>
             <p className="mb-1 text-[10px] uppercase text-muted-foreground">
               Fabricant
             </p>
-            <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+            <div className="flex flex-wrap gap-1">
               {summaryFacets!.manufacturers.map((f) => (
                 <button
                   key={f.value}
@@ -448,7 +457,7 @@ function AdvancedFiltersBody({
       {(summaryFacets?.starSystems.length ?? 0) > 0 && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Système</p>
-          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+          <div className="flex flex-wrap gap-1">
             {summaryFacets!.starSystems.map((f) => (
               <button
                 key={String(f.value)}
@@ -504,7 +513,7 @@ function AdvancedFiltersBody({
       {(summaryFacets?.contractors.length ?? 0) > 0 && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Contractor</p>
-          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+          <div className="flex flex-wrap gap-1">
             {summaryFacets!.contractors.map((f) => (
               <button
                 key={String(f.value)}
@@ -523,7 +532,7 @@ function AdvancedFiltersBody({
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">
             Type de mission
           </p>
-          <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto overscroll-contain">
+          <div className="flex flex-wrap gap-1">
             {summaryFacets!.missionTypes.map((f) => (
               <button
                 key={String(f.value)}
@@ -557,6 +566,9 @@ export interface BlueprintsCatalogFiltersProps {
   summaryFacets?: CatalogSummaryFacets | null;
   missionFilterTitle?: string | null;
   onClearMissionFilter?: () => void;
+  filtersOpen?: boolean;
+  onFiltersOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
 export function BlueprintsCatalogFilters({
@@ -566,8 +578,13 @@ export function BlueprintsCatalogFilters({
   summaryFacets = null,
   missionFilterTitle,
   onClearMissionFilter,
+  filtersOpen: filtersOpenProp,
+  onFiltersOpenChange,
+  hideTrigger = false,
 }: BlueprintsCatalogFiltersProps) {
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpenInternal, setFiltersOpenInternal] = useState(false);
+  const filtersOpen = filtersOpenProp ?? filtersOpenInternal;
+  const setFiltersOpen = onFiltersOpenChange ?? setFiltersOpenInternal;
   const [wikiItemsFilters, setWikiItemsFilters] = useState<WikiItemsFilters | null>(
     null,
   );
@@ -745,58 +762,64 @@ export function BlueprintsCatalogFilters({
   };
 
   return (
-    <div className="shrink-0 border-t border-primary/8 px-3 py-2" data-no-window-drag>
-      {missionFilterTitle && (
-        <ActiveFilterChip
-          label={`Filtre mission : ${missionFilterTitle}`}
-          onClear={() => onClearMissionFilter?.()}
-        />
-      )}
-      {state.resourceUuid && (
-        <ActiveFilterChip
-          label={`Filtre ingrédient : ${state.resourceFilterLabel ?? state.resourceUuid}`}
-          onClear={() =>
-            onChange({
-              ...state,
-              resourceUuid: null,
-              resourceUuidAliases: [],
-              resourceFilterLabel: null,
-            })
-          }
-        />
+    <>
+      {!hideTrigger && (
+        <div className="shrink-0 border-t border-primary/8 px-3 py-2" data-no-window-drag>
+          {missionFilterTitle && (
+            <ActiveFilterChip
+              label={`Filtre mission : ${missionFilterTitle}`}
+              onClear={() => onClearMissionFilter?.()}
+            />
+          )}
+          {state.resourceUuid && (
+            <ActiveFilterChip
+              label={`Filtre ingrédient : ${state.resourceFilterLabel ?? state.resourceUuid}`}
+              onClear={() =>
+                onChange({
+                  ...state,
+                  resourceUuid: null,
+                  resourceUuidAliases: [],
+                  resourceFilterLabel: null,
+                })
+              }
+            />
+          )}
+        </div>
       )}
       <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <DialogTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn(
-              "h-9 w-full justify-between gap-2 border-primary/20 bg-primary/10 text-xs font-medium shadow-none",
-              active > 0 && "border-primary/35",
-            )}
-            data-no-window-drag
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <span className="truncate">
-                Filtres avancés
-                {active > 0 && <span className="ml-1 text-primary">({active})</span>}
+        {!hideTrigger && (
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-9 w-full justify-between gap-2 border-primary/20 bg-primary/10 text-xs font-medium shadow-none",
+                active > 0 && "border-primary/35",
+              )}
+              data-no-window-drag
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">
+                  Filtres avancés
+                  {active > 0 && <span className="ml-1 text-primary">({active})</span>}
+                </span>
               </span>
-            </span>
-          </Button>
-        </DialogTrigger>
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent
           overlayClassName="z-[110]"
           className={cn(
-            "z-[110] max-w-lg gap-0 border-primary/20 bg-popover/95 p-0 shadow-lg backdrop-blur-sm",
+            "z-[110] max-h-[min(88vh,44rem)] max-w-xl gap-0 border-primary/20 bg-popover/95 p-0 shadow-lg backdrop-blur-sm",
           )}
           data-no-window-drag
         >
           <DialogHeader className="border-b border-primary/10 px-4 py-3">
             <DialogTitle className="text-sm">Filtres avancés</DialogTitle>
           </DialogHeader>
-          <div className="max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain p-4">
+          <div className="overflow-y-auto overscroll-contain p-4">
             <AdvancedFiltersBody {...panelProps} />
           </div>
           <DialogFooter className="border-t border-primary/10 px-4 py-3">
@@ -811,6 +834,6 @@ export function BlueprintsCatalogFilters({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

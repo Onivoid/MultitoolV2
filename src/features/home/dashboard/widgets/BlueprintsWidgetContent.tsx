@@ -11,6 +11,11 @@ import {
 import { useBlueprintsWidget } from "@/features/blueprints/hooks/useBlueprintsWidget";
 import { getBlueprintKey } from "@/features/blueprints/components/BlueprintCard";
 import { FeatureSearchField } from "@/shared/components/FeatureSearchField";
+import {
+  HOME_WIDGET_FOOTER,
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 import { cn } from "@/lib/utils";
 
 export function BlueprintsWidgetContent() {
@@ -49,9 +54,9 @@ export function BlueprintsWidgetContent() {
   const showList = totalCount > 0;
 
   return (
-    <>
+    <div className={HOME_WIDGET_ROOT}>
       <div
-        className="flex items-center gap-2 border-b border-primary/6 px-3 py-2"
+        className="flex shrink-0 items-center gap-2 border-b border-primary/6 px-3 py-2"
         data-no-window-drag
       >
         <span
@@ -77,7 +82,7 @@ export function BlueprintsWidgetContent() {
       </div>
 
       {showList && (
-        <div className="border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
           <FeatureSearchField
             value={searchQuery}
             onChange={setSearchQuery}
@@ -89,7 +94,7 @@ export function BlueprintsWidgetContent() {
       )}
 
       {isImporting && (
-        <div className="border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
           <BlueprintsImportProgressDisplay
             isImporting={isImporting}
             progress={progress}
@@ -110,7 +115,7 @@ export function BlueprintsWidgetContent() {
         </p>
       ) : (
         <ul
-          className="max-h-[140px] overflow-y-auto border-b border-primary/6"
+          className={cn(HOME_WIDGET_SCROLL, "border-b border-primary/6")}
           data-no-window-drag
         >
           {filteredBlueprints.map((bp) => {
@@ -141,7 +146,7 @@ export function BlueprintsWidgetContent() {
       )}
 
       <footer
-        className="settings-section-footer flex flex-wrap gap-2 px-3 py-2"
+        className={cn(HOME_WIDGET_FOOTER, "settings-section-footer flex flex-wrap gap-2 px-3 py-2")}
         data-no-window-drag
       >
         <Button
@@ -181,6 +186,6 @@ export function BlueprintsWidgetContent() {
             </Link>
           </p>
         )}
-    </>
+    </div>
   );
 }

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { TranslationLanguageToggle } from "@/features/translation/components/TranslationLanguageToggle";
 import {
   formatLastUpdated,
-  isLiveVersionKey,
+  isPublicReleaseVersionKey,
   TRANSLATION_CARD_WIDTH_CLASS,
 } from "@/features/translation/translation.lib";
 
@@ -66,9 +66,9 @@ function StatusBadge({
 }
 
 function VersionNotice({ versionKey }: { versionKey: string }) {
-  const isLive = isLiveVersionKey(versionKey);
+  const isPublicRelease = isPublicReleaseVersionKey(versionKey);
 
-  if (isLive) {
+  if (isPublicRelease) {
     return (
       <div
         className="flex gap-2 rounded-md border border-primary/20 bg-primary/8 px-2.5 py-2"

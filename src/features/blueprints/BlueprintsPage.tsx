@@ -8,6 +8,8 @@ import { DOCK_SAFE_PADDING, PAGE_CENTER } from "@/shared/components/pageStyles";
 import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
 import { BlueprintDetailPanel } from "@/features/blueprints/components/BlueprintDetailPanel";
 import { BlueprintCatalogRow } from "@/features/blueprints/components/BlueprintCatalogRow";
+import { BlueprintsCatalogTopBar } from "@/features/blueprints/components/BlueprintsCatalogTopBar";
+import { BlueprintsQuickFilterBar } from "@/features/blueprints/components/BlueprintsQuickFilterBar";
 import { BlueprintsCatalogToolbar } from "@/features/blueprints/components/BlueprintsCatalogToolbar";
 import {
   JournalMatchIssues,
@@ -27,13 +29,13 @@ import {
   resolveOwnedBlueprints,
   type JournalAmbiguousLink,
 } from "@/features/blueprints/blueprints.match.lib";
-import { BlueprintFamilyRail } from "@/features/blueprints/components/BlueprintFamilyRail";
 import { BlueprintsCatalogFilters } from "@/features/blueprints/components/BlueprintsCatalogFilters";
 import { resolveItemFamily } from "@/features/blueprints/blueprints.taxonomy";
 import type { BlueprintFamily } from "@/features/blueprints/blueprints.taxonomy";
 import {
   applyCatalogBadgeFilter,
   applyCatalogFilters,
+  countActiveFilters,
   DEFAULT_CATALOG_FILTER_STATE,
   type BlueprintCatalogFilterState,
 } from "@/features/blueprints/blueprints.catalog.filters";
@@ -67,6 +69,7 @@ export default function BlueprintsPage() {
   } | null>(null);
   const [issuesBannerDismissed, setIssuesBannerDismissed] = useState(false);
   const [issuesSheetOpen, setIssuesSheetOpen] = useState(false);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
 
   const watching = vm.status?.watching ?? false;
   const uniqueOwners = useMemo(() => getUniqueOwners(vm.blueprints), [vm.blueprints]);
@@ -257,53 +260,66 @@ export default function BlueprintsPage() {
       ) : showCatalog ? (
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:min-h-0 lg:flex-row lg:gap-3",
+            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden",
             DOCK_SAFE_PADDING,
           )}
         >
-          <section
-            className={cn(
-              BP_SECTION,
-              "flex min-h-0 min-w-0 flex-1 flex-col lg:max-w-[min(440px,46%)]",
-            )}
-          >
-            <BlueprintSectionHeader
-              icon={BookOpen}
-              title="Catalogue Wiki"
-              subtitle={`${catalogVm.catalog.length} blueprints · filtre journal et facettes`}
-            />
-            <div className="shrink-0">
-              <BlueprintsCatalogToolbar
-                searchQuery={catalogSearch}
-                onSearchChange={setCatalogSearch}
-                ownedFilter={ownedFilter}
-                onOwnedFilterChange={setOwnedFilter}
-                filteredCount={filteredCatalog.length}
-                totalCount={catalogVm.catalog.length}
-                ownedCount={ownedIds.size}
-                journalProductCount={matchStats.journalProducts}
-                matchedProductCount={matchStats.matchedProducts}
-                uniqueBlueprintIdCount={ownedIds.size}
-                uniqueOwners={uniqueOwners}
-                ownerFilter={vm.ownerFilter}
-                onOwnerFilterChange={vm.setOwnerFilter}
+          <BlueprintsCatalogTopBar
+            searchQuery={catalogSearch}
+            onSearchChange={setCatalogSearch}
+            ownedFilter={ownedFilter}
+            onOwnedFilterChange={setOwnedFilter}
+            advancedFilterCount={countActiveFilters(filterState)}
+            onOpenAdvancedFilters={() => setAdvancedFiltersOpen(true)}
+            filteredCount={filteredCatalog.length}
+            totalCount={catalogVm.catalog.length}
+          />
+
+          <BlueprintsCatalogFilters
+            state={filterState}
+            onChange={setFilterState}
+            facets={catalogVm.facets}
+            summaryFacets={catalogVm.summaryFacets}
+            missionFilterTitle={missionFilter?.title ?? null}
+            onClearMissionFilter={() => setMissionFilter(null)}
+            filtersOpen={advancedFiltersOpen}
+            onFiltersOpenChange={setAdvancedFiltersOpen}
+            hideTrigger
+          />
+
+          <BlueprintsQuickFilterBar
+            state={filterState}
+            onChange={setFilterState}
+            catalog={catalogVm.catalog}
+            familyCounts={familyCounts}
+          />
+
+          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,2.5fr)]">
+            <section className={cn(BP_SECTION, "flex min-h-0 min-w-0 flex-col")}>
+              <BlueprintSectionHeader
+                icon={BookOpen}
+                title="Liste des plans"
+                subtitle="Badges cliquables · étoile liste de suivi"
               />
-            </div>
-            <div className="shrink-0 border-t border-primary/8 px-3 py-2">
-              <BlueprintFamilyRail
-                value={filterState.family}
-                onChange={(family) => setFilterState((s) => ({ ...s, family }))}
-                counts={familyCounts}
-              />
-            </div>
-            <BlueprintsCatalogFilters
-              state={filterState}
-              onChange={setFilterState}
-              facets={catalogVm.facets}
-              summaryFacets={catalogVm.summaryFacets}
-              missionFilterTitle={missionFilter?.title ?? null}
-              onClearMissionFilter={() => setMissionFilter(null)}
-            />
+              <div className="shrink-0 border-b border-primary/8">
+                <BlueprintsCatalogToolbar
+                  compact
+                  searchQuery=""
+                  onSearchChange={() => undefined}
+                  ownedFilter={ownedFilter}
+                  onOwnedFilterChange={setOwnedFilter}
+                  filteredCount={filteredCatalog.length}
+                  totalCount={catalogVm.catalog.length}
+                  ownedCount={ownedIds.size}
+                  journalProductCount={matchStats.journalProducts}
+                  matchedProductCount={matchStats.matchedProducts}
+                  uniqueBlueprintIdCount={ownedIds.size}
+                  unmatchedProductNamesCount={matchStats.unmatchedProductNames.length}
+                  uniqueOwners={uniqueOwners}
+                  ownerFilter={vm.ownerFilter}
+                  onOwnerFilterChange={vm.setOwnerFilter}
+                />
+              </div>
             {!issuesBannerDismissed && (
               <JournalMatchIssuesBanner
                 unmatchedProductNames={matchStats.unmatchedProductNames}
@@ -370,7 +386,7 @@ export default function BlueprintsPage() {
             </div>
           </section>
 
-          <div className="flex min-h-[280px] min-w-0 flex-1 flex-col lg:min-h-0">
+            <div className="flex min-h-0 min-w-0 flex-col">
             <BlueprintDetailPanel
               selectedId={catalogVm.selectedBlueprintId}
               detail={catalogVm.detail}
@@ -423,6 +439,7 @@ export default function BlueprintsPage() {
                 })
               }
             />
+            </div>
           </div>
         </div>
       ) : null}

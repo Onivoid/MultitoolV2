@@ -1,5 +1,7 @@
 import { Palette } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { FeatureSearchField } from "@/shared/components/FeatureSearchField";
 import { BlueprintFilterSelect } from "@/features/blueprints/components/BlueprintFilterSelect";
 import { PAINTS_TOOLBAR, paintFilterChip } from "@/features/paints/paints.ui";
@@ -14,6 +16,11 @@ interface PaintsToolbarProps {
   activeEvent: string | null;
   onToggleEvent: (event: string) => void;
   onSelectEvent: (event: string | null) => void;
+  manufacturerOptions: string[];
+  activeManufacturer: string | null;
+  onSelectManufacturer: (value: string | null) => void;
+  hideSkins: boolean;
+  onHideSkinsChange: (value: boolean) => void;
 }
 
 export function PaintsToolbar({
@@ -25,6 +32,11 @@ export function PaintsToolbar({
   activeEvent,
   onToggleEvent,
   onSelectEvent,
+  manufacturerOptions,
+  activeManufacturer,
+  onSelectManufacturer,
+  hideSkins,
+  onHideSkinsChange,
 }: PaintsToolbarProps) {
   return (
     <section className={PAINTS_TOOLBAR} data-no-window-drag>
@@ -52,6 +64,45 @@ export function PaintsToolbar({
         onChange={onSearchChange}
         placeholder="Rechercher par vaisseau ou nom de peinture…"
       />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
+        {manufacturerOptions.length > 0 && (
+          <div className="min-w-[12rem] shrink-0 sm:w-56">
+            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+              Marque
+            </p>
+            <BlueprintFilterSelect
+              value={activeManufacturer ?? "__all__"}
+              onValueChange={(v) =>
+                onSelectManufacturer(v === "__all__" ? null : v)
+              }
+              options={[
+                { value: "__all__", label: "Toutes les marques" },
+                ...manufacturerOptions.map((name) => ({
+                  value: name,
+                  label: name,
+                })),
+              ]}
+              className="w-full max-w-none"
+            />
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 pb-0.5">
+          <Checkbox
+            id="hide-skins"
+            checked={hideSkins}
+            onCheckedChange={(v) => onHideSkinsChange(v === true)}
+            data-no-window-drag
+          />
+          <Label
+            htmlFor="hide-skins"
+            className="cursor-pointer text-xs text-muted-foreground"
+          >
+            Masquer les skins
+          </Label>
+        </div>
+      </div>
 
       {eventChips.length > 0 && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">

@@ -1,5 +1,8 @@
 use crate::scripts::game_log::parse::is_game_build_log;
-use crate::scripts::gamelog_archive::{list_archived_log_files, list_live_session_game_logs};
+use crate::scripts::gamelog_archive::{
+    list_archived_log_files, list_live_session_game_logs, list_recoverable_archive_sources,
+    list_unarchived_logbackup_files, sync_logbackups_archive_sync, verified_archive_source_paths,
+};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -70,8 +73,13 @@ fn try_push_file(
 ///
 /// Sources :
 /// - Archive locale Multitool (`gamelog_archive/files/`) — logbackups sauvegardés
+/// - `logbackups/` du jeu non encore archivés (évite de perdre des heures avant sync)
 /// - `Game.log` session courante par canal (intégration directe, non archivés)
 pub fn list_game_log_files(app: &AppHandle) -> Result<Vec<GameLogFile>, String> {
+    // Synchronise d'abord pour ne pas ignorer des logbackups pas encore copiés.
+    let _ = sync_logbackups_archive_sync(app);
+
+    let archived_sources = verified_archive_source_paths(app)?;
     let mut files: Vec<GameLogFile> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
 
@@ -82,6 +90,30 @@ pub fn list_game_log_files(app: &AppHandle) -> Result<Vec<GameLogFile>, String> 
             archived.path,
             archived.is_game_build,
             Some(archived.channel),
+        );
+    }
+
+    for pending in list_unarchived_logbackup_files(&archived_sources) {
+        try_push_file(
+            &mut files,
+            &mut seen,
+            pending.path,
+            pending.is_game_build,
+            Some(pending.channel),
+        );
+    }
+
+    for recoverable in list_recoverable_archive_sources(app)? {
+        eprintln!(
+            "game_log: récupération playtime depuis source (copie archive absente): {}",
+            recoverable.path.display()
+        );
+        try_push_file(
+            &mut files,
+            &mut seen,
+            recoverable.path,
+            recoverable.is_game_build,
+            Some(recoverable.channel),
         );
     }
 

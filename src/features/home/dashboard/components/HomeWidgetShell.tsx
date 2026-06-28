@@ -10,9 +10,12 @@ import type { HomeWidgetInstance } from "@/features/home/dashboard/homeDashboard
 import { getWidgetDefinition } from "@/features/home/dashboard/homeDashboard.registry";
 import {
   clampWidgetPosition,
+  MAX_WIDGET_HEIGHT_PX,
   MAX_WIDGET_WIDTH_PX,
+  MIN_WIDGET_HEIGHT_PX,
   MIN_WIDGET_WIDTH_PX,
   resolveWidgetPosition,
+  widgetHeight,
   widgetIntersectsLogo,
 } from "@/features/home/dashboard/homeDashboard.lib";
 import { useStaggeredWidgetMount } from "@/features/home/dashboard/useStaggeredWidgetMount";
@@ -32,6 +35,7 @@ export interface HomeWidgetShellProps {
     options?: { persist?: boolean },
   ) => void;
   onWidthChange: (id: string, widthPx: number) => void;
+  onHeightChange: (id: string, heightPx: number) => void;
   onRemove: (id: string) => void;
 }
 
@@ -43,6 +47,7 @@ export function HomeWidgetShell({
   logoRef,
   onPositionChange,
   onWidthChange,
+  onHeightChange,
   onRemove,
 }: HomeWidgetShellProps) {
   const definition = getWidgetDefinition(instance.type);
@@ -55,8 +60,13 @@ export function HomeWidgetShell({
   } | null>(null);
   const resizeRef = useRef<{
     startX: number;
+    startY: number;
     startWidth: number;
+    startHeight: number;
   } | null>(null);
+
+  const resolvedHeightPx = (measured: number) =>
+    widgetHeight(instance, measured);
 
   useEffect(() => {
     if (!contentReady || autoResolvedRef.current) {
@@ -72,7 +82,7 @@ export function HomeWidgetShell({
       if (containerRect.width <= 0 || containerRect.height <= 0) {
         return;
       }
-      const heightPx = widgetEl.offsetHeight;
+      const heightPx = resolvedHeightPx(widgetEl.offsetHeight);
       if (heightPx <= 0) {
         return;
       }
@@ -120,7 +130,7 @@ export function HomeWidgetShell({
           return;
         }
         const containerRect = container.getBoundingClientRect();
-        const heightPx = widgetEl.offsetHeight;
+        const heightPx = resolvedHeightPx(widgetEl.offsetHeight);
         const leftPx = ev.clientX - containerRect.left - dragRef.current.offsetX;
         const topPx = ev.clientY - containerRect.top - dragRef.current.offsetY;
         const xPercent = (leftPx / containerRect.width) * 100;
@@ -140,7 +150,7 @@ export function HomeWidgetShell({
         const widgetEl = widgetRef.current;
         if (container && widgetEl && dragRef.current) {
           const containerRect = container.getBoundingClientRect();
-          const heightPx = widgetEl.offsetHeight;
+          const heightPx = resolvedHeightPx(widgetEl.offsetHeight);
           const leftPx = ev.clientX - containerRect.left - dragRef.current.offsetX;
           const topPx = ev.clientY - containerRect.top - dragRef.current.offsetY;
           const xPercent = (leftPx / containerRect.width) * 100;
@@ -190,19 +200,27 @@ export function HomeWidgetShell({
       e.stopPropagation();
       resizeRef.current = {
         startX: e.clientX,
+        startY: e.clientY,
         startWidth: instance.widthPx,
+        startHeight: instance.heightPx ?? widgetRef.current?.offsetHeight ?? 200,
       };
       const handleEl = e.currentTarget;
       handleEl.setPointerCapture(e.pointerId);
 
       const onMove = (ev: PointerEvent) => {
         if (!resizeRef.current) return;
-        const delta = ev.clientX - resizeRef.current.startX;
-        const next = Math.max(
+        const deltaX = ev.clientX - resizeRef.current.startX;
+        const deltaY = ev.clientY - resizeRef.current.startY;
+        const nextWidth = Math.max(
           MIN_WIDGET_WIDTH_PX,
-          Math.min(MAX_WIDGET_WIDTH_PX, resizeRef.current.startWidth + delta),
+          Math.min(MAX_WIDGET_WIDTH_PX, resizeRef.current.startWidth + deltaX),
         );
-        onWidthChange(instance.id, next);
+        const nextHeight = Math.max(
+          MIN_WIDGET_HEIGHT_PX,
+          Math.min(MAX_WIDGET_HEIGHT_PX, resizeRef.current.startHeight + deltaY),
+        );
+        onWidthChange(instance.id, nextWidth);
+        onHeightChange(instance.id, nextHeight);
       };
 
       const onUp = (ev: PointerEvent) => {
@@ -217,7 +235,7 @@ export function HomeWidgetShell({
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [editMode, instance.id, instance.widthPx, onWidthChange],
+    [editMode, instance.id, instance.widthPx, instance.heightPx, onWidthChange, onHeightChange],
   );
 
   if (!definition) {
@@ -238,12 +256,20 @@ export function HomeWidgetShell({
         left: `${instance.xPercent}%`,
         top: `${instance.yPercent}%`,
         width: `min(${instance.widthPx}px, calc(100% - 1rem))`,
+        ...(instance.heightPx
+          ? { height: `${instance.heightPx}px`, maxHeight: `${instance.heightPx}px` }
+          : {}),
       }}
       data-no-window-drag
       role="group"
       aria-label={definition.label}
     >
-      <div className="settings-section relative flex flex-col overflow-hidden">
+      <div
+        className={cn(
+          "settings-section relative flex flex-col overflow-hidden",
+          instance.heightPx != null && "h-full",
+        )}
+      >
         <button
           type="button"
           className="absolute left-1 top-1 z-20 flex h-4 w-4 cursor-grab items-center justify-center rounded border border-primary/15 bg-background/80 text-muted-foreground hover:bg-primary/10 active:cursor-grabbing"
@@ -274,7 +300,9 @@ export function HomeWidgetShell({
           )}
         </header>
         {contentReady ? (
-          <Content />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Content />
+          </div>
         ) : (
           <div className="flex flex-col gap-2 px-3 py-3">
             <Skeleton className="h-4 w-full" />
@@ -284,7 +312,7 @@ export function HomeWidgetShell({
         {editMode && (
           <button
             type="button"
-            className="absolute bottom-2 right-1 z-20 h-8 w-3 cursor-ew-resize rounded-sm border border-primary/20 bg-background/80 hover:bg-primary/10"
+            className="absolute bottom-1 right-1 z-20 h-4 w-4 cursor-nwse-resize rounded-sm border border-primary/20 bg-background/80 hover:bg-primary/10"
             aria-label={`Redimensionner le widget ${definition.label}`}
             onPointerDown={handleResizePointerDown}
           />

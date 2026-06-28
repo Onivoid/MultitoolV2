@@ -11,6 +11,7 @@ import {
   bpCatalogRowContext,
   bpSheetPanel,
 } from "@/features/blueprints/blueprints.ui";
+import { formatMissionMinStanding } from "@/features/blueprints/blueprints.catalog.lib";
 import type { MissionDetailResult } from "@/features/blueprints/blueprints.catalog.types";
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
@@ -26,12 +27,6 @@ export interface MissionExplorerBodyProps {
   onSelectBlueprint: (blueprintId: string) => void;
   onFilterMission: (missionUuid: string, title: string, blueprintIds: string[]) => void;
   onClose?: () => void;
-}
-
-function missionRankLabel(detail: MissionDetailResult): string | null {
-  if (detail.minStandingName) return detail.minStandingName;
-  if (detail.rankIndex != null) return `Rang ${detail.rankIndex}`;
-  return null;
 }
 
 export function MissionExplorerBody({
@@ -91,7 +86,7 @@ export function MissionExplorerBody({
 
   if (!detail) return null;
 
-  const rankLabel = missionRankLabel(detail);
+  const minStandingLabel = formatMissionMinStanding(detail);
 
   return (
     <div className={bpSheetPanel()}>
@@ -110,8 +105,13 @@ export function MissionExplorerBody({
           {detail.faction && ` · ${detail.faction}`}
         </p>
       )}
+      {minStandingLabel && (
+        <p className="text-xs text-foreground/90">
+          <span className="font-medium">Réputation min. requise :</span>{" "}
+          {minStandingLabel}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-        {rankLabel && <span>Rang requis : {rankLabel}</span>}
         {detail.shareable != null ? (
           <span className="inline-flex items-center gap-1">
             <Users className="h-3 w-3" />

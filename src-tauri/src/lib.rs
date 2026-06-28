@@ -49,6 +49,7 @@ use scripts::onboarding::{
     complete_onboarding, get_onboarding_state, record_onboarding_attempt, reset_onboarding,
 };
 use scripts::paints_catalog::paints_catalog_list;
+use scripts::vehicles_catalog::{vehicle_detail, vehicles_catalog_list};
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
 use scripts::recent_routes::{get_top_routes, record_page_visit};
@@ -279,6 +280,8 @@ pub fn run() {
             manual_owned_blueprints_get,
             manual_owned_blueprint_toggle,
             paints_catalog_list,
+            vehicles_catalog_list,
+            vehicle_detail,
             hangar_exec_fetch_status,
             hangar_exec_start_timer,
             hangar_exec_get_timers,

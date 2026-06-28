@@ -7,6 +7,9 @@ export interface PaintSummary {
   manufacturerCode?: string | null;
   eventSources: string[];
   thumbnailUrl?: string | null;
+  imageUrl?: string | null;
+  descriptionEn?: string | null;
+  isBaseVariant?: boolean;
   webUrl?: string | null;
   updatedAt?: string | null;
 }
@@ -16,6 +19,15 @@ export const PAINT_EVENT_CHIP_PRIORITY = [
   "IAE",
   "Best in Show",
   "Concierge",
+  "CONCIERGE",
+  "SUBSCRIBER",
+  "STELLA FORTUNA",
+  "EVENT REWARD",
+  "MONTHLY BUNDLE",
+  "DAY OF THE VARA",
+  "PIRATE WEEK",
+  "ALIEN WEEK",
+  "CORAMOR",
   "Invictus Launch Week",
   "Luminalia",
   "Red Festival",

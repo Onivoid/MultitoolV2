@@ -35,6 +35,10 @@ Les badges catalogue liste sont construits par `build_summary_badges` (`blueprin
 | `armor`           | `armor`              |
 | `mining`          | `mining-modifiers`   |
 
+## Missions blueprint
+
+Les missions liées à un blueprint exposent désormais `released`, `not_for_release` et `work_in_progress` (cache `wiki_missions_cache.json`, schéma v2). Seules les missions **RELEASE** en jeu sont affichées dans la fiche détail (`is_mission_released_in_game` côté Rust + `isMissionReleasedInGame` côté FE).
+
 ## Garde-fous / tests
 
 - Rust : `ship_component_summary_badges_citadel_like` — ordre et contenu badges liste.
@@ -49,3 +53,4 @@ Les badges catalogue liste sont construits par `build_summary_badges` (`blueprin
 | `item_{uuid}.json`                   | 7 j | Profil item                     |
 | `wiki_item_meta_index.json`          | —   | Meta compacte par `blueprintId` |
 | `wiki_items_filters_{category}.json` | 7 j | Facettes items Wiki             |
+| `wiki_missions_cache.json`           | 7 j | Missions Wiki (flags release)   |

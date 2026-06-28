@@ -7,7 +7,7 @@ use tauri::command;
 pub(crate) const WIKI_API_BASE: &str = "https://api.star-citizen.wiki";
 const USER_AGENT: &str = "MultitoolV2-Paints/2.0";
 const CACHE_MAX_AGE_DAYS: u64 = 7;
-const CACHE_SCHEMA_VERSION: u32 = 2;
+const CACHE_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +21,10 @@ pub struct PaintSummary {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub event_sources: Vec<String>,
     pub thumbnail_url: Option<String>,
+    pub image_url: Option<String>,
+    pub description_en: Option<String>,
+    #[serde(default)]
+    pub is_base_variant: bool,
     pub web_url: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -92,6 +96,7 @@ where
 #[derive(Deserialize)]
 struct WikiLocalizedText {
     fr_fr: Option<String>,
+    en_en: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -116,8 +121,14 @@ struct WikiVehicleListResponse {
 
 #[derive(Deserialize)]
 struct WikiVehicleRow {
+    slug: Option<String>,
     ports: Option<Vec<WikiVehiclePort>>,
     images: Option<Vec<WikiImage>>,
+}
+
+struct PaintShipMedia {
+    thumbnail: String,
+    slug: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -227,6 +238,46 @@ fn pick_thumbnail(images: Option<&Vec<WikiImage>>) -> Option<String> {
     })
 }
 
+fn pick_full_image(images: Option<&Vec<WikiImage>>) -> Option<String> {
+    images.and_then(|imgs| {
+        imgs.iter().find_map(|img| {
+            img.original_url
+                .clone()
+                .or_else(|| img.url.clone())
+                .or_else(|| img.thumbnail_url.clone())
+                .or_else(|| img.thumbnail.clone())
+                .filter(|u| !u.is_empty())
+        })
+    })
+}
+
+fn media_tools_fallback(slug: &str) -> String {
+    let normalized = slug.trim().to_lowercase().replace(' ', "-");
+    format!("https://media.starcitizen.tools/auto/ship/{normalized}_side.jpg")
+}
+
+fn is_skin_paint(item: &WikiPaintItem) -> bool {
+    if item
+        .name
+        .to_ascii_lowercase()
+        .contains("skin")
+    {
+        return true;
+    }
+    let tags = item
+        .tags
+        .as_ref()
+        .or(item.required_tags.as_ref());
+    if let Some(tags) = tags {
+        if tags.iter().any(|t| t.to_ascii_lowercase().contains("skin")) {
+            return true;
+        }
+    }
+    item.class_name
+        .as_ref()
+        .is_some_and(|cn| cn.to_ascii_lowercase().contains("skin"))
+}
+
 fn paint_port_tag(item: &WikiPaintItem) -> Option<String> {
     item.required_tags
         .as_ref()
@@ -258,7 +309,7 @@ async fn fetch_vehicles_page(page: u64, page_size: u64) -> Result<WikiVehicleLis
         .map_err(|e| format!("Réponse Wiki /api/vehicles illisible: {e}"))
 }
 
-async fn fetch_paint_port_thumbnails() -> Result<HashMap<String, String>, String> {
+async fn fetch_paint_port_media() -> Result<HashMap<String, PaintShipMedia>, String> {
     const PAGE_SIZE: u64 = 100;
     let first = fetch_vehicles_page(1, PAGE_SIZE).await?;
     let last_page = first.meta.as_ref().map(|m| m.last_page).unwrap_or(1).max(1);
@@ -274,6 +325,7 @@ async fn fetch_paint_port_thumbnails() -> Result<HashMap<String, String>, String
         let Some(thumbnail) = thumbnail else {
             continue;
         };
+        let slug = vehicle.slug.clone();
         let Some(ports) = vehicle.ports.as_ref() else {
             continue;
         };
@@ -288,7 +340,10 @@ async fn fetch_paint_port_thumbnails() -> Result<HashMap<String, String>, String
                 if tag.starts_with("Paint_") {
                     by_paint_tag
                         .entry(tag.clone())
-                        .or_insert_with(|| thumbnail.clone());
+                        .or_insert_with(|| PaintShipMedia {
+                            thumbnail: thumbnail.clone(),
+                            slug: slug.clone(),
+                        });
                 }
             }
         }
@@ -298,11 +353,29 @@ async fn fetch_paint_port_thumbnails() -> Result<HashMap<String, String>, String
 
 fn summary_from_wiki(
     item: WikiPaintItem,
-    ship_thumbnails: &HashMap<String, String>,
+    ship_media: &HashMap<String, PaintShipMedia>,
 ) -> PaintSummary {
     let ship_name = extract_ship_name(&item);
-    let thumbnail_url = pick_thumbnail(item.images.as_ref())
-        .or_else(|| paint_port_tag(&item).and_then(|tag| ship_thumbnails.get(&tag).cloned()));
+    let port_tag = paint_port_tag(&item);
+    let port_media = port_tag.as_ref().and_then(|tag| ship_media.get(tag));
+
+    let thumbnail_url = pick_thumbnail(item.images.as_ref()).or_else(|| {
+        port_media.map(|m| m.thumbnail.clone())
+    });
+    let image_url = pick_full_image(item.images.as_ref())
+        .or_else(|| port_media.map(|m| m.thumbnail.clone()))
+        .or_else(|| {
+            port_media
+                .and_then(|m| m.slug.as_deref())
+                .map(media_tools_fallback)
+        });
+    let description_en = item
+        .description
+        .as_ref()
+        .and_then(|d| d.en_en.clone())
+        .filter(|s| !s.is_empty());
+    let is_base_variant = !is_skin_paint(&item);
+
     PaintSummary {
         uuid: item.uuid,
         name: item.name,
@@ -316,6 +389,9 @@ fn summary_from_wiki(
         manufacturer_code: item.manufacturer.as_ref().and_then(|m| m.code.clone()),
         event_sources: item.event_source,
         thumbnail_url,
+        image_url,
+        description_en,
+        is_base_variant,
         web_url: item.web_url,
         updated_at: item.updated_at,
     }
@@ -345,9 +421,9 @@ async fn fetch_paints_page(page: u64, page_size: u64) -> Result<WikiItemsListRes
 
 async fn fetch_all_paints() -> Result<Vec<PaintSummary>, String> {
     const PAGE_SIZE: u64 = 200;
-    let (first, ship_thumbnails) = tokio::try_join!(
+    let (first, ship_media) = tokio::try_join!(
         fetch_paints_page(1, PAGE_SIZE),
-        fetch_paint_port_thumbnails()
+        fetch_paint_port_media()
     )?;
     let last_page = first.meta.as_ref().map(|m| m.last_page).unwrap_or(1).max(1);
     let mut all = first.data;
@@ -357,7 +433,7 @@ async fn fetch_all_paints() -> Result<Vec<PaintSummary>, String> {
     }
     let mut paints: Vec<PaintSummary> = all
         .into_iter()
-        .map(|item| summary_from_wiki(item, &ship_thumbnails))
+        .map(|item| summary_from_wiki(item, &ship_media))
         .collect();
     sort_paints(&mut paints);
     Ok(paints)

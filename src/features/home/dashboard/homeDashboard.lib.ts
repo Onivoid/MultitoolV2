@@ -8,36 +8,94 @@ import type {
 export const DEFAULT_WIDGET_WIDTH_PX = 280;
 export const MIN_WIDGET_WIDTH_PX = 220;
 export const MAX_WIDGET_WIDTH_PX = 480;
+export const MIN_WIDGET_HEIGHT_PX = 140;
+export const MAX_WIDGET_HEIGHT_PX = 520;
+export const DASHBOARD_SCHEMA_VERSION = 3;
 export const LOGO_COLLISION_PADDING_PX = 24;
+
+function widgetHeight(instance: HomeWidgetInstance, measuredPx: number): number {
+  if (instance.heightPx != null && instance.heightPx > 0) {
+    return Math.max(
+      MIN_WIDGET_HEIGHT_PX,
+      Math.min(MAX_WIDGET_HEIGHT_PX, instance.heightPx),
+    );
+  }
+  return measuredPx;
+}
 
 export function createWidgetId(): string {
   return crypto.randomUUID();
 }
 
+export { widgetHeight };
+
 export function defaultDashboardLayout(): HomeDashboardLayout {
   return {
-    schemaVersion: 2,
+    schemaVersion: DASHBOARD_SCHEMA_VERSION,
     widgets: [
       {
-        id: createWidgetId(),
+        id: "default-top-routes",
         type: "top_routes",
-        xPercent: 2,
-        yPercent: 38,
-        widthPx: DEFAULT_WIDGET_WIDTH_PX,
+        xPercent: 16,
+        yPercent: 2,
+        widthPx: 240,
+        heightPx: 200,
       },
       {
-        id: createWidgetId(),
-        type: "blueprints",
+        id: "default-translation",
+        type: "translation",
         xPercent: 36,
-        yPercent: 38,
-        widthPx: 300,
+        yPercent: 2,
+        widthPx: 220,
+        heightPx: 200,
       },
       {
-        id: createWidgetId(),
+        id: "default-hangar-exec",
+        type: "hangar_exec",
+        xPercent: 54,
+        yPercent: 2,
+        widthPx: 220,
+        heightPx: 200,
+      },
+      {
+        id: "default-sc-versions",
         type: "sc_versions",
-        xPercent: 70,
-        yPercent: 38,
-        widthPx: DEFAULT_WIDGET_WIDTH_PX,
+        xPercent: 72,
+        yPercent: 2,
+        widthPx: 240,
+        heightPx: 200,
+      },
+      {
+        id: "default-rsi-status",
+        type: "rsi_status",
+        xPercent: 2,
+        yPercent: 28,
+        widthPx: 260,
+        heightPx: 220,
+      },
+      {
+        id: "default-blueprints",
+        type: "blueprints",
+        xPercent: 2,
+        yPercent: 52,
+        widthPx: 280,
+        heightPx: 240,
+      },
+      {
+        id: "default-cache",
+        type: "cache",
+        xPercent: 72,
+        yPercent: 28,
+        widthPx: 260,
+        heightPx: 220,
+      },
+      {
+        id: "default-game-stats",
+        type: "game_stats",
+        xPercent: 72,
+        yPercent: 52,
+        widthPx: 280,
+        heightPx: 280,
       },
     ],
   };
@@ -45,13 +103,20 @@ export function defaultDashboardLayout(): HomeDashboardLayout {
 
 export function normalizeLayout(layout: HomeDashboardLayout): HomeDashboardLayout {
   return {
-    schemaVersion: 2,
+    schemaVersion: DASHBOARD_SCHEMA_VERSION,
     widgets: layout.widgets.map((w) => ({
       ...w,
       widthPx: Math.max(
         MIN_WIDGET_WIDTH_PX,
         Math.min(MAX_WIDGET_WIDTH_PX, w.widthPx || DEFAULT_WIDGET_WIDTH_PX),
       ),
+      heightPx:
+        w.heightPx != null
+          ? Math.max(
+              MIN_WIDGET_HEIGHT_PX,
+              Math.min(MAX_WIDGET_HEIGHT_PX, w.heightPx),
+            )
+          : undefined,
       xPercent: Math.max(0, Math.min(100, w.xPercent)),
       yPercent: Math.max(0, Math.min(100, w.yPercent)),
     })),

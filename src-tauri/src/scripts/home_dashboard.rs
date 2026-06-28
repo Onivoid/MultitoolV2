@@ -4,10 +4,11 @@ use std::path::PathBuf;
 use tauri::path::PathResolver;
 use tauri::{command, AppHandle, Manager, Runtime};
 
-const SCHEMA_VERSION: u32 = 2;
-const DEFAULT_WIDGET_WIDTH_PX: u32 = 280;
+const SCHEMA_VERSION: u32 = 3;
 const MIN_WIDGET_WIDTH_PX: u32 = 220;
 const MAX_WIDGET_WIDTH_PX: u32 = 480;
+const MIN_WIDGET_HEIGHT_PX: u32 = 140;
+const MAX_WIDGET_HEIGHT_PX: u32 = 520;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +19,8 @@ pub struct HomeWidgetInstance {
     pub x_percent: f64,
     pub y_percent: f64,
     pub width_px: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub height_px: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,23 +44,66 @@ impl HomeDashboardLayout {
                 HomeWidgetInstance {
                     id: "default-top-routes".to_string(),
                     widget_type: "top_routes".to_string(),
-                    x_percent: 2.0,
-                    y_percent: 38.0,
-                    width_px: DEFAULT_WIDGET_WIDTH_PX,
+                    x_percent: 16.0,
+                    y_percent: 2.0,
+                    width_px: 240,
+                    height_px: Some(200),
                 },
                 HomeWidgetInstance {
-                    id: "default-blueprints".to_string(),
-                    widget_type: "blueprints".to_string(),
+                    id: "default-translation".to_string(),
+                    widget_type: "translation".to_string(),
                     x_percent: 36.0,
-                    y_percent: 38.0,
-                    width_px: 300,
+                    y_percent: 2.0,
+                    width_px: 220,
+                    height_px: Some(200),
+                },
+                HomeWidgetInstance {
+                    id: "default-hangar-exec".to_string(),
+                    widget_type: "hangar_exec".to_string(),
+                    x_percent: 54.0,
+                    y_percent: 2.0,
+                    width_px: 220,
+                    height_px: Some(200),
                 },
                 HomeWidgetInstance {
                     id: "default-sc-versions".to_string(),
                     widget_type: "sc_versions".to_string(),
-                    x_percent: 70.0,
-                    y_percent: 38.0,
-                    width_px: DEFAULT_WIDGET_WIDTH_PX,
+                    x_percent: 72.0,
+                    y_percent: 2.0,
+                    width_px: 240,
+                    height_px: Some(200),
+                },
+                HomeWidgetInstance {
+                    id: "default-rsi-status".to_string(),
+                    widget_type: "rsi_status".to_string(),
+                    x_percent: 2.0,
+                    y_percent: 28.0,
+                    width_px: 260,
+                    height_px: Some(220),
+                },
+                HomeWidgetInstance {
+                    id: "default-blueprints".to_string(),
+                    widget_type: "blueprints".to_string(),
+                    x_percent: 2.0,
+                    y_percent: 52.0,
+                    width_px: 280,
+                    height_px: Some(240),
+                },
+                HomeWidgetInstance {
+                    id: "default-cache".to_string(),
+                    widget_type: "cache".to_string(),
+                    x_percent: 72.0,
+                    y_percent: 28.0,
+                    width_px: 260,
+                    height_px: Some(220),
+                },
+                HomeWidgetInstance {
+                    id: "default-game-stats".to_string(),
+                    widget_type: "game_stats".to_string(),
+                    x_percent: 72.0,
+                    y_percent: 52.0,
+                    width_px: 280,
+                    height_px: Some(280),
                 },
             ],
         }
@@ -82,6 +128,10 @@ fn clamp_widget_width(width_px: u32) -> u32 {
     width_px.clamp(MIN_WIDGET_WIDTH_PX, MAX_WIDGET_WIDTH_PX)
 }
 
+fn clamp_widget_height(height_px: Option<u32>) -> Option<u32> {
+    height_px.map(|h| h.clamp(MIN_WIDGET_HEIGHT_PX, MAX_WIDGET_HEIGHT_PX))
+}
+
 fn normalize_loaded_layout(
     path: &PathResolver<impl Runtime>,
     mut layout: HomeDashboardLayout,
@@ -95,6 +145,7 @@ fn normalize_loaded_layout(
     }
     for widget in &mut layout.widgets {
         widget.width_px = clamp_widget_width(widget.width_px);
+        widget.height_px = clamp_widget_height(widget.height_px);
     }
     Ok(layout)
 }
@@ -126,11 +177,8 @@ pub fn get_home_dashboard(app: AppHandle) -> Result<HomeDashboardLayout, String>
 
 #[command]
 pub fn save_home_dashboard(app: AppHandle, mut layout: HomeDashboardLayout) -> Result<(), String> {
-    layout.schema_version = SCHEMA_VERSION;
-    for widget in &mut layout.widgets {
-        widget.width_px = clamp_widget_width(widget.width_px);
-    }
     let resolver = app.path();
+    layout = normalize_loaded_layout(resolver, layout)?;
     save_layout(resolver, &layout)
 }
 
@@ -139,12 +187,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_layout_has_three_widgets() {
+    fn default_layout_has_eight_widgets() {
         let layout = HomeDashboardLayout::default_layout();
-        assert_eq!(layout.widgets.len(), 3);
-        assert_eq!(layout.widgets[0].widget_type, "top_routes");
-        assert_eq!(layout.widgets[1].widget_type, "blueprints");
-        assert_eq!(layout.widgets[2].widget_type, "sc_versions");
+        assert_eq!(layout.widgets.len(), 8);
+        assert!(layout.widgets.iter().any(|w| w.widget_type == "game_stats"));
     }
 
     #[test]
@@ -173,7 +219,7 @@ mod tests {
             widgets: vec![],
         };
         assert!(layout.widgets.is_empty());
-        assert_eq!(HomeDashboardLayout::default_layout().widgets.len(), 3);
+        assert_eq!(HomeDashboardLayout::default_layout().widgets.len(), 8);
     }
 
     #[test]
@@ -186,6 +232,7 @@ mod tests {
                 x_percent: 10.0,
                 y_percent: 20.0,
                 width_px: 280,
+                height_px: None,
             }],
         };
         assert_eq!(legacy.widgets.len(), 1);

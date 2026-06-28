@@ -69,6 +69,12 @@ export function isLiveVersionKey(key: string): boolean {
   return canonicalVersionKey(key) === "LIVE";
 }
 
+/** LIVE et HOTFIX : branches publiques (message « version publique »). */
+export function isPublicReleaseVersionKey(key: string): boolean {
+  const canon = canonicalVersionKey(key).toUpperCase();
+  return canon === "LIVE" || canon === "HOTFIX";
+}
+
 /** Réécrit les préférences sauvegardées vers les clés canoniques. */
 export function canonicalizeTranslationsSelected(
   selected: TranslationsChoosen,

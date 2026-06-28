@@ -24,9 +24,12 @@ export interface BlueprintsCatalogToolbarProps {
   journalProductCount?: number;
   matchedProductCount?: number;
   uniqueBlueprintIdCount?: number;
+  unmatchedProductNamesCount?: number;
   uniqueOwners?: string[];
   ownerFilter?: string;
   onOwnerFilterChange?: (owner: string) => void;
+  /** Masque recherche + statut déblocage (déjà dans la top bar wireframe). */
+  compact?: boolean;
 }
 
 export function BlueprintsCatalogToolbar({
@@ -40,9 +43,11 @@ export function BlueprintsCatalogToolbar({
   journalProductCount,
   matchedProductCount,
   uniqueBlueprintIdCount,
+  unmatchedProductNamesCount,
   uniqueOwners = [],
   ownerFilter = "",
   onOwnerFilterChange,
+  compact = false,
 }: BlueprintsCatalogToolbarProps) {
   const journalGap =
     journalProductCount != null &&
@@ -51,11 +56,12 @@ export function BlueprintsCatalogToolbar({
       ? journalProductCount - uniqueBlueprintIdCount
       : 0;
   const unmatchedNames =
-    journalProductCount != null &&
+    unmatchedProductNamesCount ??
+    (journalProductCount != null &&
     matchedProductCount != null &&
     matchedProductCount < journalProductCount
       ? journalProductCount - matchedProductCount
-      : 0;
+      : 0);
 
   const ownerOptions = [
     { value: ALL_OWNERS_VALUE, label: "Tous les comptes" },
@@ -70,13 +76,16 @@ export function BlueprintsCatalogToolbar({
       className="flex shrink-0 flex-col gap-3 border-b border-primary/8 px-3 py-3"
       data-no-window-drag
     >
-      <FeatureSearchField
-        value={searchQuery}
-        onChange={onSearchChange}
-        placeholder="Rechercher un blueprint…"
-        className="w-full"
-      />
+      {!compact && (
+        <FeatureSearchField
+          value={searchQuery}
+          onChange={onSearchChange}
+          placeholder="Rechercher un blueprint…"
+          className="w-full"
+        />
+      )}
 
+      {!compact && (
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {uniqueOwners.length > 0 && onOwnerFilterChange && (
           <div className="min-w-0 space-y-1">
@@ -108,12 +117,18 @@ export function BlueprintsCatalogToolbar({
           />
         </div>
       </div>
+      )}
 
       <p className="text-xs leading-relaxed text-muted-foreground tabular-nums">
-        <span className="text-foreground/90">
-          {filteredCount} / {totalCount}
-        </span>{" "}
-        affichés · {ownedCount} débloqués
+        {!compact && (
+          <>
+            <span className="text-foreground/90">
+              {filteredCount} / {totalCount}
+            </span>{" "}
+            affichés ·{" "}
+          </>
+        )}
+        {ownedCount} débloqués
         {journalProductCount != null && journalProductCount > 0 && (
           <>
             {" "}

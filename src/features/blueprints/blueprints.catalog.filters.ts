@@ -204,6 +204,24 @@ function sortCatalog(
           b.nameEn || b.blueprintId,
           "fr",
         );
+      case "nameEnDesc":
+        return (b.nameEn || b.blueprintId).localeCompare(
+          a.nameEn || a.blueprintId,
+          "fr",
+        );
+      case "nameFrDesc": {
+        const na = catalogDisplayName(a, "fr");
+        const nb = catalogDisplayName(b, "fr");
+        return nb.localeCompare(na, "fr");
+      }
+      case "category": {
+        const ca = a.family ?? "";
+        const cb = b.family ?? "";
+        return ca.localeCompare(cb, "fr") || catalogDisplayName(a, "fr").localeCompare(
+          catalogDisplayName(b, "fr"),
+          "fr",
+        );
+      }
       case "craftTime":
         return (a.craftTimeSeconds ?? 0) - (b.craftTimeSeconds ?? 0);
       case "size":

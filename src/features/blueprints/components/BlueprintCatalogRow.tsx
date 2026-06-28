@@ -6,7 +6,6 @@ import type { BlueprintMetaBadgeVariant } from "@/features/blueprints/components
 import {
   catalogDisplayName,
   catalogRowBadges,
-  CLASS_LABEL_FR,
   resolveBlueprintClass,
   type CatalogBadgeFilter,
 } from "@/features/blueprints/blueprints.catalog.lib";
@@ -63,6 +62,17 @@ export function BlueprintCatalogRow({
   const metaBadges = catalogRowBadges(item);
   const classCode = resolveBlueprintClass(item);
   const classStyle = classBadgeClass(classCode);
+
+  const renderMetaBadge = (b: (typeof metaBadges)[number], clickable: boolean, active: boolean) => (
+    <BlueprintMetaBadge
+      variant={BADGE_VARIANT[b.kind]}
+      interactive={clickable}
+      active={active}
+      className={b.kind === "class" ? (classStyle ?? undefined) : undefined}
+    >
+      {b.label}
+    </BlueprintMetaBadge>
+  );
 
   return (
     <div
@@ -155,15 +165,7 @@ export function BlueprintCatalogRow({
                   b.filter != null &&
                   isCatalogBadgeFilterActive(filterState, b.filter);
 
-                const badge = (
-                  <BlueprintMetaBadge
-                    variant={BADGE_VARIANT[b.kind]}
-                    interactive={clickable}
-                    active={active}
-                  >
-                    {b.label}
-                  </BlueprintMetaBadge>
-                );
+                const badge = renderMetaBadge(b, clickable, !!active);
 
                 if (!clickable) {
                   return <span key={b.key}>{badge}</span>;
@@ -188,21 +190,17 @@ export function BlueprintCatalogRow({
               })}
             </div>
           )}
-          {(systems.length > 0 ||
-            (item.unlockJurisdictions?.length ?? 0) > 0 ||
-            classCode) && (
+          {(systems.length > 0 || (item.unlockJurisdictions ?? []).some((j) => j !== "UEE")) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {systems.map((s) => (
                 <SystemBadge key={s} name={s} />
               ))}
-              {(item.unlockJurisdictions ?? []).slice(0, 1).map((j) => (
-                <JurisdictionBadge key={j} name={j} />
-              ))}
-              {classCode && classStyle && (
-                <BlueprintMetaBadge variant="class" className={classStyle}>
-                  {CLASS_LABEL_FR[classCode]}
-                </BlueprintMetaBadge>
-              )}
+              {(item.unlockJurisdictions ?? [])
+                .filter((j) => j !== "UEE")
+                .slice(0, 1)
+                .map((j) => (
+                  <JurisdictionBadge key={j} name={j} />
+                ))}
             </div>
           )}
           {unlockedAt != null && (

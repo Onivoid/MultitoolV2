@@ -4,6 +4,7 @@
 use crate::scripts::gamepath::get_star_citizen_versions_sync;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -287,6 +288,86 @@ pub fn list_archived_log_files(app: &AppHandle) -> Result<Vec<ArchivedLogFile>, 
     }
     out.sort_by_key(|f| f.mtime_ms);
     Ok(out)
+}
+
+/// Chemins source (`logbackups/…`) dont une copie vérifiée existe réellement sur disque.
+pub fn verified_archive_source_paths(app: &AppHandle) -> Result<HashSet<String>, String> {
+    let root = ensure_archive_dir(app.path())?;
+    let manifest = load_manifest(&root)?;
+    let files_dir = archive_files_dir(&root);
+    Ok(manifest
+        .entries
+        .iter()
+        .filter(|e| e.verified && files_dir.join(&e.archive_name).is_file())
+        .map(|e| e.source_path.to_ascii_lowercase())
+        .collect())
+}
+
+/// Fichiers source encore présents alors que la copie archive a disparu (récupération playtime).
+pub fn list_recoverable_archive_sources(app: &AppHandle) -> Result<Vec<ArchivedLogFile>, String> {
+    let root = ensure_archive_dir(app.path())?;
+    let manifest = load_manifest(&root)?;
+    let files_dir = archive_files_dir(&root);
+    let mut out = Vec::new();
+    for entry in &manifest.entries {
+        if !entry.verified || files_dir.join(&entry.archive_name).is_file() {
+            continue;
+        }
+        let source = PathBuf::from(&entry.source_path);
+        if !is_log_file(&source) {
+            continue;
+        }
+        out.push(ArchivedLogFile {
+            path: source,
+            channel: entry.channel.clone(),
+            is_game_build: true,
+            mtime_ms: entry.source_mtime_ms,
+            size: fs::metadata(&entry.source_path)
+                .map(|m| m.len())
+                .unwrap_or(entry.size),
+        });
+    }
+    out.sort_by_key(|f| f.mtime_ms);
+    Ok(out)
+}
+
+/// Fichiers encore présents dans `logbackups/` du jeu mais pas encore archivés localement.
+pub fn list_unarchived_logbackup_files(archived_sources: &HashSet<String>) -> Vec<ArchivedLogFile> {
+    let mut out = Vec::new();
+    for (channel, install) in detected_archive_channels() {
+        let logbackups = install.join("logbackups");
+        if !logbackups.is_dir() {
+            continue;
+        }
+
+        let mut sources: Vec<PathBuf> = fs::read_dir(&logbackups)
+            .ok()
+            .into_iter()
+            .flatten()
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| is_log_file(p))
+            .collect();
+        sources.sort();
+
+        for source in sources {
+            let source_str = source.to_string_lossy().into_owned();
+            if archived_sources.contains(&source_str.to_ascii_lowercase()) {
+                continue;
+            }
+            let mtime_ms = file_mtime_ms(&source);
+            let size = fs::metadata(&source).map(|m| m.len()).unwrap_or(0);
+            out.push(ArchivedLogFile {
+                path: source,
+                channel: channel.clone(),
+                is_game_build: true,
+                mtime_ms,
+                size,
+            });
+        }
+    }
+    out.sort_by_key(|f| f.mtime_ms);
+    out
 }
 
 fn find_manifest_entry<'a>(

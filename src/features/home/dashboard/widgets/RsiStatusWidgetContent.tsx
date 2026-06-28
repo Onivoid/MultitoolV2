@@ -4,6 +4,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { invokeCommand } from "@/shared/api/tauriClient";
 import { TAURI_COMMANDS } from "@/shared/api/commands";
 import { openExternalUrl } from "@/shared/lib/openExternal";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 import { cn } from "@/lib/utils";
 
 interface RsiSystemStatus {
@@ -80,7 +84,7 @@ export function RsiStatusWidgetContent() {
   const systems = (feed.systems ?? []).slice(0, 5);
 
   return (
-    <div className="px-3 py-3" data-no-window-drag>
+    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} px-3 py-3`} data-no-window-drag>
       <button
         type="button"
         className="text-ui-secondary mb-2 flex w-full items-center gap-2 text-left font-medium hover:underline"

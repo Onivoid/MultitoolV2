@@ -6,10 +6,10 @@ use std::fs;
 use std::path::PathBuf;
 
 use super::blueprints_catalog::{
-    fetch_wiki_blueprint_by_uuid, http_client, load_wiki_catalog_from_disk, normalize_bp_id_key,
-    summary_from_wiki, BlueprintDetail, BlueprintSummary, IngredientEnrichment,
-    IngredientLocationPreview, IngredientOption, MissionBlueprintReward, MissionDetailResult,
-    MissionInfo, WIKI_API_BASE,
+    fetch_wiki_blueprint_by_uuid, http_client, is_mission_released_in_game,
+    load_wiki_catalog_from_disk, normalize_bp_id_key, summary_from_wiki, BlueprintDetail,
+    BlueprintSummary, IngredientEnrichment, IngredientLocationPreview, IngredientOption,
+    MissionBlueprintReward, MissionDetailResult, MissionInfo, WIKI_API_BASE,
 };
 use tauri::command;
 
@@ -199,10 +199,14 @@ pub fn merge_unlock_index(summaries: &mut [BlueprintSummary]) {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 struct MissionCacheFile {
+    #[serde(default)]
+    schema_version: u32,
     missions: HashMap<String, CachedMission>,
 }
+
+const MISSION_CACHE_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -222,6 +226,9 @@ struct CachedMission {
     mission_type: Option<String>,
     reward_scope: Option<String>,
     time_to_complete_minutes: Option<f64>,
+    released: Option<bool>,
+    not_for_release: Option<bool>,
+    work_in_progress: Option<bool>,
 }
 
 fn mission_cache_path() -> Option<PathBuf> {
@@ -232,19 +239,72 @@ fn load_mission_cache() -> MissionCacheFile {
     let Some(path) = mission_cache_path() else {
         return MissionCacheFile::default();
     };
-    fs::read(&path)
+    let cache: MissionCacheFile = fs::read(&path)
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    if cache.schema_version != MISSION_CACHE_SCHEMA_VERSION {
+        return MissionCacheFile {
+            schema_version: MISSION_CACHE_SCHEMA_VERSION,
+            missions: HashMap::new(),
+        };
+    }
+    cache
 }
 
 fn save_mission_cache(cache: &MissionCacheFile) {
     let Some(path) = mission_cache_path() else {
         return;
     };
-    if let Ok(bytes) = serde_json::to_vec(cache) {
+    let mut to_write = cache.clone();
+    to_write.schema_version = MISSION_CACHE_SCHEMA_VERSION;
+    if let Ok(bytes) = serde_json::to_vec(&to_write) {
         let _ = fs::write(path, bytes);
     }
+}
+
+fn mission_release_flags_from_api(
+    data: &serde_json::Value,
+) -> (Option<bool>, Option<bool>, Option<bool>) {
+    let mut released = data.get("released").and_then(|v| v.as_bool());
+    let not_for_release = data.get("not_for_release").and_then(|v| v.as_bool());
+    let work_in_progress = data.get("work_in_progress").and_then(|v| v.as_bool());
+    if released.is_none() {
+        if let Some(status) = data
+            .get("release_status")
+            .or_else(|| data.get("production_status"))
+            .and_then(|v| v.as_str())
+        {
+            let upper = status.to_ascii_uppercase();
+            if upper.contains("UNRELEASE") || upper == "WIP" || upper.contains("WORK_IN_PROGRESS")
+            {
+                released = Some(false);
+            } else if upper.contains("RELEASE") {
+                released = Some(true);
+            }
+        }
+    }
+    (released, not_for_release, work_in_progress)
+}
+
+fn cached_mission_has_release_flags(c: &CachedMission) -> bool {
+    c.released.is_some() || c.not_for_release.is_some() || c.work_in_progress.is_some()
+}
+
+fn is_mission_released_from_cache(c: &CachedMission) -> bool {
+    if c.not_for_release == Some(true) {
+        return false;
+    }
+    if c.released == Some(false) {
+        return false;
+    }
+    if c.work_in_progress == Some(true) {
+        return false;
+    }
+    if c.released.is_none() && c.not_for_release.is_none() && c.work_in_progress.is_none() {
+        return false;
+    }
+    true
 }
 
 fn normalize_system_name(s: &str) -> String {
@@ -300,7 +360,9 @@ fn blueprint_uuid_from_link(link: &str) -> Option<String> {
 
 async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Option<CachedMission> {
     if let Some(m) = cache.missions.get(uuid) {
-        return Some(m.clone());
+        if cached_mission_has_release_flags(m) {
+            return Some(m.clone());
+        }
     }
     let url = format!("{WIKI_API_BASE}/api/missions/{uuid}");
     let client = http_client().ok()?;
@@ -351,6 +413,7 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
             }
         }
     }
+    let (released, not_for_release, work_in_progress) = mission_release_flags_from_api(data);
     let entry = CachedMission {
         title,
         star_systems,
@@ -408,6 +471,9 @@ async fn fetch_mission_cached(uuid: &str, cache: &mut MissionCacheFile) -> Optio
         time_to_complete_minutes: data
             .get("time_to_complete_minutes")
             .and_then(|v| v.as_f64()),
+        released,
+        not_for_release,
+        work_in_progress,
     };
     cache.missions.insert(uuid.to_string(), entry.clone());
     Some(entry)
@@ -437,6 +503,9 @@ pub async fn build_unlock_index_background() {
                     if let Some(uuid) = mission_uuid_from_url(url) {
                         if let Some(cached) = fetch_mission_cached(&uuid, &mut mission_cache).await
                         {
+                            if !is_mission_released_from_cache(&cached) {
+                                continue;
+                            }
                             for s in &cached.star_systems {
                                 systems.insert(s.clone());
                             }
@@ -534,6 +603,9 @@ pub fn enrich_missions_from_cache(missions: &mut [MissionInfo]) {
             if let Some(mins) = c.time_to_complete_minutes {
                 m.time_to_complete_minutes = Some(mins.round() as u64);
             }
+            m.not_for_release = c.not_for_release;
+            m.released = c.released;
+            m.work_in_progress = c.work_in_progress;
         }
     }
 }
@@ -820,14 +892,10 @@ pub async fn enrich_blueprint_detail(detail: &mut BlueprintDetail) {
     }
     save_mission_cache(&mission_cache);
     enrich_missions_from_cache(&mut detail.missions);
+    detail.missions.retain(|m| is_mission_released_in_game(m));
 
-    let mut systems: HashSet<String> = detail.summary.unlock_systems.iter().cloned().collect();
-    let mut jurisdictions: HashSet<String> = detail
-        .summary
-        .unlock_jurisdictions
-        .iter()
-        .cloned()
-        .collect();
+    let mut systems: HashSet<String> = HashSet::new();
+    let mut jurisdictions: HashSet<String> = HashSet::new();
     for m in &detail.missions {
         for s in &m.star_systems {
             systems.insert(s.clone());

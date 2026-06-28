@@ -28,3 +28,4 @@ pub mod theme_preferences;
 pub mod translation_functions;
 pub mod translation_preferences;
 pub mod translations_links;
+pub mod vehicles_catalog;

@@ -17,6 +17,11 @@ export default function PaintsPage() {
     toggleEvent,
     selectEvent,
     eventChips,
+    manufacturerOptions,
+    activeManufacturer,
+    setActiveManufacturer,
+    hideSkins,
+    setHideSkins,
   } = usePaintsCatalog();
 
   return (
@@ -30,6 +35,11 @@ export default function PaintsPage() {
         activeEvent={activeEvent}
         onToggleEvent={toggleEvent}
         onSelectEvent={selectEvent}
+        manufacturerOptions={manufacturerOptions}
+        activeManufacturer={activeManufacturer}
+        onSelectManufacturer={setActiveManufacturer}
+        hideSkins={hideSkins}
+        onHideSkinsChange={setHideSkins}
       />
 
       {isLoading ? (

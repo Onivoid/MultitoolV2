@@ -16,6 +16,9 @@ use std::path::Path;
 struct PlaytimeCacheState {
     sessions: HashMap<String, GameSession>,
     oldest_game_build_start_ts: Option<f64>,
+    /// Dernier `@session` connu par fichier (scan incrémental du Game.log courant).
+    #[serde(default)]
+    file_session_ids: HashMap<String, String>,
 }
 
 #[derive(Debug, Default)]
@@ -29,6 +32,7 @@ struct FileScan {
 pub struct PlaytimeExtractor {
     sessions: HashMap<String, GameSession>,
     oldest_game_build_start_ts: Option<f64>,
+    file_session_ids: HashMap<String, String>,
     current_file: FileScan,
 }
 
@@ -37,6 +41,7 @@ impl PlaytimeExtractor {
         Self {
             sessions: HashMap::new(),
             oldest_game_build_start_ts: None,
+            file_session_ids: HashMap::new(),
             current_file: FileScan::default(),
         }
     }
@@ -48,16 +53,28 @@ impl PlaytimeExtractor {
             return;
         };
 
+        let path_key = ctx.file_path.clone();
         let source = path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| path.display().to_string());
 
+        if let Some(id) = &self.current_file.session_id {
+            self.file_session_ids
+                .insert(path_key.clone(), id.clone());
+        }
+
+        let fallback_id = format!("file:{path_key}");
         let session_id = self
             .current_file
             .session_id
             .clone()
-            .unwrap_or_else(|| format!("file:{}", path.display()));
+            .or_else(|| self.file_session_ids.get(&path_key).cloned())
+            .unwrap_or(fallback_id.clone());
+
+        if session_id != fallback_id {
+            self.sessions.remove(&fallback_id);
+        }
 
         merge_session_interval(&mut self.sessions, session_id, start, end, source);
 
@@ -81,6 +98,7 @@ impl GameLogStatExtractor for PlaytimeExtractor {
     fn reset(&mut self) {
         self.sessions.clear();
         self.oldest_game_build_start_ts = None;
+        self.file_session_ids.clear();
         self.current_file = FileScan::default();
     }
 
@@ -119,6 +137,7 @@ impl GameLogStatExtractor for PlaytimeExtractor {
         if let Ok(state) = serde_json::from_value::<PlaytimeCacheState>(cached.clone()) {
             self.sessions = state.sessions;
             self.oldest_game_build_start_ts = state.oldest_game_build_start_ts;
+            self.file_session_ids = state.file_session_ids;
         }
     }
 
@@ -126,6 +145,7 @@ impl GameLogStatExtractor for PlaytimeExtractor {
         serde_json::to_value(PlaytimeCacheState {
             sessions: self.sessions.clone(),
             oldest_game_build_start_ts: self.oldest_game_build_start_ts,
+            file_session_ids: self.file_session_ids.clone(),
         })
         .unwrap_or(Value::Null)
     }

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { paintsService } from "@/features/paints/paints.service";
 import {
+  isPaintSkin,
+  resolvePaintManufacturer,
+} from "@/features/paints/paints.lib";
+import {
   PAINT_EVENT_CHIP_PRIORITY,
   type PaintSummary,
 } from "@/features/paints/paints.types";
@@ -14,10 +18,13 @@ function normalizeSearch(value: string): string {
 
 function paintMatchesSearch(paint: PaintSummary, query: string): boolean {
   if (!query) return true;
+  const manufacturer = resolvePaintManufacturer(paint);
   const haystack = [
     paint.name,
     paint.nameFr,
     paint.shipName,
+    manufacturer.name,
+    manufacturer.code,
     paint.manufacturerName,
     paint.manufacturerCode,
     ...paint.eventSources,
@@ -30,6 +37,13 @@ function paintMatchesSearch(paint: PaintSummary, query: string): boolean {
 
 function paintMatchesEvent(paint: PaintSummary, event: string | null): boolean {
   if (!event) return true;
+  const normalized = event.toLowerCase();
+  if (
+    paint.eventSources.some((e) => e.toLowerCase().includes(normalized)) ||
+    paint.name.toLowerCase().includes(normalized)
+  ) {
+    return true;
+  }
   if (event === "Limited") {
     return (
       paint.eventSources.some((e) => e.toLowerCase().includes("limited")) ||
@@ -42,7 +56,7 @@ function paintMatchesEvent(paint: PaintSummary, event: string | null): boolean {
       paint.name.toLowerCase().includes("best in show")
     );
   }
-  if (event === "Concierge") {
+  if (event === "Concierge" || event === "CONCIERGE") {
     return (
       paint.eventSources.some((e) => e.toLowerCase().includes("concierge")) ||
       paint.name.toLowerCase().includes("concierge")
@@ -51,11 +65,29 @@ function paintMatchesEvent(paint: PaintSummary, event: string | null): boolean {
   return paint.eventSources.includes(event);
 }
 
+function paintMatchesManufacturer(
+  paint: PaintSummary,
+  manufacturer: string | null,
+): boolean {
+  if (!manufacturer) return true;
+  const resolved = resolvePaintManufacturer(paint);
+  return (
+    resolved.name === manufacturer ||
+    resolved.code === manufacturer ||
+    paint.manufacturerName === manufacturer ||
+    paint.manufacturerCode === manufacturer
+  );
+}
+
 export function usePaintsCatalog() {
   const [paints, setPaints] = useState<PaintSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
+  const [activeManufacturer, setActiveManufacturer] = useState<string | null>(
+    null,
+  );
+  const [hideSkins, setHideSkins] = useState(true);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -73,6 +105,15 @@ export function usePaintsCatalog() {
     load().finally(() => setIsLoading(false));
   }, [load]);
 
+  const manufacturerOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const paint of paints) {
+      const m = resolvePaintManufacturer(paint).name;
+      if (m) names.add(m);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b, "fr"));
+  }, [paints]);
+
   const eventChips = useMemo(() => {
     const fromData = new Set<string>();
     for (const paint of paints) {
@@ -86,13 +127,19 @@ export function usePaintsCatalog() {
         chip === "Limited" ||
         chip === "Best in Show" ||
         chip === "Concierge" ||
-        fromData.has(chip)
+        chip === "CONCIERGE" ||
+        fromData.has(chip) ||
+        [...fromData].some((e) => e.toLowerCase() === chip.toLowerCase())
       ) {
-        ordered.push(chip);
+        if (!ordered.some((o) => o.toLowerCase() === chip.toLowerCase())) {
+          ordered.push(chip);
+        }
       }
     }
     for (const event of [...fromData].sort()) {
-      if (!ordered.includes(event)) ordered.push(event);
+      if (!ordered.some((o) => o.toLowerCase() === event.toLowerCase())) {
+        ordered.push(event);
+      }
     }
     return ordered;
   }, [paints]);
@@ -101,9 +148,12 @@ export function usePaintsCatalog() {
     const query = normalizeSearch(search);
     return paints.filter(
       (paint) =>
-        paintMatchesSearch(paint, query) && paintMatchesEvent(paint, activeEvent),
+        paintMatchesSearch(paint, query) &&
+        paintMatchesEvent(paint, activeEvent) &&
+        paintMatchesManufacturer(paint, activeManufacturer) &&
+        (!hideSkins || !isPaintSkin(paint)),
     );
-  }, [paints, search, activeEvent]);
+  }, [paints, search, activeEvent, activeManufacturer, hideSkins]);
 
   const toggleEvent = (event: string) => {
     setActiveEvent((prev) => (prev === event ? null : event));
@@ -123,5 +173,10 @@ export function usePaintsCatalog() {
     toggleEvent,
     selectEvent,
     eventChips,
+    manufacturerOptions,
+    activeManufacturer,
+    setActiveManufacturer,
+    hideSkins,
+    setHideSkins,
   };
 }

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { TranslationsChoosen } from "@/types/translation";
 import { translationService } from "@/features/translation/translation.service";
+import { blueprintsCatalogService } from "@/features/blueprints/blueprints.catalog.service";
 import {
   createTranslationTimestamp,
   DEFAULT_TRANSLATION_LANG,
@@ -57,6 +58,7 @@ export function useTranslationActions(data: TranslationData) {
         setTranslationsSelected(updatedTranslations);
         await saveSelectedTranslations(updatedTranslations);
         await translationService.initFiles(versionPath, link, DEFAULT_TRANSLATION_LANG);
+        await blueprintsCatalogService.refreshLocalization().catch(() => undefined);
         toastSuccess(toast, `Traduction installée · ${version}`);
         await refreshVersionStates();
       };
@@ -100,6 +102,7 @@ export function useTranslationActions(data: TranslationData) {
           setTranslationsSelected(updatedTranslations);
           await saveSelectedTranslations(updatedTranslations);
           toastSuccess(toast, `Traduction installée · ${version}`);
+          await blueprintsCatalogService.refreshLocalization().catch(() => undefined);
           await refreshVersionStates();
         } catch (error) {
           toastError(
@@ -130,6 +133,7 @@ export function useTranslationActions(data: TranslationData) {
           translationLink,
           DEFAULT_TRANSLATION_LANG,
         );
+        await blueprintsCatalogService.refreshLocalization().catch(() => undefined);
         if (translationsSelected) {
           const current = translationsSelected[buttonId as keyof TranslationsChoosen];
           const updatedTranslations = {

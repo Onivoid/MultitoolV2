@@ -13,6 +13,7 @@ import { bpDetailBlock } from "@/features/blueprints/blueprints.ui";
 import {
   cleanScText,
   formatCraftDuration,
+  formatMissionMinStanding,
 } from "@/features/blueprints/blueprints.catalog.lib";
 import {
   groupHasQualitySliders,
@@ -173,7 +174,11 @@ export function BlueprintDetailTabs({
                       <LegalityBadge lawful={m.lawful} />
                       {m.contractor && <span>· {m.contractor}</span>}
                       {m.missionType && <span>· {m.missionType}</span>}
-                      {m.minStandingName && <span>· Rang : {m.minStandingName}</span>}
+                      {formatMissionMinStanding(m) && (
+                        <span className="font-medium text-foreground/85">
+                          · Réputation min. : {formatMissionMinStanding(m)}
+                        </span>
+                      )}
                       {m.shareable != null ? (
                         <span className="inline-flex items-center gap-0.5">
                           <Users className="h-3 w-3" />

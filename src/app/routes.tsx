@@ -13,6 +13,7 @@ import NewsPage from "@/features/news/NewsPage";
 import Ships3DPage from "@/features/ships3d/Ships3DPage";
 import BlueprintsPage from "@/features/blueprints/BlueprintsPage";
 import PaintsPage from "@/features/paints/PaintsPage";
+import ShipsPage from "@/features/ships/ShipsPage";
 import HangarExecPage from "@/features/hangar-exec/HangarExecPage";
 import FeaturesHubPage from "@/features/features-hub/FeaturesHubPage";
 import SettingsPage from "@/features/settings/SettingsPage";
@@ -49,6 +50,7 @@ const AppRouter = () => (
             <Route path="/blueprints" element={<BlueprintsPage />} />
             <Route path="/statistiques" element={<StatisticsPage />} />
             <Route path="/peintures" element={<PaintsPage />} />
+            <Route path="/vaisseaux" element={<ShipsPage />} />
             <Route path="/hangar-exec" element={<HangarExecPage />} />
             <Route path="/fonctionnalites" element={<FeaturesHubPage />} />
             <Route path="/settings" element={<SettingsPage />} />

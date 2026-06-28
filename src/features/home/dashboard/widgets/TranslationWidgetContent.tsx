@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TranslationWidgetVersionRow } from "@/features/home/dashboard/widgets/TranslationWidgetVersionRow";
 import { useTranslationWidget } from "@/features/translation/hooks/useTranslationWidget";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 
 export function TranslationWidgetContent() {
   const {
@@ -41,7 +45,7 @@ export function TranslationWidgetContent() {
   }
 
   return (
-    <div className="max-h-[140px] overflow-y-auto" data-no-window-drag>
+    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL}`} data-no-window-drag>
       {versionOrder.map((key) => {
         const version = paths.versions[key];
         if (!version) {

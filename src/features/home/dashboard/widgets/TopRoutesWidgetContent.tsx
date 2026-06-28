@@ -3,13 +3,17 @@ import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHomeRouteLabel } from "@/features/home/homeRouteLabels";
 import { useTopRoutes } from "@/features/home/useTopRoutes";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 import { cn } from "@/lib/utils";
 
 export function TopRoutesWidgetContent() {
   const { routes, loading } = useTopRoutes(3);
 
   return (
-    <div className="flex flex-col gap-1 px-2 py-2">
+    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} flex-col gap-1 px-2 py-2`}>
       {loading &&
         Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-full rounded-md" />

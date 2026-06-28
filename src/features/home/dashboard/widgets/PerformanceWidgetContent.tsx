@@ -8,6 +8,10 @@ import {
   memoryUsagePercent,
 } from "@/features/system-metrics/system-metrics.lib";
 import { useSystemMetricsWidget } from "@/features/system-metrics/hooks/useSystemMetricsWidget";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 import { cn } from "@/lib/utils";
 
 function MetricRow({
@@ -76,7 +80,7 @@ export function PerformanceWidgetContent() {
   );
 
   return (
-    <div className="border-t border-primary/6" data-no-window-drag>
+    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} border-t border-primary/6`} data-no-window-drag>
       <MetricRow
         label="CPU"
         percent={snapshot.cpuUsagePercent}

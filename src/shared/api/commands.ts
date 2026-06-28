@@ -71,6 +71,8 @@ export const TAURI_COMMANDS = {
   listGameConfigBackupTargets: "list_game_config_backup_targets",
   exportGameConfigBackup: "export_game_config_backup",
   paintsCatalogList: "paints_catalog_list",
+  vehiclesCatalogList: "vehicles_catalog_list",
+  vehicleDetail: "vehicle_detail",
   hangarExecFetchStatus: "hangar_exec_fetch_status",
   hangarExecStartTimer: "hangar_exec_start_timer",
   hangarExecGetTimers: "hangar_exec_get_timers",

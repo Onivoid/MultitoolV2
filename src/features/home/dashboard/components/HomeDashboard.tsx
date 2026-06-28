@@ -19,6 +19,7 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
     setEditMode,
     updateWidgetPosition,
     updateWidgetWidth,
+    updateWidgetHeight,
     removeWidget,
     addWidget,
   } = useHomeDashboard();
@@ -56,6 +57,7 @@ export function HomeDashboard({ logoRef }: HomeDashboardProps) {
               logoRef={logoRef}
               onPositionChange={updateWidgetPosition}
               onWidthChange={updateWidgetWidth}
+              onHeightChange={updateWidgetHeight}
               onRemove={removeWidget}
             />
           );

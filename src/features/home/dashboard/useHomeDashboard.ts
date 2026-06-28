@@ -103,6 +103,16 @@ export function useHomeDashboard() {
     [updateLayout],
   );
 
+  const updateWidgetHeight = useCallback(
+    (id: string, heightPx: number) => {
+      updateLayout((prev) => ({
+        ...prev,
+        widgets: prev.widgets.map((w) => (w.id === id ? { ...w, heightPx } : w)),
+      }));
+    },
+    [updateLayout],
+  );
+
   const removeWidget = useCallback(
     (id: string) => {
       updateLayout((prev) => ({
@@ -141,6 +151,7 @@ export function useHomeDashboard() {
     setEditMode,
     updateWidgetPosition,
     updateWidgetWidth,
+    updateWidgetHeight,
     removeWidget,
     addWidget,
     setWidgets,

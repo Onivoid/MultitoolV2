@@ -7,6 +7,10 @@ import {
   formatNewsDate,
 } from "@/features/news/news.lib";
 import { openExternalUrl } from "@/shared/lib/openExternal";
+import {
+  HOME_WIDGET_ROOT,
+  HOME_WIDGET_SCROLL,
+} from "@/features/home/dashboard/homeDashboard.ui";
 
 const PREVIEW_COUNT = 5;
 
@@ -61,7 +65,7 @@ export function NewsWidgetContent() {
   }
 
   return (
-    <ul className="max-h-[160px] overflow-y-auto" data-no-window-drag>
+    <ul className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL}`} data-no-window-drag>
       {items.map((item) => {
         const title =
           item.summary?.trim() || extractTitleFromUrl(item.url) || "Actualité RSI";

@@ -2,7 +2,9 @@ import PageMotion from "@/shared/components/PageMotion";
 import { PAGE_CENTER, PAGE_SCROLL } from "@/shared/components/pageStyles";
 import { PageWaveLoader } from "@/shared/components/PageWaveLoader";
 import { HangarExecToolbar } from "@/features/hangar-exec/components/HangarExecToolbar";
+import { HangarHelpCards } from "@/features/hangar-exec/components/HangarHelpCards";
 import { HangarTerminalCard } from "@/features/hangar-exec/components/HangarTerminalCard";
+import { PyamStatusHero } from "@/features/hangar-exec/components/PyamStatusHero";
 import { groupTerminalsByLocation } from "@/features/hangar-exec/hangarExec.lib";
 import { useHangarExec } from "@/features/hangar-exec/useHangarExec";
 
@@ -22,6 +24,8 @@ export default function HangarExecPage() {
         </div>
       ) : (
         <div className={`${PAGE_SCROLL} space-y-4 pb-20`}>
+          {status && <PyamStatusHero status={status} />}
+
           {[...grouped.entries()].map(([location, locationTerminals]) => (
             <section key={location}>
               <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -42,6 +46,8 @@ export default function HangarExecPage() {
               </div>
             </section>
           ))}
+
+          <HangarHelpCards />
 
           {upcoming.length > 0 && (
             <section className="settings-section p-3">

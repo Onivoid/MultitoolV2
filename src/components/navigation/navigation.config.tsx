@@ -12,6 +12,7 @@ import {
   Package,
   Palette,
   Radio,
+  Rocket,
   ScrollText,
   Users,
 } from "lucide-react";
@@ -49,7 +50,7 @@ export const featuresRouteGroups: NavRouteGroup[] = [
     routes: [
       {
         path: "/traduction",
-        label: "Traduction",
+        label: "Traduction Française",
         icon: Languages,
         description: "Traductions SCEFRA",
       },
@@ -58,6 +59,18 @@ export const featuresRouteGroups: NavRouteGroup[] = [
         label: "Cache",
         icon: HardDrive,
         description: "Dossiers cache du jeu",
+      },
+      {
+        path: "/blueprints",
+        label: "Blueprints",
+        icon: Package,
+        description: "Catalogue et journal Game.log",
+      },
+      {
+        path: "/statistiques",
+        label: "Statistiques",
+        icon: BarChart3,
+        description: "Stats extraites des logs",
       },
     ],
   },
@@ -82,10 +95,10 @@ export const featuresRouteGroups: NavRouteGroup[] = [
     label: "Outils",
     routes: [
       {
-        path: "/blueprints",
-        label: "Blueprints",
-        icon: Package,
-        description: "Catalogue et journal Game.log",
+        path: "/vaisseaux",
+        label: "Vaisseaux",
+        icon: Rocket,
+        description: "Comparateur et fiches vaisseaux",
       },
       {
         path: "/peintures",
@@ -98,12 +111,6 @@ export const featuresRouteGroups: NavRouteGroup[] = [
         label: "Hangar Executive",
         icon: Radio,
         description: "Minuteurs PYAM et terminaux Pyro",
-      },
-      {
-        path: "/statistiques",
-        label: "Statistiques",
-        icon: BarChart3,
-        description: "Stats extraites des logs",
       },
       {
         path: "/ships3d",
@@ -148,13 +155,13 @@ export const newsRoutes: NavRoute[] = [newsRoute];
 export const infoRoutes: NavRoute[] = [
   {
     path: "/patchnotes",
-    label: "Patchnotes",
+    label: "Patchnotes Multitool",
     icon: ScrollText,
     description: "Notes de version Multitool",
   },
   {
     path: "/updates",
-    label: "Mises à jour",
+    label: "Mises à jour Multitool",
     icon: Download,
     description: "Historique des releases",
   },

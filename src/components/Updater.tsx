@@ -1,81 +1,62 @@
-import { useEffect, useRef, useState } from "react";
-import { check, Update } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
+import { useState } from "react";
+import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getBuildInfo } from "@/utils/buildInfo";
+import { useUpdate } from "@/features/update/useUpdate";
 import { formatVersion } from "@/utils/version";
+import { cn } from "@/lib/utils";
 
+/**
+ * Popup persistante au lancement : reste visible en bas à droite tant que
+ * l'utilisateur ne la ferme pas explicitement (réaffichée au prochain démarrage).
+ */
 export function Updater() {
-  const [update, setUpdate] = useState<Update | null>(null);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
+  const {
+    status,
+    update,
+    downloading,
+    downloadProgress,
+    canUseUpdater,
+    downloadAndInstall,
+  } = useUpdate();
   const [dismissed, setDismissed] = useState(false);
-  const totalSize = useRef(0);
-  const downloaded = useRef(0);
 
-  useEffect(() => {
-    getBuildInfo()
-      .then((info) => {
-        if (!info.canAutoUpdate) return;
+  const show =
+    canUseUpdater && status === "available" && update?.available && !dismissed;
 
-        return check().then((u) => {
-          if (u?.available) {
-            setUpdate(u);
-          }
-        });
-      })
-      .catch((err) => console.error("[Updater] check() failed:", err));
-  }, []);
-
-  async function downloadAndInstall() {
-    if (!update) return;
-    try {
-      setDownloading(true);
-      downloaded.current = 0;
-      totalSize.current = 0;
-
-      await update.downloadAndInstall((event) => {
-        switch (event.event) {
-          case "Started":
-            totalSize.current = event.data.contentLength ?? 0;
-            setDownloadProgress(0);
-            break;
-          case "Progress":
-            downloaded.current += event.data.chunkLength;
-            if (totalSize.current > 0) {
-              setDownloadProgress(
-                Math.min(
-                  99,
-                  Math.round((downloaded.current / totalSize.current) * 100),
-                ),
-              );
-            }
-            break;
-          case "Finished":
-            setDownloadProgress(100);
-            break;
-        }
-      });
-
-      await relaunch();
-    } catch (error) {
-      console.error("Failed to download and install update:", error);
-      setDownloading(false);
-    }
-  }
-
-  if (!update?.available || dismissed) {
+  if (!show) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border bg-background p-4 shadow-lg">
+    <div
+      className={cn(
+        "fixed bottom-4 right-4 z-[100] w-full max-w-sm rounded-lg border border-primary/30",
+        "bg-background/95 p-4 shadow-lg backdrop-blur-sm",
+        "animate-in slide-in-from-bottom-4 fade-in duration-300",
+      )}
+      role="dialog"
+      aria-labelledby="updater-title"
+      data-no-window-drag
+    >
       <div className="flex flex-col gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Mise à jour disponible</h3>
-          <p className="text-xs text-muted-foreground">
-            La version {formatVersion(update.version)} est disponible.
-          </p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 id="updater-title" className="text-sm font-semibold">
+              Mise à jour disponible
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              La version {formatVersion(update.version)} est prête à installer.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => setDismissed(true)}
+            disabled={downloading}
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {downloading && (
@@ -94,12 +75,13 @@ export function Updater() {
 
         <div className="flex gap-2">
           <Button
-            onClick={downloadAndInstall}
+            onClick={() => void downloadAndInstall()}
             disabled={downloading}
             size="sm"
-            className="flex-1"
+            className="flex-1 gap-1.5"
           >
-            {downloading ? "Téléchargement..." : "Installer"}
+            <Download className="h-3.5 w-3.5" />
+            {downloading ? "Installation…" : "Installer et redémarrer"}
           </Button>
           <Button
             onClick={() => setDismissed(true)}
