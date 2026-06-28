@@ -86,6 +86,11 @@ function applyVersion(version, gitTag) {
   conf.version = version;
   writeFileSync(TAURI_CONF, `${JSON.stringify(conf, null, 4)}\n`, "utf8");
 
+  execSync(
+    `pnpm exec prettier --write ${JSON.stringify(PACKAGE_JSON)} ${JSON.stringify(TAURI_CONF)}`,
+    { cwd: rootDir, stdio: "inherit" },
+  );
+
   execSync(`git add "${PACKAGE_JSON}" "${TAURI_CONF}"`, {
     cwd: rootDir,
     stdio: "inherit",
