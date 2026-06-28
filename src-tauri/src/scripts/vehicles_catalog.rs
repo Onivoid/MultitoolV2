@@ -414,7 +414,7 @@ fn infer_variant_label_single(slug: &str, class_name: Option<&str>) -> Option<St
 
     for suffix in KNOWN_SUFFIXES {
         if slug.ends_with(suffix) {
-            return Some(humanize_slug_suffix(&suffix.trim_start_matches('-')));
+            return Some(humanize_slug_suffix(suffix.trim_start_matches('-')));
         }
     }
 

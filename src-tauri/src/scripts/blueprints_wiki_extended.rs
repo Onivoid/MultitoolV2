@@ -891,7 +891,7 @@ pub async fn enrich_blueprint_detail(detail: &mut BlueprintDetail) {
     }
     save_mission_cache(&mission_cache);
     enrich_missions_from_cache(&mut detail.missions);
-    detail.missions.retain(|m| is_mission_released_in_game(m));
+    detail.missions.retain(is_mission_released_in_game);
 
     let mut systems: HashSet<String> = HashSet::new();
     let mut jurisdictions: HashSet<String> = HashSet::new();
