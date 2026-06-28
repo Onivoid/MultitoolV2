@@ -8,7 +8,8 @@ import { DEFAULT_CATALOG_FILTER_STATE } from "@/features/blueprints/blueprints.c
 import type { BlueprintCatalogSummary } from "@/features/blueprints/blueprints.catalog.types";
 
 function summary(
-  partial: Partial<BlueprintCatalogSummary> & Pick<BlueprintCatalogSummary, "blueprintId">,
+  partial: Partial<BlueprintCatalogSummary> &
+    Pick<BlueprintCatalogSummary, "blueprintId">,
 ): BlueprintCatalogSummary {
   return {
     blueprintId: partial.blueprintId,

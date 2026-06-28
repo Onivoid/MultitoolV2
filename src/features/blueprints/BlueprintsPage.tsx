@@ -320,125 +320,125 @@ export default function BlueprintsPage() {
                   onOwnerFilterChange={vm.setOwnerFilter}
                 />
               </div>
-            {!issuesBannerDismissed && (
-              <JournalMatchIssuesBanner
-                unmatchedProductNames={matchStats.unmatchedProductNames}
-                ambiguousLinks={matchStats.ambiguousLinks}
-                journalProductCount={matchStats.journalProducts}
-                uniqueBlueprintIdCount={ownedIds.size}
-                onOpen={() => setIssuesSheetOpen(true)}
-                onDismiss={() => setIssuesBannerDismissed(true)}
-              />
-            )}
-            <Sheet open={issuesSheetOpen} onOpenChange={setIssuesSheetOpen}>
-              <SheetContent
-                side="right"
-                className="w-full max-w-md overflow-y-auto"
-                data-no-window-drag
-              >
-                <SheetHeader className="mb-4">
-                  <SheetTitle className="flex items-center gap-2 text-amber-300">
-                    <AlertCircle className="h-4 w-4" />
-                    Liaison journal → encyclopédie
-                  </SheetTitle>
-                </SheetHeader>
-                <JournalMatchIssues
+              {!issuesBannerDismissed && (
+                <JournalMatchIssuesBanner
                   unmatchedProductNames={matchStats.unmatchedProductNames}
                   ambiguousLinks={matchStats.ambiguousLinks}
-                  missingCatalogIds={matchStats.missingCatalogIds}
                   journalProductCount={matchStats.journalProducts}
                   uniqueBlueprintIdCount={ownedIds.size}
+                  onOpen={() => setIssuesSheetOpen(true)}
+                  onDismiss={() => setIssuesBannerDismissed(true)}
                 />
-              </SheetContent>
-            </Sheet>
-            <div className={cn(BP_LIST_SCROLL, "min-h-0 flex-1")}>
-              {filteredCatalog.length === 0 ? (
-                <div className={BP_EMPTY_STATE}>
-                  <p className="font-medium text-foreground">Aucun résultat</p>
-                  <p className="mt-1 text-xs">
-                    Ajuste la recherche ou les filtres pour afficher des blueprints.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 pb-2">
-                  {filteredCatalog.map((item) => (
-                    <BlueprintCatalogRow
-                      key={item.blueprintId}
-                      item={item}
-                      selected={catalogVm.selectedBlueprintId === item.blueprintId}
-                      isOwned={ownedIds.has(item.blueprintId)}
-                      isManualOwned={isManualOwned(item.blueprintId)}
-                      isWishlisted={isWishlisted(item.blueprintId)}
-                      onToggleWishlist={() => void toggleWishlist(item.blueprintId)}
-                      onToggleManualOwned={() =>
-                        void toggleManualOwned(item.blueprintId)
-                      }
-                      unlockedAt={unlockDates.get(item.blueprintId)}
-                      filterState={filterState}
-                      onSelect={() => catalogVm.selectBlueprint(item.blueprintId)}
-                      onBadgeFilter={(filter) =>
-                        setFilterState((s) => applyCatalogBadgeFilter(s, filter))
-                      }
-                    />
-                  ))}
-                </div>
               )}
-            </div>
-          </section>
+              <Sheet open={issuesSheetOpen} onOpenChange={setIssuesSheetOpen}>
+                <SheetContent
+                  side="right"
+                  className="w-full max-w-md overflow-y-auto"
+                  data-no-window-drag
+                >
+                  <SheetHeader className="mb-4">
+                    <SheetTitle className="flex items-center gap-2 text-amber-300">
+                      <AlertCircle className="h-4 w-4" />
+                      Liaison journal → encyclopédie
+                    </SheetTitle>
+                  </SheetHeader>
+                  <JournalMatchIssues
+                    unmatchedProductNames={matchStats.unmatchedProductNames}
+                    ambiguousLinks={matchStats.ambiguousLinks}
+                    missingCatalogIds={matchStats.missingCatalogIds}
+                    journalProductCount={matchStats.journalProducts}
+                    uniqueBlueprintIdCount={ownedIds.size}
+                  />
+                </SheetContent>
+              </Sheet>
+              <div className={cn(BP_LIST_SCROLL, "min-h-0 flex-1")}>
+                {filteredCatalog.length === 0 ? (
+                  <div className={BP_EMPTY_STATE}>
+                    <p className="font-medium text-foreground">Aucun résultat</p>
+                    <p className="mt-1 text-xs">
+                      Ajuste la recherche ou les filtres pour afficher des blueprints.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 pb-2">
+                    {filteredCatalog.map((item) => (
+                      <BlueprintCatalogRow
+                        key={item.blueprintId}
+                        item={item}
+                        selected={catalogVm.selectedBlueprintId === item.blueprintId}
+                        isOwned={ownedIds.has(item.blueprintId)}
+                        isManualOwned={isManualOwned(item.blueprintId)}
+                        isWishlisted={isWishlisted(item.blueprintId)}
+                        onToggleWishlist={() => void toggleWishlist(item.blueprintId)}
+                        onToggleManualOwned={() =>
+                          void toggleManualOwned(item.blueprintId)
+                        }
+                        unlockedAt={unlockDates.get(item.blueprintId)}
+                        filterState={filterState}
+                        onSelect={() => catalogVm.selectBlueprint(item.blueprintId)}
+                        onBadgeFilter={(filter) =>
+                          setFilterState((s) => applyCatalogBadgeFilter(s, filter))
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
 
             <div className="flex min-h-0 min-w-0 flex-col">
-            <BlueprintDetailPanel
-              selectedId={catalogVm.selectedBlueprintId}
-              detail={catalogVm.detail}
-              isLoading={catalogVm.isLoadingDetail}
-              error={catalogVm.detailError}
-              isOwned={
-                catalogVm.selectedBlueprintId != null &&
-                ownedIds.has(catalogVm.selectedBlueprintId)
-              }
-              isManualOwned={
-                catalogVm.selectedBlueprintId != null &&
-                isManualOwned(catalogVm.selectedBlueprintId)
-              }
-              isWishlisted={
-                catalogVm.selectedBlueprintId != null &&
-                isWishlisted(catalogVm.selectedBlueprintId)
-              }
-              onToggleWishlist={
-                catalogVm.selectedBlueprintId
-                  ? () => void toggleWishlist(catalogVm.selectedBlueprintId!)
-                  : undefined
-              }
-              onToggleManualOwned={
-                catalogVm.selectedBlueprintId
-                  ? () => void toggleManualOwned(catalogVm.selectedBlueprintId!)
-                  : undefined
-              }
-              ownedIds={ownedIds}
-              unlockDate={
-                catalogVm.selectedBlueprintId != null
-                  ? (unlockDates.get(catalogVm.selectedBlueprintId) ?? null)
-                  : null
-              }
-              onSelectBlueprint={(id) => catalogVm.selectBlueprint(id)}
-              onFilterByResource={(ids, label) => {
-                const [primary, ...aliases] = ids;
-                if (!primary) return;
-                setFilterState((s) => ({
-                  ...s,
-                  resourceUuid: primary,
-                  resourceUuidAliases: aliases,
-                  resourceFilterLabel: label,
-                }));
-              }}
-              onFilterMission={(uuid, title, ids) =>
-                setMissionFilter({
-                  uuid,
-                  title,
-                  blueprintIds: new Set(ids),
-                })
-              }
-            />
+              <BlueprintDetailPanel
+                selectedId={catalogVm.selectedBlueprintId}
+                detail={catalogVm.detail}
+                isLoading={catalogVm.isLoadingDetail}
+                error={catalogVm.detailError}
+                isOwned={
+                  catalogVm.selectedBlueprintId != null &&
+                  ownedIds.has(catalogVm.selectedBlueprintId)
+                }
+                isManualOwned={
+                  catalogVm.selectedBlueprintId != null &&
+                  isManualOwned(catalogVm.selectedBlueprintId)
+                }
+                isWishlisted={
+                  catalogVm.selectedBlueprintId != null &&
+                  isWishlisted(catalogVm.selectedBlueprintId)
+                }
+                onToggleWishlist={
+                  catalogVm.selectedBlueprintId
+                    ? () => void toggleWishlist(catalogVm.selectedBlueprintId!)
+                    : undefined
+                }
+                onToggleManualOwned={
+                  catalogVm.selectedBlueprintId
+                    ? () => void toggleManualOwned(catalogVm.selectedBlueprintId!)
+                    : undefined
+                }
+                ownedIds={ownedIds}
+                unlockDate={
+                  catalogVm.selectedBlueprintId != null
+                    ? (unlockDates.get(catalogVm.selectedBlueprintId) ?? null)
+                    : null
+                }
+                onSelectBlueprint={(id) => catalogVm.selectBlueprint(id)}
+                onFilterByResource={(ids, label) => {
+                  const [primary, ...aliases] = ids;
+                  if (!primary) return;
+                  setFilterState((s) => ({
+                    ...s,
+                    resourceUuid: primary,
+                    resourceUuidAliases: aliases,
+                    resourceFilterLabel: label,
+                  }));
+                }}
+                onFilterMission={(uuid, title, ids) =>
+                  setMissionFilter({
+                    uuid,
+                    title,
+                    blueprintIds: new Set(ids),
+                  })
+                }
+              />
             </div>
           </div>
         </div>

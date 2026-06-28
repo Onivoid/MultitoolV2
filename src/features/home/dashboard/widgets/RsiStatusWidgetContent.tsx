@@ -84,7 +84,10 @@ export function RsiStatusWidgetContent() {
   const systems = (feed.systems ?? []).slice(0, 5);
 
   return (
-    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} px-3 py-3`} data-no-window-drag>
+    <div
+      className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} px-3 py-3`}
+      data-no-window-drag
+    >
       <button
         type="button"
         className="text-ui-secondary mb-2 flex w-full items-center gap-2 text-left font-medium hover:underline"

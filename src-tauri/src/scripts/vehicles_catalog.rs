@@ -236,9 +236,7 @@ struct WikiPortItemRef {
     item_class: Option<String>,
 }
 
-fn deserialize_optional_flexible_string<'de, D>(
-    deserializer: D,
-) -> Result<Option<String>, D::Error>
+fn deserialize_optional_flexible_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -487,9 +485,7 @@ fn enrich_summary_display(summary: &mut VehicleSummary) {
         }
     }
 
-    if let Some(label) =
-        infer_variant_label_single(&summary.slug, summary.class_name.as_deref())
-    {
+    if let Some(label) = infer_variant_label_single(&summary.slug, summary.class_name.as_deref()) {
         summary.variant_label = Some(label.clone());
         summary.display_name = format!("{} ({label})", summary.name);
     } else {
@@ -557,10 +553,11 @@ fn pick_vehicle_thumbnail(images: Option<&Vec<WikiImage>>) -> Option<String> {
         .filter(|img| img.source.as_deref() == Some("starcitizen.tools"))
         .collect();
     if !tools.is_empty() {
-        if let Some(img) = tools
-            .iter()
-            .find(|img| img.original_url.as_ref().is_some_and(|u| is_illustration_url(u)))
-        {
+        if let Some(img) = tools.iter().find(|img| {
+            img.original_url
+                .as_ref()
+                .is_some_and(|u| is_illustration_url(u))
+        }) {
             return image_url(img);
         }
         return image_url(tools[0]);
@@ -656,14 +653,8 @@ fn collect_ports_from_wiki(port: &WikiPortItem, out: &mut Vec<VehiclePortSummary
             name: slot_name,
             category_label: port.category_label.clone(),
             item_name: item.name.clone(),
-            item_manufacturer: item
-                .manufacturer
-                .as_ref()
-                .and_then(|m| m.name.clone()),
-            item_type_label: item
-                .type_label
-                .clone()
-                .or_else(|| port.type_label.clone()),
+            item_manufacturer: item.manufacturer.as_ref().and_then(|m| m.name.clone()),
+            item_type_label: item.type_label.clone().or_else(|| port.type_label.clone()),
             item_size: item.size,
             item_grade: item.grade.clone(),
             item_class: item.item_class.clone(),

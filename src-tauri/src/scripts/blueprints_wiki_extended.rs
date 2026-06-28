@@ -276,8 +276,7 @@ fn mission_release_flags_from_api(
             .and_then(|v| v.as_str())
         {
             let upper = status.to_ascii_uppercase();
-            if upper.contains("UNRELEASE") || upper == "WIP" || upper.contains("WORK_IN_PROGRESS")
-            {
+            if upper.contains("UNRELEASE") || upper == "WIP" || upper.contains("WORK_IN_PROGRESS") {
                 released = Some(false);
             } else if upper.contains("RELEASE") {
                 released = Some(true);

@@ -10,9 +10,11 @@
 
 Activés aussi via `pnpm install` (`prepare`).
 
-**Sur les branches configurées** (`scripts/versioning/config.json`, ex. `master`, `v3`) : à chaque `git commit`, choix du canal (stable / beta / alpha / rc) + bump de `package.json` / `tauri.conf.json` + tag `v{version}` en `post-commit`.
+**Sur les branches configurées** (`scripts/versioning/config.json`, ex. `master`, `v3`) : à chaque `git commit`, contrôles qualité puis choix du canal (stable / beta / alpha / rc) + bump de `package.json` / `tauri.conf.json` + tag `v{version}` en `post-commit`.
 
-Sur les autres branches : pas de prompt version.
+**À chaque push** : clippy + tests Rust si `src-tauri/` a changé (`scripts/pre-push-checks.sh`).
+
+Sur les autres branches : pas de prompt version, mais les contrôles qualité s’appliquent quand même.
 
 Commit sans bump : `git commit --no-verify`
 

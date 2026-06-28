@@ -50,9 +50,7 @@ export function PaintCard({ paint, index }: PaintCardProps) {
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
               <Palette className="h-10 w-10 opacity-40" />
               {paint.shipName && (
-                <span className="text-xs font-medium opacity-70">
-                  {paint.shipName}
-                </span>
+                <span className="text-xs font-medium opacity-70">{paint.shipName}</span>
               )}
             </div>
           )}

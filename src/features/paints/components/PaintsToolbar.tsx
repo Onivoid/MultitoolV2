@@ -68,14 +68,10 @@ export function PaintsToolbar({
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
         {manufacturerOptions.length > 0 && (
           <div className="min-w-[12rem] shrink-0 sm:w-56">
-            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
-              Marque
-            </p>
+            <p className="mb-1 text-[10px] uppercase text-muted-foreground">Marque</p>
             <BlueprintFilterSelect
               value={activeManufacturer ?? "__all__"}
-              onValueChange={(v) =>
-                onSelectManufacturer(v === "__all__" ? null : v)
-              }
+              onValueChange={(v) => onSelectManufacturer(v === "__all__" ? null : v)}
               options={[
                 { value: "__all__", label: "Toutes les marques" },
                 ...manufacturerOptions.map((name) => ({

@@ -13,9 +13,9 @@ describe("ships.compare.lib", () => {
   });
 
   it("surligne le minimum en mode lowerIsBetter", () => {
-    expect(compareBestIndices([1_000_000, 800_000, 900_000], { lowerIsBetter: true })).toEqual(
-      new Set([1]),
-    );
+    expect(
+      compareBestIndices([1_000_000, 800_000, 900_000], { lowerIsBetter: true }),
+    ).toEqual(new Set([1]));
   });
 
   it("ignore les valeurs manquantes", () => {

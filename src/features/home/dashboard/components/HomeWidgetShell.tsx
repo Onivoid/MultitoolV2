@@ -65,8 +65,7 @@ export function HomeWidgetShell({
     startHeight: number;
   } | null>(null);
 
-  const resolvedHeightPx = (measured: number) =>
-    widgetHeight(instance, measured);
+  const resolvedHeightPx = (measured: number) => widgetHeight(instance, measured);
 
   useEffect(() => {
     if (!contentReady || autoResolvedRef.current) {
@@ -235,7 +234,14 @@ export function HomeWidgetShell({
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [editMode, instance.id, instance.widthPx, instance.heightPx, onWidthChange, onHeightChange],
+    [
+      editMode,
+      instance.id,
+      instance.widthPx,
+      instance.heightPx,
+      onWidthChange,
+      onHeightChange,
+    ],
   );
 
   if (!definition) {

@@ -257,17 +257,10 @@ fn media_tools_fallback(slug: &str) -> String {
 }
 
 fn is_skin_paint(item: &WikiPaintItem) -> bool {
-    if item
-        .name
-        .to_ascii_lowercase()
-        .contains("skin")
-    {
+    if item.name.to_ascii_lowercase().contains("skin") {
         return true;
     }
-    let tags = item
-        .tags
-        .as_ref()
-        .or(item.required_tags.as_ref());
+    let tags = item.tags.as_ref().or(item.required_tags.as_ref());
     if let Some(tags) = tags {
         if tags.iter().any(|t| t.to_ascii_lowercase().contains("skin")) {
             return true;
@@ -359,9 +352,8 @@ fn summary_from_wiki(
     let port_tag = paint_port_tag(&item);
     let port_media = port_tag.as_ref().and_then(|tag| ship_media.get(tag));
 
-    let thumbnail_url = pick_thumbnail(item.images.as_ref()).or_else(|| {
-        port_media.map(|m| m.thumbnail.clone())
-    });
+    let thumbnail_url =
+        pick_thumbnail(item.images.as_ref()).or_else(|| port_media.map(|m| m.thumbnail.clone()));
     let image_url = pick_full_image(item.images.as_ref())
         .or_else(|| port_media.map(|m| m.thumbnail.clone()))
         .or_else(|| {
@@ -421,10 +413,8 @@ async fn fetch_paints_page(page: u64, page_size: u64) -> Result<WikiItemsListRes
 
 async fn fetch_all_paints() -> Result<Vec<PaintSummary>, String> {
     const PAGE_SIZE: u64 = 200;
-    let (first, ship_media) = tokio::try_join!(
-        fetch_paints_page(1, PAGE_SIZE),
-        fetch_paint_port_media()
-    )?;
+    let (first, ship_media) =
+        tokio::try_join!(fetch_paints_page(1, PAGE_SIZE), fetch_paint_port_media())?;
     let last_page = first.meta.as_ref().map(|m| m.last_page).unwrap_or(1).max(1);
     let mut all = first.data;
     for page in 2..=last_page {

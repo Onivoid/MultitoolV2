@@ -1,7 +1,10 @@
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LoadoutEntryRow } from "@/features/ships/components/LoadoutEntryList";
-import { groupPortsByType, totalLoadoutItemCount } from "@/features/ships/ships.loadout.lib";
+import {
+  groupPortsByType,
+  totalLoadoutItemCount,
+} from "@/features/ships/ships.loadout.lib";
 import type { VehiclePortSummary } from "@/features/ships/ships.types";
 import {
   SHIP_MODAL_CARD,
@@ -41,7 +44,12 @@ export function ShipLoadoutPanel({
 
   if (groups.length === 0) {
     return (
-      <div className={cn(SHIP_MODAL_CARD, "px-4 py-6 text-center text-xs text-muted-foreground")}>
+      <div
+        className={cn(
+          SHIP_MODAL_CARD,
+          "px-4 py-6 text-center text-xs text-muted-foreground",
+        )}
+      >
         {emptyMessage}
       </div>
     );
@@ -51,9 +59,7 @@ export function ShipLoadoutPanel({
     <div className={className}>
       {showHeader && (
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className={SHIP_MODAL_SECTION_TITLE}>
-            Équipement d&apos;usine
-          </h3>
+          <h3 className={SHIP_MODAL_SECTION_TITLE}>Équipement d&apos;usine</h3>
           <Badge variant="secondary" className="text-[10px] tabular-nums">
             {totalItems} composant{totalItems > 1 ? "s" : ""}
           </Badge>

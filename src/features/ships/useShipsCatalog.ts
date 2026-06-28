@@ -60,8 +60,7 @@ export function useShipsCatalog() {
   const filtered = useMemo(() => {
     const query = normalizeSearch(search);
     return ships.filter(
-      (ship) =>
-        shipMatchesSearch(ship, query) && shipMatchesFacets(ship, facetFilters),
+      (ship) => shipMatchesSearch(ship, query) && shipMatchesFacets(ship, facetFilters),
     );
   }, [ships, search, facetFilters]);
 
@@ -73,21 +72,24 @@ export function useShipsCatalog() {
     [compareIds, shipsById],
   );
 
-  const loadDetail = useCallback(async (uuid: string) => {
-    setDetailLoading(true);
-    setDetail(null);
-    try {
-      const data = await shipsService.detail(uuid);
-      setDetail(data);
-      return data;
-    } catch (error) {
-      logger.error("Erreur détail vaisseau:", error);
-      toastError(toast, "Erreur", "Impossible de charger les détails du vaisseau");
-      return null;
-    } finally {
-      setDetailLoading(false);
-    }
-  }, [toast]);
+  const loadDetail = useCallback(
+    async (uuid: string) => {
+      setDetailLoading(true);
+      setDetail(null);
+      try {
+        const data = await shipsService.detail(uuid);
+        setDetail(data);
+        return data;
+      } catch (error) {
+        logger.error("Erreur détail vaisseau:", error);
+        toastError(toast, "Erreur", "Impossible de charger les détails du vaisseau");
+        return null;
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [toast],
+  );
 
   const openDetail = useCallback(
     (uuid: string) => {
@@ -172,7 +174,10 @@ export function useShipsCatalog() {
     setCompareDetails(new Map());
   }, []);
 
-  const isCompared = useCallback((uuid: string) => compareIds.includes(uuid), [compareIds]);
+  const isCompared = useCallback(
+    (uuid: string) => compareIds.includes(uuid),
+    [compareIds],
+  );
 
   return {
     ships: filtered,

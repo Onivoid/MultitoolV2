@@ -87,9 +87,7 @@ export function HangarHelpCards() {
         src={lightbox?.imageUrl ?? null}
         title={lightbox?.title}
         description={
-          lightbox
-            ? `${lightbox.subtitle} — ${lightbox.description}`
-            : undefined
+          lightbox ? `${lightbox.subtitle} — ${lightbox.description}` : undefined
         }
         alt={lightbox?.title ?? "Carte d'aide"}
       />

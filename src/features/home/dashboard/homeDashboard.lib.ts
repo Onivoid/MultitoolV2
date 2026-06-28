@@ -112,10 +112,7 @@ export function normalizeLayout(layout: HomeDashboardLayout): HomeDashboardLayou
       ),
       heightPx:
         w.heightPx != null
-          ? Math.max(
-              MIN_WIDGET_HEIGHT_PX,
-              Math.min(MAX_WIDGET_HEIGHT_PX, w.heightPx),
-            )
+          ? Math.max(MIN_WIDGET_HEIGHT_PX, Math.min(MAX_WIDGET_HEIGHT_PX, w.heightPx))
           : undefined,
       xPercent: Math.max(0, Math.min(100, w.xPercent)),
       yPercent: Math.max(0, Math.min(100, w.yPercent)),

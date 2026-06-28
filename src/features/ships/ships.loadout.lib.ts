@@ -105,10 +105,7 @@ export function groupPortsByType(
   const map = new Map<string, VehiclePortSummary[]>();
 
   for (const port of equipped) {
-    const group =
-      port.itemTypeLabel?.trim() ||
-      port.categoryLabel?.trim() ||
-      "Autre";
+    const group = port.itemTypeLabel?.trim() || port.categoryLabel?.trim() || "Autre";
     if (isExcludedLoadoutGroup(group)) continue;
     const list = map.get(group) ?? [];
     list.push(port);

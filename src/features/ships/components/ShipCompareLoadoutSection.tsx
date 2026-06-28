@@ -95,7 +95,12 @@ export function ShipCompareLoadoutSection({
                 </span>
               </summary>
 
-              <div className={cn("mt-3 grid gap-3 border-t border-border/20 pt-3", columnClass)}>
+              <div
+                className={cn(
+                  "mt-3 grid gap-3 border-t border-border/20 pt-3",
+                  columnClass,
+                )}
+              >
                 {ships.map((ship, index) => (
                   <div key={ship.uuid} className="min-w-0">
                     <p className="mb-2 truncate text-[11px] font-semibold text-foreground/80">

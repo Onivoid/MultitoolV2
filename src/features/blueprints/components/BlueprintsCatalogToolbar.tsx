@@ -86,37 +86,37 @@ export function BlueprintsCatalogToolbar({
       )}
 
       {!compact && (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {uniqueOwners.length > 0 && onOwnerFilterChange && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {uniqueOwners.length > 0 && onOwnerFilterChange && (
+            <div className="min-w-0 space-y-1">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Compte journal
+              </p>
+              <BlueprintFilterSelect
+                value={ownerFilter.trim() || ALL_OWNERS_VALUE}
+                onValueChange={(v) =>
+                  onOwnerFilterChange(v === ALL_OWNERS_VALUE ? "" : v)
+                }
+                options={ownerOptions}
+                placeholder="Tous les comptes"
+                icon={<User className="h-4 w-4 shrink-0 text-primary" />}
+                ariaLabel="Filtrer par compte"
+              />
+            </div>
+          )}
           <div className="min-w-0 space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              Compte journal
+              Statut déblocage
             </p>
             <BlueprintFilterSelect
-              value={ownerFilter.trim() || ALL_OWNERS_VALUE}
-              onValueChange={(v) =>
-                onOwnerFilterChange(v === ALL_OWNERS_VALUE ? "" : v)
-              }
-              options={ownerOptions}
-              placeholder="Tous les comptes"
-              icon={<User className="h-4 w-4 shrink-0 text-primary" />}
-              ariaLabel="Filtrer par compte"
+              value={ownedFilter}
+              onValueChange={(v) => onOwnedFilterChange(v as BlueprintOwnedFilter)}
+              options={OWNED_FILTER_OPTIONS}
+              icon={<Filter className="h-4 w-4 shrink-0 text-primary" />}
+              ariaLabel="Filtrer par statut déblocage"
             />
           </div>
-        )}
-        <div className="min-w-0 space-y-1">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Statut déblocage
-          </p>
-          <BlueprintFilterSelect
-            value={ownedFilter}
-            onValueChange={(v) => onOwnedFilterChange(v as BlueprintOwnedFilter)}
-            options={OWNED_FILTER_OPTIONS}
-            icon={<Filter className="h-4 w-4 shrink-0 text-primary" />}
-            ariaLabel="Filtrer par statut déblocage"
-          />
         </div>
-      </div>
       )}
 
       <p className="text-xs leading-relaxed text-muted-foreground tabular-nums">

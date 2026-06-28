@@ -13,9 +13,10 @@ export function pyamProgressPercent(
   return Math.min(100, Math.round((elapsed / phaseTotal) * 100));
 }
 
-export function pyamSegmentStates(isOnline: boolean, progressPercent: number): boolean[] {
+export function pyamSegmentStates(
+  isOnline: boolean,
+  progressPercent: number,
+): boolean[] {
   const filled = Math.round((progressPercent / 100) * 5);
-  return Array.from({ length: 5 }, (_, i) =>
-    isOnline ? i < filled : i >= 5 - filled,
-  );
+  return Array.from({ length: 5 }, (_, i) => (isOnline ? i < filled : i >= 5 - filled));
 }

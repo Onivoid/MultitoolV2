@@ -59,26 +59,19 @@ export function paintDisplayTitle(paint: {
   return cleanPaintTitle(raw);
 }
 
-export function normalizePaintSummary(
-  raw: Record<string, unknown>,
-): PaintSummary {
+export function normalizePaintSummary(raw: Record<string, unknown>): PaintSummary {
   return {
     uuid: String(raw.uuid ?? ""),
     name: String(raw.name ?? ""),
     nameFr: (raw.nameFr as string | null | undefined) ?? null,
     shipName: (raw.shipName as string | null | undefined) ?? null,
-    manufacturerName:
-      (raw.manufacturerName as string | null | undefined) ?? null,
-    manufacturerCode:
-      (raw.manufacturerCode as string | null | undefined) ?? null,
-    eventSources: Array.isArray(raw.eventSources)
-      ? (raw.eventSources as string[])
-      : [],
+    manufacturerName: (raw.manufacturerName as string | null | undefined) ?? null,
+    manufacturerCode: (raw.manufacturerCode as string | null | undefined) ?? null,
+    eventSources: Array.isArray(raw.eventSources) ? (raw.eventSources as string[]) : [],
     thumbnailUrl: (raw.thumbnailUrl as string | null | undefined) ?? null,
     imageUrl: (raw.imageUrl as string | null | undefined) ?? null,
     descriptionEn: (raw.descriptionEn as string | null | undefined) ?? null,
-    isBaseVariant:
-      raw.isBaseVariant === undefined ? true : Boolean(raw.isBaseVariant),
+    isBaseVariant: raw.isBaseVariant === undefined ? true : Boolean(raw.isBaseVariant),
     webUrl: (raw.webUrl as string | null | undefined) ?? null,
     updatedAt: (raw.updatedAt as string | null | undefined) ?? null,
   };

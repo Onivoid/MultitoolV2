@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { paintsService } from "@/features/paints/paints.service";
-import {
-  isPaintSkin,
-  resolvePaintManufacturer,
-} from "@/features/paints/paints.lib";
+import { isPaintSkin, resolvePaintManufacturer } from "@/features/paints/paints.lib";
 import {
   PAINT_EVENT_CHIP_PRIORITY,
   type PaintSummary,
@@ -84,9 +81,7 @@ export function usePaintsCatalog() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
-  const [activeManufacturer, setActiveManufacturer] = useState<string | null>(
-    null,
-  );
+  const [activeManufacturer, setActiveManufacturer] = useState<string | null>(null);
   const [hideSkins, setHideSkins] = useState(true);
   const { toast } = useToast();
 

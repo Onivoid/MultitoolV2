@@ -82,7 +82,10 @@ export function BlueprintsWidgetContent() {
       </div>
 
       {showList && (
-        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div
+          className="shrink-0 border-b border-primary/6 px-3 py-2"
+          data-no-window-drag
+        >
           <FeatureSearchField
             value={searchQuery}
             onChange={setSearchQuery}
@@ -94,7 +97,10 @@ export function BlueprintsWidgetContent() {
       )}
 
       {isImporting && (
-        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div
+          className="shrink-0 border-b border-primary/6 px-3 py-2"
+          data-no-window-drag
+        >
           <BlueprintsImportProgressDisplay
             isImporting={isImporting}
             progress={progress}
@@ -146,7 +152,10 @@ export function BlueprintsWidgetContent() {
       )}
 
       <footer
-        className={cn(HOME_WIDGET_FOOTER, "settings-section-footer flex flex-wrap gap-2 px-3 py-2")}
+        className={cn(
+          HOME_WIDGET_FOOTER,
+          "settings-section-footer flex flex-wrap gap-2 px-3 py-2",
+        )}
         data-no-window-drag
       >
         <Button

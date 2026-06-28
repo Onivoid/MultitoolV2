@@ -60,7 +60,10 @@ export function CacheWidgetContent() {
       </div>
 
       {showList && (
-        <div className="shrink-0 border-b border-primary/6 px-3 py-2" data-no-window-drag>
+        <div
+          className="shrink-0 border-b border-primary/6 px-3 py-2"
+          data-no-window-drag
+        >
           <FeatureSearchField
             value={searchQuery}
             onChange={setSearchQuery}
@@ -80,7 +83,10 @@ export function CacheWidgetContent() {
           Aucun résultat pour « {searchQuery.trim()} ».
         </p>
       ) : (
-        <ul className={`${HOME_WIDGET_SCROLL} border-b border-primary/6`} data-no-window-drag>
+        <ul
+          className={`${HOME_WIDGET_SCROLL} border-b border-primary/6`}
+          data-no-window-drag
+        >
           {filteredFolders.map((folder) => (
             <li
               key={folder.path}

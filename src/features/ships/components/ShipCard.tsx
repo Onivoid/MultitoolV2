@@ -64,14 +64,13 @@ export function ShipCard({
             {shipDisplayName(ship)}
           </p>
           {ship.manufacturerName && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{ship.manufacturerName}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {ship.manufacturerName}
+            </p>
           )}
         </div>
         {formatProductionStatusLabel(ship.productionStatus) && (
-          <Badge
-            variant="secondary"
-            className="absolute right-2 top-2 text-[10px]"
-          >
+          <Badge variant="secondary" className="absolute right-2 top-2 text-[10px]">
             {formatProductionStatusLabel(ship.productionStatus)}
           </Badge>
         )}

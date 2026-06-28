@@ -40,7 +40,9 @@ function pickInt(value: unknown): number | null {
   return n == null ? null : Math.round(n);
 }
 
-function normalizeDimensions(raw: Record<string, unknown> | undefined): VehicleDimensions {
+function normalizeDimensions(
+  raw: Record<string, unknown> | undefined,
+): VehicleDimensions {
   if (!raw) return {};
   return {
     length: pickNumber(raw.length),
@@ -76,9 +78,7 @@ function normalizeUexPrices(raw: unknown): VehicleUexPrices {
     return { purchase: [], rental: [] };
   }
   const o = raw as Record<string, unknown>;
-  const purchase = Array.isArray(o.purchase)
-    ? o.purchase.map(normalizeUexPrice)
-    : [];
+  const purchase = Array.isArray(o.purchase) ? o.purchase.map(normalizeUexPrice) : [];
   const rental = Array.isArray(o.rental) ? o.rental.map(normalizeUexPrice) : [];
   return { purchase, rental };
 }
@@ -93,7 +93,9 @@ function normalizeImage(raw: unknown): VehicleImage {
   };
 }
 
-function nestedItemRecord(raw: Record<string, unknown>): Record<string, unknown> | null {
+function nestedItemRecord(
+  raw: Record<string, unknown>,
+): Record<string, unknown> | null {
   for (const key of ["equippedItem", "equipped_item", "item"] as const) {
     const value = raw[key];
     if (value && typeof value === "object") {
@@ -118,16 +120,14 @@ export function normalizePort(raw: unknown): VehiclePortSummary | null {
   return {
     name,
     categoryLabel: pickString(o.categoryLabel ?? o.category_label),
-    itemName:
-      pickString(o.itemName ?? o.item_name) ?? pickString(nested?.name),
+    itemName: pickString(o.itemName ?? o.item_name) ?? pickString(nested?.name),
     itemManufacturer:
       pickString(o.itemManufacturer ?? o.item_manufacturer) ??
       pickString(nestedMfr?.name),
     itemTypeLabel:
       pickString(o.itemTypeLabel ?? o.item_type_label) ??
       pickString(nested?.typeLabel ?? nested?.type_label),
-    itemSize:
-      pickInt(o.itemSize ?? o.item_size) ?? pickInt(nested?.size),
+    itemSize: pickInt(o.itemSize ?? o.item_size) ?? pickInt(nested?.size),
     itemGrade:
       pickFlexibleString(o.itemGrade ?? o.item_grade) ??
       pickFlexibleString(nested?.grade),
@@ -167,7 +167,9 @@ export function normalizeVehicleSummary(raw: Record<string, unknown>): VehicleSu
       pickString(raw.productionStatus ?? raw.production_status),
     ),
     className: sanitizeCatalogText(pickString(raw.className ?? raw.class_name)),
-    variantLabel: sanitizeCatalogText(pickString(raw.variantLabel ?? raw.variant_label)),
+    variantLabel: sanitizeCatalogText(
+      pickString(raw.variantLabel ?? raw.variant_label),
+    ),
     displayName,
     thumbnailUrl: pickString(raw.thumbnailUrl ?? raw.thumbnail_url),
     purchaseMinPrice: pickInt(raw.purchaseMinPrice ?? raw.purchase_min_price),
@@ -182,7 +184,9 @@ export function normalizeVehicleDetail(raw: Record<string, unknown>): VehicleDet
       ? (raw.dimensions as Record<string, unknown>)
       : undefined;
   const images = Array.isArray(raw.images)
-    ? raw.images.map(normalizeImage).filter((img) => img.originalUrl || img.thumbnailUrl)
+    ? raw.images
+        .map(normalizeImage)
+        .filter((img) => img.originalUrl || img.thumbnailUrl)
     : [];
   const ports = Array.isArray(raw.ports)
     ? raw.ports.map(normalizePort).filter((p): p is VehiclePortSummary => p != null)

@@ -24,10 +24,7 @@ export interface BlueprintsQuickFilterBarProps {
   familyCounts?: Partial<Record<BlueprintFamily | "all", number>>;
 }
 
-function toggleInList<T extends string | number>(
-  list: T[],
-  value: T,
-): T[] {
+function toggleInList<T extends string | number>(list: T[], value: T): T[] {
   const set = new Set(list);
   if (set.has(value)) set.delete(value);
   else set.add(value);
@@ -113,9 +110,15 @@ export function BlueprintsQuickFilterBar({
                   })
                 }
                 className={cn(
-                  code === "civi" && state.classCodes.includes(code) && "border-sky-500/40",
-                  code === "mili" && state.classCodes.includes(code) && "border-red-500/40",
-                  code === "stlh" && state.classCodes.includes(code) && "border-violet-500/40",
+                  code === "civi" &&
+                    state.classCodes.includes(code) &&
+                    "border-sky-500/40",
+                  code === "mili" &&
+                    state.classCodes.includes(code) &&
+                    "border-red-500/40",
+                  code === "stlh" &&
+                    state.classCodes.includes(code) &&
+                    "border-violet-500/40",
                 )}
               >
                 {CLASS_LABEL_FR[code] ?? code}
@@ -177,13 +180,7 @@ export function BlueprintsQuickFilterBar({
   );
 }
 
-function FilterRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">

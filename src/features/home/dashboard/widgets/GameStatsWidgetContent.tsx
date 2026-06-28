@@ -39,7 +39,8 @@ export function GameStatsWidgetContent() {
           !showSkeleton &&
           !snapshotHasHomeStats(snapshot, journalBlueprintCount) && (
             <p className="px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-              Aucune statistique détectée dans les logs. Lancez le jeu puis synchronisez.
+              Aucune statistique détectée dans les logs. Lancez le jeu puis
+              synchronisez.
             </p>
           )}
 

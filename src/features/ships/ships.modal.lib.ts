@@ -1,6 +1,5 @@
 /** Styles partagés pour les modales vaisseaux (overlay flou + panneau glass). */
-export const SHIP_MODAL_OVERLAY =
-  "bg-black/50 backdrop-blur-md dark:bg-black/65";
+export const SHIP_MODAL_OVERLAY = "bg-black/50 backdrop-blur-md dark:bg-black/65";
 
 export const SHIP_MODAL_CONTENT =
   "glass-surface gap-0 overflow-hidden bg-background/50 p-0 shadow-2xl shadow-black/10 backdrop-blur-2xl dark:shadow-black/30";
@@ -29,8 +28,7 @@ export const SHIP_COMPARE_STICKY_CELL =
   "sticky left-0 z-10 bg-white/[0.1] backdrop-blur-md dark:bg-black/20";
 
 /** Libellé de ligne dans le tableau comparateur. */
-export const SHIP_COMPARE_ROW_LABEL =
-  "text-xs font-medium text-foreground/90";
+export const SHIP_COMPARE_ROW_LABEL = "text-xs font-medium text-foreground/90";
 
 /** Valeur dans le tableau comparateur. */
 export const SHIP_COMPARE_CELL_VALUE =

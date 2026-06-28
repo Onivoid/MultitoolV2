@@ -9,9 +9,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShipLoadoutPanel } from "@/features/ships/components/ShipLoadoutPanel";
-import { formatProductionStatusLabel, isWikiPlaceholder, shipDisplayName } from "@/features/ships/ships.catalog.lib";
+import {
+  formatProductionStatusLabel,
+  isWikiPlaceholder,
+  shipDisplayName,
+} from "@/features/ships/ships.catalog.lib";
 import { formatStat } from "@/features/ships/ships.lib";
-import { SHIP_MODAL_CONTENT, SHIP_MODAL_DIVIDER, SHIP_MODAL_INNER, SHIP_MODAL_OVERLAY, SHIP_MODAL_SECTION_TITLE } from "@/features/ships/ships.modal.lib";
+import {
+  SHIP_MODAL_CONTENT,
+  SHIP_MODAL_DIVIDER,
+  SHIP_MODAL_INNER,
+  SHIP_MODAL_OVERLAY,
+  SHIP_MODAL_SECTION_TITLE,
+} from "@/features/ships/ships.modal.lib";
 import type { VehicleDetail } from "@/features/ships/ships.types";
 import { formatAuec } from "@/features/game-stats/gameStats.lib";
 import { openExternalUrl } from "@/shared/lib/openExternal";
@@ -37,9 +47,7 @@ function PriceList({
   if (rows.length === 0) {
     return (
       <div>
-        <h3 className={cn("mb-1", SHIP_MODAL_SECTION_TITLE)}>
-          {title}
-        </h3>
+        <h3 className={cn("mb-1", SHIP_MODAL_SECTION_TITLE)}>{title}</h3>
         <p className="text-xs text-muted-foreground">Aucune donnée disponible.</p>
       </div>
     );
@@ -47,9 +55,7 @@ function PriceList({
 
   return (
     <div>
-      <h3 className={cn("mb-2", SHIP_MODAL_SECTION_TITLE)}>
-        {title}
-      </h3>
+      <h3 className={cn("mb-2", SHIP_MODAL_SECTION_TITLE)}>{title}</h3>
       <ul className="space-y-2">
         {rows.slice(0, 6).map((row, index) => {
           const price = row[field];
@@ -68,7 +74,9 @@ function PriceList({
                     <p className="text-[11px] text-muted-foreground">{system}</p>
                   )}
                   {row.terminalName && row.terminalName !== location && (
-                    <p className="text-[11px] text-muted-foreground">{row.terminalName}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {row.terminalName}
+                    </p>
                   )}
                 </div>
                 <span className="shrink-0 font-semibold tabular-nums">
@@ -124,12 +132,19 @@ export function ShipDetailModal({
         )}
         data-no-window-drag
       >
-        <DialogHeader className={cn("shrink-0 border-b px-6 py-4 text-left", SHIP_MODAL_DIVIDER, "bg-foreground/[0.02]")}>
+        <DialogHeader
+          className={cn(
+            "shrink-0 border-b px-6 py-4 text-left",
+            SHIP_MODAL_DIVIDER,
+            "bg-foreground/[0.02]",
+          )}
+        >
           <DialogTitle className="pr-8 text-lg leading-tight">
             {detail ? shipDisplayName(detail) : "Détails du vaisseau"}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Fiche détaillée du vaisseau avec statistiques, prix et équipement d&apos;usine.
+            Fiche détaillée du vaisseau avec statistiques, prix et équipement
+            d&apos;usine.
           </DialogDescription>
           {detail?.gameName && detail.gameName !== detail.name && (
             <p className="text-xs text-muted-foreground">{detail.gameName}</p>
@@ -216,10 +231,7 @@ export function ShipDetailModal({
                       ["Largeur", formatStat(detail.dimensions.width, " m")],
                       ["Hauteur", formatStat(detail.dimensions.height, " m")],
                     ].map(([label, value]) => (
-                      <div
-                        key={label}
-                        className={cn(SHIP_MODAL_INNER, "px-2 py-1.5")}
-                      >
+                      <div key={label} className={cn(SHIP_MODAL_INNER, "px-2 py-1.5")}>
                         <dt className="text-[10px] text-muted-foreground">{label}</dt>
                         <dd className="font-semibold tabular-nums">{value}</dd>
                       </div>
@@ -267,7 +279,13 @@ export function ShipDetailModal({
               </div>
             </div>
 
-            <div className={cn("flex flex-col gap-2 border-t px-6 py-4 sm:flex-row", SHIP_MODAL_DIVIDER, "bg-foreground/[0.015]")}>
+            <div
+              className={cn(
+                "flex flex-col gap-2 border-t px-6 py-4 sm:flex-row",
+                SHIP_MODAL_DIVIDER,
+                "bg-foreground/[0.015]",
+              )}
+            >
               {onAddCompare && (
                 <Button
                   type="button"

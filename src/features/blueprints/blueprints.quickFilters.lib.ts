@@ -1,12 +1,13 @@
 import type { BlueprintCatalogSummary } from "@/features/blueprints/blueprints.catalog.types";
 import type { CatalogSummaryFacet } from "@/features/blueprints/blueprints.catalog.lib";
-import { resolveItemFamily, type BlueprintFamily } from "@/features/blueprints/blueprints.taxonomy";
+import {
+  resolveItemFamily,
+  type BlueprintFamily,
+} from "@/features/blueprints/blueprints.taxonomy";
 
 const QUICK_OUTPUT_TYPE_LIMIT = 12;
 
-export function showComponentQuickFilters(
-  family: BlueprintFamily | "all",
-): boolean {
+export function showComponentQuickFilters(family: BlueprintFamily | "all"): boolean {
   return family === "ship_component" || family === "ship_weapon";
 }
 

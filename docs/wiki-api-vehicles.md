@@ -4,34 +4,34 @@ Documentation du mapping entre l’API [Star Citizen Wiki](https://api.star-citi
 
 ## Endpoints
 
-| Endpoint | Usage Multitool | Fichier |
-| -------- | --------------- | ------- |
+| Endpoint                          | Usage Multitool                                   | Fichier               |
+| --------------------------------- | ------------------------------------------------- | --------------------- |
 | `GET /api/vehicles?page[size]=50` | Cache catalogue `vehicles_catalog.json` (TTL 7 j) | `vehicles_catalog.rs` |
-| `GET /api/vehicles/{uuid}` | Fiche détail (stats, ports, prix UEX) | `vehicles_catalog.rs` |
+| `GET /api/vehicles/{uuid}`        | Fiche détail (stats, ports, prix UEX)             | `vehicles_catalog.rs` |
 
 ## Commandes Tauri
 
-| Commande | Description |
-| -------- | ----------- |
+| Commande                | Description                                  |
+| ----------------------- | -------------------------------------------- |
 | `vehicles_catalog_list` | Liste `VehicleSummary[]` depuis cache ou API |
-| `vehicle_detail` | Détail `VehicleDetail` pour un UUID |
+| `vehicle_detail`        | Détail `VehicleDetail` pour un UUID          |
 
 ## Champs véhicule → `VehicleSummary`
 
-| Champ Wiki | Champ Multitool | Notes |
-| ---------- | --------------- | ----- |
-| `uuid`, `name`, `slug` | id, libellé, slug | |
-| `manufacturer.name` / `code` | fabricant | |
-| `size_class` | taille | |
-| `cargo_capacity` | fret SCU | |
-| `speed.scm` / `speed.max` | vitesses | |
-| `crew.max` | équipage max | |
-| `health`, `shield_hp` | survie | |
-| `weaponry.pilot_dps` | DPS pilote | |
-| `career`, `role` | rôle gameplay | |
-| `production_status` | statut prod. | |
-| `images[]` | `thumbnailUrl` | priorité illustration |
-| `uex_prices.purchase` / `rental` | prix min achat / location | |
+| Champ Wiki                       | Champ Multitool           | Notes                 |
+| -------------------------------- | ------------------------- | --------------------- |
+| `uuid`, `name`, `slug`           | id, libellé, slug         |                       |
+| `manufacturer.name` / `code`     | fabricant                 |                       |
+| `size_class`                     | taille                    |                       |
+| `cargo_capacity`                 | fret SCU                  |                       |
+| `speed.scm` / `speed.max`        | vitesses                  |                       |
+| `crew.max`                       | équipage max              |                       |
+| `health`, `shield_hp`            | survie                    |                       |
+| `weaponry.pilot_dps`             | DPS pilote                |                       |
+| `career`, `role`                 | rôle gameplay             |                       |
+| `production_status`              | statut prod.              |                       |
+| `images[]`                       | `thumbnailUrl`            | priorité illustration |
+| `uex_prices.purchase` / `rental` | prix min achat / location |                       |
 
 ## Comparateur VS (frontend)
 

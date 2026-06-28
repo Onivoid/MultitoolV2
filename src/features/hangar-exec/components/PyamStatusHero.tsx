@@ -65,9 +65,7 @@ export function PyamStatusHero({ status }: PyamStatusHeroProps) {
             {formatCountdown(secondsRemaining)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {isOnline
-              ? "Fermeture dans"
-              : "Prochaine ouverture dans"}
+            {isOnline ? "Fermeture dans" : "Prochaine ouverture dans"}
           </p>
         </div>
 

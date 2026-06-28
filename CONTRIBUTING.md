@@ -38,6 +38,9 @@ Les hooks Git s’activent via `pnpm install` (`prepare` → `scripts/setup-hook
 | `pnpm lint`                     | ESLint                                       |
 | `pnpm format:check`             | Prettier (CI)                                |
 | `pnpm format`                   | Formater le code                             |
+| `pnpm validate`                 | Typecheck + ESLint + Prettier (comme CI FE)  |
+| `pnpm validate:rust`            | fmt + clippy + tests Rust                    |
+| `pnpm validate:all`             | Tous les checks CI en local                  |
 | `pnpm lint:rust`                | `cargo fmt`, clippy, tests                   |
 | `pnpm tauri build`              | Build production                             |
 | `node scripts/check-version.js` | Cohérence `package.json` / `tauri.conf.json` |
@@ -65,7 +68,11 @@ Règles frontend :
 
 Sur les branches de travail, commitez normalement. **Le bump de version interactif ne s’exécute que sur `master`** (hooks `pre-commit` / `post-commit`).
 
-Pour un commit sans bump (docs, WIP) :
+**À chaque commit** : `pre-commit` lance typecheck, ESLint et Prettier (si fichiers frontend indexés) + `cargo fmt --check` (si `.rs` indexés).
+
+**À chaque push** : `pre-push` lance clippy + tests Rust si `src-tauri/` a changé depuis la branche distante.
+
+Pour un commit sans vérifications ni bump (docs, WIP) :
 
 ```bash
 git commit --no-verify -m "docs: …"

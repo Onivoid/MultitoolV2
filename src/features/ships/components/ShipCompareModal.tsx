@@ -190,13 +190,19 @@ export function ShipCompareModal({
         )}
         data-no-window-drag
       >
-        <DialogHeader className={cn("shrink-0 border-b px-6 py-4 text-left", SHIP_MODAL_DIVIDER, "bg-foreground/[0.02]")}>
+        <DialogHeader
+          className={cn(
+            "shrink-0 border-b px-6 py-4 text-left",
+            SHIP_MODAL_DIVIDER,
+            "bg-foreground/[0.02]",
+          )}
+        >
           <div className="flex items-start justify-between gap-3 pr-8">
             <div>
               <DialogTitle>Comparateur VS</DialogTitle>
               <DialogDescription>
-                {ships.length} vaisseau{ships.length > 1 ? "x" : ""} — vert =
-                meilleur lorsqu&apos;il y a une différence
+                {ships.length} vaisseau{ships.length > 1 ? "x" : ""} — vert = meilleur
+                lorsqu&apos;il y a une différence
               </DialogDescription>
             </div>
             <Button
@@ -217,50 +223,47 @@ export function ShipCompareModal({
               <thead>
                 <tr className={cn("border-b", SHIP_MODAL_DIVIDER)}>
                   <th
-                    className={cn(
-                      SHIP_COMPARE_STICKY_CELL,
-                      "w-36 py-2 pr-3 text-left",
-                    )}
+                    className={cn(SHIP_COMPARE_STICKY_CELL, "w-36 py-2 pr-3 text-left")}
                   />
-                {ships.map((ship) => {
-                  const detailLoading = !details.has(ship.uuid);
-                  return (
-                    <th key={ship.uuid} className="min-w-[140px] px-2 py-2 align-top">
-                      <div className="flex flex-col gap-2">
-                        <div className="relative h-16 overflow-hidden rounded-md bg-foreground/[0.03] ring-1 ring-border/30">
-                          {ship.thumbnailUrl ? (
-                            <img
-                              src={ship.thumbnailUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : null}
+                  {ships.map((ship) => {
+                    const detailLoading = !details.has(ship.uuid);
+                    return (
+                      <th key={ship.uuid} className="min-w-[140px] px-2 py-2 align-top">
+                        <div className="flex flex-col gap-2">
+                          <div className="relative h-16 overflow-hidden rounded-md bg-foreground/[0.03] ring-1 ring-border/30">
+                            {ship.thumbnailUrl ? (
+                              <img
+                                src={ship.thumbnailUrl}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : null}
+                            <button
+                              type="button"
+                              className="absolute right-1 top-1 rounded bg-background/80 p-0.5 backdrop-blur-sm"
+                              onClick={() => onRemove(ship.uuid)}
+                              aria-label={`Retirer ${shipDisplayName(ship)}`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                           <button
                             type="button"
-                            className="absolute right-1 top-1 rounded bg-background/80 p-0.5 backdrop-blur-sm"
-                            onClick={() => onRemove(ship.uuid)}
-                            aria-label={`Retirer ${shipDisplayName(ship)}`}
+                            className="text-left text-sm font-semibold leading-tight text-foreground hover:text-primary"
+                            onClick={() => onOpenDetail(ship.uuid)}
                           >
-                            <X className="h-3.5 w-3.5" />
+                            {shipDisplayName(ship)}
                           </button>
+                          {detailLoading && <Skeleton className="h-3 w-20" />}
                         </div>
-                        <button
-                          type="button"
-                          className="text-left text-sm font-semibold leading-tight text-foreground hover:text-primary"
-                          onClick={() => onOpenDetail(ship.uuid)}
-                        >
-                          {shipDisplayName(ship)}
-                        </button>
-                        {detailLoading && <Skeleton className="h-3 w-20" />}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARE_SECTIONS.map((section) => (
-                <Fragment key={section.id}>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_SECTIONS.map((section) => (
+                  <Fragment key={section.id}>
                     <tr>
                       <td
                         colSpan={ships.length + 1}
@@ -272,7 +275,10 @@ export function ShipCompareModal({
                     {section.rows.map((row) => {
                       const bests = bestIndices(ships, details, row);
                       return (
-                        <tr key={row.label} className={cn("border-b", SHIP_MODAL_DIVIDER)}>
+                        <tr
+                          key={row.label}
+                          className={cn("border-b", SHIP_MODAL_DIVIDER)}
+                        >
                           <td
                             className={cn(
                               SHIP_COMPARE_STICKY_CELL,

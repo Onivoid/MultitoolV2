@@ -40,7 +40,9 @@ export function canonicalProductionStatus(
   return normalized;
 }
 
-export function formatProductionStatusLabel(status: string | null | undefined): string | null {
+export function formatProductionStatusLabel(
+  status: string | null | undefined,
+): string | null {
   const canonical = canonicalProductionStatus(status);
   if (!canonical) return null;
   return PRODUCTION_STATUS_LABELS[canonical] ?? canonical;
@@ -62,16 +64,27 @@ export function mergeProductionStatusFilterValues(catalogStatuses: string[]): st
 
 export function sortProductionStatusValues(statuses: string[]): string[] {
   return [...statuses].sort((a, b) => {
-    const indexA = PRODUCTION_STATUS_ORDER.indexOf(a as (typeof PRODUCTION_STATUS_ORDER)[number]);
-    const indexB = PRODUCTION_STATUS_ORDER.indexOf(b as (typeof PRODUCTION_STATUS_ORDER)[number]);
+    const indexA = PRODUCTION_STATUS_ORDER.indexOf(
+      a as (typeof PRODUCTION_STATUS_ORDER)[number],
+    );
+    const indexB = PRODUCTION_STATUS_ORDER.indexOf(
+      b as (typeof PRODUCTION_STATUS_ORDER)[number],
+    );
     const rankA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
     const rankB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
     if (rankA !== rankB) return rankA - rankB;
-    return formatProductionStatusLabel(a)?.localeCompare(formatProductionStatusLabel(b) ?? b, "fr") ?? 0;
+    return (
+      formatProductionStatusLabel(a)?.localeCompare(
+        formatProductionStatusLabel(b) ?? b,
+        "fr",
+      ) ?? 0
+    );
   });
 }
 
-export function shipDisplayName(ship: Pick<VehicleSummary, "displayName" | "name">): string {
+export function shipDisplayName(
+  ship: Pick<VehicleSummary, "displayName" | "name">,
+): string {
   const display = ship.displayName?.trim();
   if (display) return display;
   return ship.name;

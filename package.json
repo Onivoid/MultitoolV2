@@ -2,7 +2,7 @@
     "name": "multitoolv2",
     "private": true,
     "license": "AGPL-3.0-or-later",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "packageManager": "pnpm@10.15.1",
     "type": "module",
     "proxy": "https://multitool.onivoid.fr",
@@ -16,6 +16,9 @@
         "lint": "eslint .",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
+        "validate": "pnpm typecheck && pnpm lint && pnpm format:check",
+        "validate:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml -- --test-threads=1",
+        "validate:all": "pnpm validate && pnpm validate:rust",
         "lint:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
         "test": "vitest run"
     },

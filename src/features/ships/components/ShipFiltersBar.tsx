@@ -106,9 +106,7 @@ export function ShipFiltersBar({ facets, onChange, options }: ShipFiltersBarProp
       <FacetSelect
         label="Rôle"
         value={facets.role ?? "__all__"}
-        onChange={(v) =>
-          onChange({ ...facets, role: v === "__all__" ? null : v })
-        }
+        onChange={(v) => onChange({ ...facets, role: v === "__all__" ? null : v })}
         options={[
           { value: "__all__", label: "Tous" },
           ...options.roles.map((r) => ({ value: r, label: r })),

@@ -50,9 +50,7 @@ export function BlueprintsCatalogTopBar({
           <ToggleBtn
             active={ownedFilter === "wishlist"}
             onClick={() =>
-              onOwnedFilterChange(
-                ownedFilter === "wishlist" ? "all" : "wishlist",
-              )
+              onOwnedFilterChange(ownedFilter === "wishlist" ? "all" : "wishlist")
             }
             icon={<Bookmark className="h-3.5 w-3.5" />}
           >
@@ -102,10 +100,7 @@ function ToggleBtn({
       type="button"
       variant={active ? "default" : "outline"}
       size="sm"
-      className={cn(
-        "h-8 gap-1.5 text-xs",
-        !active && "border-primary/20 bg-primary/5",
-      )}
+      className={cn("h-8 gap-1.5 text-xs", !active && "border-primary/20 bg-primary/5")}
       onClick={onClick}
     >
       {icon}

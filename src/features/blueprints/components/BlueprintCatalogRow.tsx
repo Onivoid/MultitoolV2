@@ -63,7 +63,11 @@ export function BlueprintCatalogRow({
   const classCode = resolveBlueprintClass(item);
   const classStyle = classBadgeClass(classCode);
 
-  const renderMetaBadge = (b: (typeof metaBadges)[number], clickable: boolean, active: boolean) => (
+  const renderMetaBadge = (
+    b: (typeof metaBadges)[number],
+    clickable: boolean,
+    active: boolean,
+  ) => (
     <BlueprintMetaBadge
       variant={BADGE_VARIANT[b.kind]}
       interactive={clickable}
@@ -190,7 +194,8 @@ export function BlueprintCatalogRow({
               })}
             </div>
           )}
-          {(systems.length > 0 || (item.unlockJurisdictions ?? []).some((j) => j !== "UEE")) && (
+          {(systems.length > 0 ||
+            (item.unlockJurisdictions ?? []).some((j) => j !== "UEE")) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {systems.map((s) => (
                 <SystemBadge key={s} name={s} />

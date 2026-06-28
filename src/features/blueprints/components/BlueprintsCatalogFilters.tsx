@@ -292,19 +292,19 @@ function AdvancedFiltersBody({
                 return val !== "MISC" && !label.includes("MISC");
               })
               .map((f) => {
-              const val = filterValueToString(f.value);
-              const activeType = state.outputTypes.includes(val);
-              return (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => toggleOutputType(val)}
-                  className={bpFilterChip(activeType)}
-                >
-                  {f.label} ({f.count})
-                </button>
-              );
-            })}
+                const val = filterValueToString(f.value);
+                const activeType = state.outputTypes.includes(val);
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => toggleOutputType(val)}
+                    className={bpFilterChip(activeType)}
+                  >
+                    {f.label} ({f.count})
+                  </button>
+                );
+              })}
           </div>
         </div>
       )}
@@ -363,7 +363,7 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
-      {false && familyShowsManufacturer(family) &&
+      {familyShowsManufacturer(family) &&
         (summaryFacets?.manufacturers.length ?? 0) > 0 && (
           <div>
             <p className="mb-1 text-[10px] uppercase text-muted-foreground">
@@ -764,7 +764,10 @@ export function BlueprintsCatalogFilters({
   return (
     <>
       {!hideTrigger && (
-        <div className="shrink-0 border-t border-primary/8 px-3 py-2" data-no-window-drag>
+        <div
+          className="shrink-0 border-t border-primary/8 px-3 py-2"
+          data-no-window-drag
+        >
           {missionFilterTitle && (
             <ActiveFilterChip
               label={`Filtre mission : ${missionFilterTitle}`}

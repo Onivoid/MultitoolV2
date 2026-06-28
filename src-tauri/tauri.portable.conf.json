@@ -13,7 +13,7 @@
       {
         "title": "Multitool — Portable",
         "minWidth": 1600,
-                "minHeight": 940,
+        "minHeight": 940,
         "center": true,
         "decorations": false,
         "transparent": false

@@ -217,9 +217,9 @@ function sortCatalog(
       case "category": {
         const ca = a.family ?? "";
         const cb = b.family ?? "";
-        return ca.localeCompare(cb, "fr") || catalogDisplayName(a, "fr").localeCompare(
-          catalogDisplayName(b, "fr"),
-          "fr",
+        return (
+          ca.localeCompare(cb, "fr") ||
+          catalogDisplayName(a, "fr").localeCompare(catalogDisplayName(b, "fr"), "fr")
         );
       }
       case "craftTime":

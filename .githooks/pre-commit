@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+bash scripts/pre-commit-checks.sh
+
 branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
 
 if ! node scripts/versioning/should-bump-branch.mjs "$branch"; then
-    exit 0
+  exit 0
 fi
 
 exec < /dev/tty

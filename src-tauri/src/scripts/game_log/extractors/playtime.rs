@@ -60,8 +60,7 @@ impl PlaytimeExtractor {
             .unwrap_or_else(|| path.display().to_string());
 
         if let Some(id) = &self.current_file.session_id {
-            self.file_session_ids
-                .insert(path_key.clone(), id.clone());
+            self.file_session_ids.insert(path_key.clone(), id.clone());
         }
 
         let fallback_id = format!("file:{path_key}");

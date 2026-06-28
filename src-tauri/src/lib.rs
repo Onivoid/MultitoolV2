@@ -49,7 +49,6 @@ use scripts::onboarding::{
     complete_onboarding, get_onboarding_state, record_onboarding_attempt, reset_onboarding,
 };
 use scripts::paints_catalog::paints_catalog_list;
-use scripts::vehicles_catalog::{vehicle_detail, vehicles_catalog_list};
 use scripts::patchnote::get_latest_commits;
 use scripts::presets_list_functions::get_characters;
 use scripts::recent_routes::{get_top_routes, record_page_visit};
@@ -67,6 +66,7 @@ use scripts::translation_functions::{
 };
 use scripts::translation_preferences::{load_translations_selected, save_translations_selected};
 use scripts::translations_links::{get_translation_by_setting, get_translations};
+use scripts::vehicles_catalog::{vehicle_detail, vehicles_catalog_list};
 use tauri::{command, Manager};
 use tauri_plugin_shell::ShellExt;
 

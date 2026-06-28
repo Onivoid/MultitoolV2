@@ -50,10 +50,7 @@ pub fn total_playtime_seconds(sessions: &HashMap<String, GameSession>) -> f64 {
     if intervals.is_empty() {
         return 0.0;
     }
-    intervals.sort_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    intervals.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
     let mut total = 0.0;
     let (mut cur_start, mut cur_end) = intervals[0];
     for (start, end) in intervals.into_iter().skip(1) {

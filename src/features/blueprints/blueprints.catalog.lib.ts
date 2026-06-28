@@ -759,7 +759,8 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
     const family = summary.family ?? classifyBlueprintFamily(summary.outputType);
     out = [];
     if (summary.outputTypeLabel && isUsefulOutputTypeLabel(summary.outputTypeLabel)) {
-      const label = outputTypeLabelEn(summary.outputTypeLabel) ?? summary.outputTypeLabel;
+      const label =
+        outputTypeLabelEn(summary.outputTypeLabel) ?? summary.outputTypeLabel;
       out.push({
         key: `family-${family}`,
         label,
@@ -769,7 +770,11 @@ export function catalogRowBadges(item: BlueprintCatalogSummary): CatalogRowBadge
           : null,
       });
     }
-    if (family === "armor" && summary.subType && isUsefulSubTypeLabel(summary.subType)) {
+    if (
+      family === "armor" &&
+      summary.subType &&
+      isUsefulSubTypeLabel(summary.subType)
+    ) {
       out.push({
         key: `subtype-${summary.subType}`,
         label: summary.subType,
@@ -908,11 +913,7 @@ export function isMissionReleasedInGame(m: MissionInfo): boolean {
   if (m.notForRelease === true) return false;
   if (m.released === false) return false;
   if (m.workInProgress === true) return false;
-  if (
-    m.released == null &&
-    m.notForRelease == null &&
-    m.workInProgress == null
-  ) {
+  if (m.released == null && m.notForRelease == null && m.workInProgress == null) {
     return false;
   }
   return true;
@@ -920,10 +921,7 @@ export function isMissionReleasedInGame(m: MissionInfo): boolean {
 
 /** Libellé réputation / rang minimum pour débloquer une mission (Wiki). */
 export function formatMissionMinStanding(
-  mission: Pick<
-    MissionInfo,
-    "minStandingName" | "minStandingReputation" | "rankIndex"
-  >,
+  mission: Pick<MissionInfo, "minStandingName" | "minStandingReputation" | "rankIndex">,
 ): string | null {
   const name =
     mission.minStandingName?.trim() ||

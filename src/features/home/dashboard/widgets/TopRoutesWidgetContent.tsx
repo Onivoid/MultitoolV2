@@ -13,7 +13,9 @@ export function TopRoutesWidgetContent() {
   const { routes, loading } = useTopRoutes(3);
 
   return (
-    <div className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} flex-col gap-1 px-2 py-2`}>
+    <div
+      className={`${HOME_WIDGET_ROOT} ${HOME_WIDGET_SCROLL} flex-col gap-1 px-2 py-2`}
+    >
       {loading &&
         Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-full rounded-md" />

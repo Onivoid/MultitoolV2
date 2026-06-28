@@ -9,7 +9,11 @@ import { ShipCard } from "@/features/ships/components/ShipCard";
 import { ShipCompareModal } from "@/features/ships/components/ShipCompareModal";
 import { ShipDetailModal } from "@/features/ships/components/ShipDetailModal";
 import { ShipFiltersBar } from "@/features/ships/components/ShipFiltersBar";
-import { SHIPS_COMPARE_BANNER, SHIPS_GRID, SHIPS_TOOLBAR } from "@/features/ships/ships.ui";
+import {
+  SHIPS_COMPARE_BANNER,
+  SHIPS_GRID,
+  SHIPS_TOOLBAR,
+} from "@/features/ships/ships.ui";
 import { useShipsCatalog } from "@/features/ships/useShipsCatalog";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +32,8 @@ export default function ShipsPage() {
               <h1 className="text-lg font-semibold">Vaisseaux</h1>
             </div>
             <p className="max-w-xl text-sm text-muted-foreground">
-              Catalogue Wiki Star Citizen — stats, prix UEX et comparateur jusqu&apos;à 4
-              vaisseaux.
+              Catalogue Wiki Star Citizen — stats, prix UEX et comparateur jusqu&apos;à
+              4 vaisseaux.
             </p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
