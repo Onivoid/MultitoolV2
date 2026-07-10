@@ -1,7 +1,5 @@
 import { Palette } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { FeatureSearchField } from "@/shared/components/FeatureSearchField";
 import { BlueprintFilterSelect } from "@/features/blueprints/components/BlueprintFilterSelect";
 import { PAINTS_TOOLBAR, paintFilterChip } from "@/features/paints/paints.ui";
@@ -19,8 +17,6 @@ interface PaintsToolbarProps {
   manufacturerOptions: string[];
   activeManufacturer: string | null;
   onSelectManufacturer: (value: string | null) => void;
-  hideSkins: boolean;
-  onHideSkinsChange: (value: boolean) => void;
 }
 
 export function PaintsToolbar({
@@ -35,8 +31,6 @@ export function PaintsToolbar({
   manufacturerOptions,
   activeManufacturer,
   onSelectManufacturer,
-  hideSkins,
-  onHideSkinsChange,
 }: PaintsToolbarProps) {
   return (
     <section className={PAINTS_TOOLBAR} data-no-window-drag>
@@ -83,21 +77,6 @@ export function PaintsToolbar({
             />
           </div>
         )}
-
-        <div className="flex items-center gap-2 pb-0.5">
-          <Checkbox
-            id="hide-skins"
-            checked={hideSkins}
-            onCheckedChange={(v) => onHideSkinsChange(v === true)}
-            data-no-window-drag
-          />
-          <Label
-            htmlFor="hide-skins"
-            className="cursor-pointer text-xs text-muted-foreground"
-          >
-            Masquer les skins
-          </Label>
-        </div>
       </div>
 
       {eventChips.length > 0 && (

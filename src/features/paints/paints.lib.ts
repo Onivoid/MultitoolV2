@@ -17,15 +17,6 @@ export function cleanPaintTitle(name: string): string {
   return name.replace(TITLE_SUFFIX_RE, "").trim() || name;
 }
 
-export function isPaintSkin(paint: {
-  name: string;
-  isBaseVariant?: boolean | null;
-}): boolean {
-  if (paint.isBaseVariant === false) return true;
-  if (paint.isBaseVariant === true) return false;
-  return /\bskin\b/i.test(paint.name);
-}
-
 export function resolvePaintManufacturer(paint: {
   uuid: string;
   name: string;

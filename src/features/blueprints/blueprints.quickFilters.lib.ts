@@ -21,7 +21,7 @@ export function buildQuickOutputTypeFacets(
   for (const item of catalog) {
     if (family !== "all" && resolveItemFamily(item) !== family) continue;
     const label = (item.outputTypeLabel ?? "").trim();
-    if (!label) continue;
+    if (!label || /^(misc|divers)$/i.test(label)) continue;
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
 

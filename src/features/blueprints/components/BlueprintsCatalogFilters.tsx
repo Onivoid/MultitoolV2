@@ -330,59 +330,23 @@ function AdvancedFiltersBody({
             </div>
           </div>
         )}
-      {familyShowsGrade(family) && (
+      {familyShowsSize(family) && (
         <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Grade</p>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Taille</p>
           <div className="flex flex-wrap gap-1">
-            {GRADE_OPTIONS.map((g) => {
-              const facet = summaryFacets?.grades.find((f) => f.value === g);
-              const count = facet?.count ?? 0;
-              return (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => toggleGrade(g)}
-                  disabled={summaryFacets != null && count === 0}
-                  className={cn(
-                    bpFilterChip(state.grades.includes(g)),
-                    summaryFacets != null && count === 0 && "opacity-40",
-                  )}
-                  title={
-                    summaryFacets != null && count === 0
-                      ? "Aucun blueprint avec ce grade dans le catalogue"
-                      : undefined
-                  }
-                >
-                  {g}
-                  {summaryFacets != null && count > 0 && (
-                    <span className="ml-0.5 tabular-nums opacity-80">({count})</span>
-                  )}
-                </button>
-              );
-            })}
+            {SIZE_OPTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleSize(s)}
+                className={cn(bpFilterChip(state.sizes.includes(s)), "tabular-nums")}
+              >
+                T{s}
+              </button>
+            ))}
           </div>
         </div>
       )}
-      {familyShowsManufacturer(family) &&
-        (summaryFacets?.manufacturers.length ?? 0) > 0 && (
-          <div>
-            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
-              Fabricant
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {summaryFacets!.manufacturers.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => toggleManufacturer(f.value)}
-                  className={bpFilterChip(state.manufacturerCodes.includes(f.value))}
-                >
-                  {f.label} ({f.count})
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       {familyShowsClass(family) && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Classe</p>
@@ -416,42 +380,37 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
-      {familyShowsSize(family) && (
+      {familyShowsGrade(family) && (
         <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Taille</p>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Grade</p>
           <div className="flex flex-wrap gap-1">
-            {SIZE_OPTIONS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => toggleSize(s)}
-                className={cn(bpFilterChip(state.sizes.includes(s)), "tabular-nums")}
-              >
-                T{s}
-              </button>
-            ))}
+            {GRADE_OPTIONS.map((g) => {
+              const facet = summaryFacets?.grades.find((f) => f.value === g);
+              const count = facet?.count ?? 0;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => toggleGrade(g)}
+                  disabled={summaryFacets != null && count === 0}
+                  className={cn(
+                    bpFilterChip(state.grades.includes(g)),
+                    summaryFacets != null && count === 0 && "opacity-40",
+                  )}
+                  title={
+                    summaryFacets != null && count === 0
+                      ? "Aucun blueprint avec ce grade dans le catalogue"
+                      : undefined
+                  }
+                >
+                  {g}
+                  {summaryFacets != null && count > 0 && (
+                    <span className="ml-0.5 tabular-nums opacity-80">({count})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
-      {resourceSelectOptions.length > 1 && (
-        <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">
-            Ingrédient / ressource
-          </p>
-          <BlueprintFilterSelect
-            value={state.resourceUuid ?? "__none__"}
-            onValueChange={(v) =>
-              onChange({
-                ...state,
-                resourceUuid: v === "__none__" ? null : v,
-                resourceUuidAliases: [],
-                resourceFilterLabel: null,
-              })
-            }
-            options={resourceSelectOptions}
-            searchable
-            className="w-full max-w-none"
-          />
         </div>
       )}
       {(summaryFacets?.starSystems.length ?? 0) > 0 && (
@@ -471,45 +430,6 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
-      {(summaryFacets?.jurisdictions.length ?? 0) > 0 && (
-        <div>
-          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Statut UEE</p>
-          <div className="flex flex-wrap gap-1">
-            {summaryFacets!.jurisdictions.map((f) => (
-              <button
-                key={String(f.value)}
-                type="button"
-                onClick={() => toggleJurisdiction(String(f.value))}
-                className={bpFilterChip(state.jurisdictions.includes(String(f.value)))}
-              >
-                {f.label} ({f.count})
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div>
-        <p className="mb-1 text-[10px] uppercase text-muted-foreground">
-          Légalité mission
-        </p>
-        <BlueprintFilterSelect
-          value={state.lawful}
-          onValueChange={(v) =>
-            onChange({ ...state, lawful: v as "all" | "legal" | "illegal" })
-          }
-          options={[
-            { value: "all", label: "Toutes" },
-            { value: "legal", label: "Légal" },
-            { value: "illegal", label: "Illégal" },
-          ]}
-        />
-        {!unlockIndexReady && state.lawful !== "all" && (
-          <p className="mt-1.5 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
-            Index de légalité en cours de construction — résultats partiels possibles.
-            Réessayez dans quelques minutes ou rafraîchissez le catalogue.
-          </p>
-        )}
-      </div>
       {(summaryFacets?.contractors.length ?? 0) > 0 && (
         <div>
           <p className="mb-1 text-[10px] uppercase text-muted-foreground">Contractor</p>
@@ -546,6 +466,86 @@ function AdvancedFiltersBody({
           </div>
         </div>
       )}
+      <div>
+        <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+          Légalité mission
+        </p>
+        <BlueprintFilterSelect
+          value={state.lawful}
+          onValueChange={(v) =>
+            onChange({ ...state, lawful: v as "all" | "legal" | "illegal" })
+          }
+          options={[
+            { value: "all", label: "Toutes" },
+            { value: "legal", label: "Légal" },
+            { value: "illegal", label: "Illégal" },
+          ]}
+        />
+        {!unlockIndexReady && state.lawful !== "all" && (
+          <p className="mt-1.5 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+            Index de légalité en cours de construction — résultats partiels possibles.
+            Réessayez dans quelques minutes ou rafraîchissez le catalogue.
+          </p>
+        )}
+      </div>
+      {(summaryFacets?.jurisdictions.length ?? 0) > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">Statut UEE</p>
+          <div className="flex flex-wrap gap-1">
+            {summaryFacets!.jurisdictions.map((f) => (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => toggleJurisdiction(String(f.value))}
+                className={bpFilterChip(state.jurisdictions.includes(String(f.value)))}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {resourceSelectOptions.length > 1 && (
+        <div>
+          <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+            Ingrédient / ressource
+          </p>
+          <BlueprintFilterSelect
+            value={state.resourceUuid ?? "__none__"}
+            onValueChange={(v) =>
+              onChange({
+                ...state,
+                resourceUuid: v === "__none__" ? null : v,
+                resourceUuidAliases: [],
+                resourceFilterLabel: null,
+              })
+            }
+            options={resourceSelectOptions}
+            searchable
+            className="w-full max-w-none"
+          />
+        </div>
+      )}
+      {familyShowsManufacturer(family) &&
+        (summaryFacets?.manufacturers.length ?? 0) > 0 && (
+          <div>
+            <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+              Fabricant
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {summaryFacets!.manufacturers.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => toggleManufacturer(f.value)}
+                  className={bpFilterChip(state.manufacturerCodes.includes(f.value))}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       <Button
         type="button"
         variant="ghost"
@@ -815,14 +815,14 @@ export function BlueprintsCatalogFilters({
         <DialogContent
           overlayClassName="z-[110]"
           className={cn(
-            "z-[110] max-h-[min(88vh,44rem)] max-w-xl gap-0 border-primary/20 bg-popover/95 p-0 shadow-lg backdrop-blur-sm",
+            "z-[110] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[min(88vh,44rem)] max-w-xl gap-0 overflow-hidden border-primary/20 bg-popover/95 p-0 shadow-lg backdrop-blur-sm",
           )}
           data-no-window-drag
         >
           <DialogHeader className="border-b border-primary/10 px-4 py-3">
             <DialogTitle className="text-sm">Filtres avancés</DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto overscroll-contain p-4">
+          <div className="min-h-0 overflow-y-auto overscroll-contain p-4">
             <AdvancedFiltersBody {...panelProps} />
           </div>
           <DialogFooter className="border-t border-primary/10 px-4 py-3">

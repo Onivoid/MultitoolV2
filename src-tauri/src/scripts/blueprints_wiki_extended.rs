@@ -6,10 +6,11 @@ use std::fs;
 use std::path::PathBuf;
 
 use super::blueprints_catalog::{
-    fetch_wiki_blueprint_by_uuid, http_client, is_mission_released_in_game,
-    load_wiki_catalog_from_disk, normalize_bp_id_key, summary_from_wiki, BlueprintDetail,
-    BlueprintSummary, IngredientEnrichment, IngredientLocationPreview, IngredientOption,
-    MissionBlueprintReward, MissionDetailResult, MissionInfo, WIKI_API_BASE,
+    collect_ingredient_facets, fetch_wiki_blueprint_by_uuid, http_client,
+    is_mission_released_in_game, load_wiki_catalog_from_disk, normalize_bp_id_key,
+    summary_from_wiki, BlueprintDetail, BlueprintSummary, IngredientEnrichment,
+    IngredientLocationPreview, IngredientOption, MissionBlueprintReward, MissionDetailResult,
+    MissionInfo, WIKI_API_BASE,
 };
 use tauri::command;
 
@@ -86,11 +87,37 @@ fn filters_cache_path() -> Option<PathBuf> {
     wiki_data_dir().map(|d| d.join("wiki_blueprints_filters.json"))
 }
 
+/// Complète les facets ingrédients avec ceux du catalogue local (l'API Wiki
+/// `/api/blueprints/filters` n'expose que les minerais vaisseau — pas les
+/// ressources FPS comme l'Hadanite).
+fn merge_local_ingredient_facets(filters: &mut BlueprintCatalogFilters) {
+    let Ok(blueprints) = load_wiki_catalog_from_disk() else {
+        return;
+    };
+    let known: HashSet<String> = filters
+        .ingredient_uuid
+        .iter()
+        .chain(filters.resource_uuid.iter())
+        .filter_map(|f| f.value.as_ref().and_then(|v| v.as_str().map(String::from)))
+        .collect();
+    for (uuid, name, count) in collect_ingredient_facets(&blueprints) {
+        if known.contains(&uuid) {
+            continue;
+        }
+        filters.ingredient_uuid.push(FilterValue {
+            value: Some(serde_json::Value::String(uuid)),
+            label: name,
+            count,
+        });
+    }
+}
+
 pub async fn fetch_blueprint_filters() -> Result<BlueprintCatalogFilters, String> {
     if let Some(path) = filters_cache_path() {
         if !is_cache_stale(&path, 7) {
             if let Ok(bytes) = fs::read(&path) {
-                if let Ok(parsed) = serde_json::from_slice::<BlueprintCatalogFilters>(&bytes) {
+                if let Ok(mut parsed) = serde_json::from_slice::<BlueprintCatalogFilters>(&bytes) {
+                    merge_local_ingredient_facets(&mut parsed);
                     return Ok(parsed);
                 }
             }
@@ -112,7 +139,7 @@ pub async fn fetch_blueprint_filters() -> Result<BlueprintCatalogFilters, String
         .json()
         .await
         .map_err(|e| format!("Wiki filters illisible: {e}"))?;
-    let out = BlueprintCatalogFilters {
+    let mut out = BlueprintCatalogFilters {
         output_type: map_filter_values(raw.filters.output_type),
         ingredient_uuid: map_filter_values(raw.filters.ingredient_uuid),
         resource_uuid: map_filter_values(raw.filters.resource_uuid),
@@ -122,6 +149,7 @@ pub async fn fetch_blueprint_filters() -> Result<BlueprintCatalogFilters, String
             let _ = fs::write(path, bytes);
         }
     }
+    merge_local_ingredient_facets(&mut out);
     Ok(out)
 }
 

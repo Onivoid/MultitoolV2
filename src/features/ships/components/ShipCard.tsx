@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { GitCompare, Rocket, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function ShipCard({
   onOpenDetail,
 }: ShipCardProps) {
   const compareDisabled = !compared && !canAddCompare;
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <article
@@ -46,12 +48,13 @@ export function ShipCard({
         className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-primary/5 text-left"
         onClick={() => onOpenDetail(ship.uuid)}
       >
-        {ship.thumbnailUrl ? (
+        {ship.thumbnailUrl && !imageFailed ? (
           <img
             src={ship.thumbnailUrl}
             alt=""
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             loading="lazy"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">

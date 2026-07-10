@@ -69,6 +69,11 @@ export function PaintCard({ paint, index }: PaintCardProps) {
                 {paint.shipName}
               </Badge>
             )}
+            {manufacturer.code && (
+              <Badge variant="outline" className="text-[10px] text-primary">
+                {manufacturer.code}
+              </Badge>
+            )}
             {paint.eventSources.slice(0, 2).map((event) => (
               <Badge key={event} variant="secondary" className="text-[10px]">
                 {event}

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use tauri::command;
@@ -7,7 +6,7 @@ use tauri::command;
 pub(crate) const WIKI_API_BASE: &str = "https://api.star-citizen.wiki";
 const USER_AGENT: &str = "MultitoolV2-Paints/2.0";
 const CACHE_MAX_AGE_DAYS: u64 = 7;
-const CACHE_SCHEMA_VERSION: u32 = 3;
+const CACHE_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -111,30 +110,6 @@ struct WikiImage {
     thumbnail: Option<String>,
     thumbnail_url: Option<String>,
     original_url: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct WikiVehicleListResponse {
-    data: Vec<WikiVehicleRow>,
-    meta: Option<WikiPaginationMeta>,
-}
-
-#[derive(Deserialize)]
-struct WikiVehicleRow {
-    slug: Option<String>,
-    ports: Option<Vec<WikiVehiclePort>>,
-    images: Option<Vec<WikiImage>>,
-}
-
-struct PaintShipMedia {
-    thumbnail: String,
-    slug: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct WikiVehiclePort {
-    name: Option<String>,
-    required_tags: Option<Vec<String>>,
 }
 
 fn http_client() -> Result<reqwest::Client, String> {
@@ -251,11 +226,6 @@ fn pick_full_image(images: Option<&Vec<WikiImage>>) -> Option<String> {
     })
 }
 
-fn media_tools_fallback(slug: &str) -> String {
-    let normalized = slug.trim().to_lowercase().replace(' ', "-");
-    format!("https://media.starcitizen.tools/auto/ship/{normalized}_side.jpg")
-}
-
 fn is_skin_paint(item: &WikiPaintItem) -> bool {
     if item.name.to_ascii_lowercase().contains("skin") {
         return true;
@@ -271,96 +241,13 @@ fn is_skin_paint(item: &WikiPaintItem) -> bool {
         .is_some_and(|cn| cn.to_ascii_lowercase().contains("skin"))
 }
 
-fn paint_port_tag(item: &WikiPaintItem) -> Option<String> {
-    item.required_tags
-        .as_ref()
-        .or(item.tags.as_ref())
-        .and_then(|tags| {
-            tags.iter()
-                .find(|t| t.starts_with("Paint_") && !t.starts_with("@"))
-                .cloned()
-        })
-}
-
-async fn fetch_vehicles_page(page: u64, page_size: u64) -> Result<WikiVehicleListResponse, String> {
-    let url = format!("{WIKI_API_BASE}/api/vehicles?page[number]={page}&page[size]={page_size}");
-    let client = http_client()?;
-    let response = client
-        .get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Erreur réseau vers Star Citizen Wiki (vehicles): {e}"))?;
-    if !response.status().is_success() {
-        return Err(format!(
-            "Star Citizen Wiki a renvoyé HTTP {} (vehicles)",
-            response.status()
-        ));
-    }
-    response
-        .json()
-        .await
-        .map_err(|e| format!("Réponse Wiki /api/vehicles illisible: {e}"))
-}
-
-async fn fetch_paint_port_media() -> Result<HashMap<String, PaintShipMedia>, String> {
-    const PAGE_SIZE: u64 = 100;
-    let first = fetch_vehicles_page(1, PAGE_SIZE).await?;
-    let last_page = first.meta.as_ref().map(|m| m.last_page).unwrap_or(1).max(1);
-    let mut vehicles = first.data;
-    for page in 2..=last_page {
-        let resp = fetch_vehicles_page(page, PAGE_SIZE).await?;
-        vehicles.extend(resp.data);
-    }
-
-    let mut by_paint_tag = HashMap::new();
-    for vehicle in vehicles {
-        let thumbnail = pick_thumbnail(vehicle.images.as_ref());
-        let Some(thumbnail) = thumbnail else {
-            continue;
-        };
-        let slug = vehicle.slug.clone();
-        let Some(ports) = vehicle.ports.as_ref() else {
-            continue;
-        };
-        for port in ports {
-            if port.name.as_deref() != Some("hardpoint_paint") {
-                continue;
-            }
-            let Some(required_tags) = port.required_tags.as_ref() else {
-                continue;
-            };
-            for tag in required_tags {
-                if tag.starts_with("Paint_") {
-                    by_paint_tag
-                        .entry(tag.clone())
-                        .or_insert_with(|| PaintShipMedia {
-                            thumbnail: thumbnail.clone(),
-                            slug: slug.clone(),
-                        });
-                }
-            }
-        }
-    }
-    Ok(by_paint_tag)
-}
-
-fn summary_from_wiki(
-    item: WikiPaintItem,
-    ship_media: &HashMap<String, PaintShipMedia>,
-) -> PaintSummary {
+fn summary_from_wiki(item: WikiPaintItem) -> PaintSummary {
     let ship_name = extract_ship_name(&item);
-    let port_tag = paint_port_tag(&item);
-    let port_media = port_tag.as_ref().and_then(|tag| ship_media.get(tag));
 
-    let thumbnail_url =
-        pick_thumbnail(item.images.as_ref()).or_else(|| port_media.map(|m| m.thumbnail.clone()));
-    let image_url = pick_full_image(item.images.as_ref())
-        .or_else(|| port_media.map(|m| m.thumbnail.clone()))
-        .or_else(|| {
-            port_media
-                .and_then(|m| m.slug.as_deref())
-                .map(media_tools_fallback)
-        });
+    // Uniquement les images propres à la paint : les secours via l'image du
+    // vaisseau associé affichaient une livrée générique trompeuse.
+    let thumbnail_url = pick_thumbnail(item.images.as_ref());
+    let image_url = pick_full_image(item.images.as_ref());
     let description_en = item
         .description
         .as_ref()
@@ -413,18 +300,14 @@ async fn fetch_paints_page(page: u64, page_size: u64) -> Result<WikiItemsListRes
 
 async fn fetch_all_paints() -> Result<Vec<PaintSummary>, String> {
     const PAGE_SIZE: u64 = 200;
-    let (first, ship_media) =
-        tokio::try_join!(fetch_paints_page(1, PAGE_SIZE), fetch_paint_port_media())?;
+    let first = fetch_paints_page(1, PAGE_SIZE).await?;
     let last_page = first.meta.as_ref().map(|m| m.last_page).unwrap_or(1).max(1);
     let mut all = first.data;
     for page in 2..=last_page {
         let resp = fetch_paints_page(page, PAGE_SIZE).await?;
         all.extend(resp.data);
     }
-    let mut paints: Vec<PaintSummary> = all
-        .into_iter()
-        .map(|item| summary_from_wiki(item, &ship_media))
-        .collect();
+    let mut paints: Vec<PaintSummary> = all.into_iter().map(summary_from_wiki).collect();
     sort_paints(&mut paints);
     Ok(paints)
 }

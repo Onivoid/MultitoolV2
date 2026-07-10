@@ -462,7 +462,7 @@ export function buildCatalogSummaryFacets(
       classCounts.set(cls, (classCounts.get(cls) ?? 0) + 1);
     }
     const typeLabel = (b.outputTypeLabel ?? "").trim();
-    if (typeLabel) {
+    if (typeLabel && !/^(misc|divers)$/i.test(typeLabel)) {
       outputTypeLabelCounts.set(
         typeLabel,
         (outputTypeLabelCounts.get(typeLabel) ?? 0) + 1,

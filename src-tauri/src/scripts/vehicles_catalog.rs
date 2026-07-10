@@ -7,7 +7,7 @@ use tauri::command;
 pub(crate) const WIKI_API_BASE: &str = "https://api.star-citizen.wiki";
 const USER_AGENT: &str = "MultitoolV2-Vehicles/2.0";
 const CACHE_MAX_AGE_DAYS: u64 = 7;
-const CACHE_SCHEMA_VERSION: u32 = 3;
+const CACHE_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -347,8 +347,6 @@ fn production_status_canonical(text: &Option<WikiLocalizedText>) -> Option<Strin
 fn humanize_slug_suffix(suffix: &str) -> String {
     match suffix {
         "gs" => "GS".to_string(),
-        "bis2950" => "BIS 2950".to_string(),
-        "showdown" => "Best In Show".to_string(),
         "exec-military" => "PYAM Exec Militaire".to_string(),
         "exec-stealth" | "exec-stealthindustrial" => "PYAM Exec Furtif".to_string(),
         "collector-military" | "collector-milt" => "Collector Militaire".to_string(),
@@ -403,8 +401,6 @@ fn infer_variant_label_single(slug: &str, class_name: Option<&str>) -> Option<St
         "-collector-military",
         "-collector-milt",
         "-collector-indust",
-        "-bis2950",
-        "-showdown",
         "-fw-25",
         "-gs",
         "-plat",
@@ -427,6 +423,27 @@ fn infer_variant_label_single(slug: &str, class_name: Option<&str>) -> Option<St
     }
 
     None
+}
+
+/// Variante « Best in Show » (BIS) : n'est plus utilisée en jeu comme un
+/// vaisseau distinct, donc exclue du catalogue.
+fn is_bis_variant(slug: &str, name: &str) -> bool {
+    let slug = slug.to_ascii_lowercase();
+    if slug.ends_with("-showdown") {
+        return true;
+    }
+    // Suffixe `-bisNNNN` (ex: drak-cutlass-black-bis2950, orig-600i-bis2951).
+    if let Some(pos) = slug.rfind("-bis") {
+        let tail = &slug[pos + 4..];
+        if tail.len() == 4 && tail.chars().all(|c| c.is_ascii_digit()) {
+            return true;
+        }
+    }
+    if name.to_ascii_lowercase().contains("best in show") {
+        return true;
+    }
+    // Mot « BIS » isolé dans le nom (ex: « 600i 2951 BIS »).
+    name.split_whitespace().any(|word| word == "BIS")
 }
 
 fn apply_variant_labels(vehicles: &mut [VehicleSummary]) {
@@ -752,6 +769,7 @@ async fn fetch_all_vehicles() -> Result<Vec<VehicleSummary>, String> {
         all.extend(resp.data);
     }
     let mut vehicles: Vec<VehicleSummary> = all.iter().map(summary_from_wiki).collect();
+    vehicles.retain(|v| !is_bis_variant(&v.slug, &v.name));
     apply_variant_labels(&mut vehicles);
     sort_vehicles(&mut vehicles);
     Ok(vehicles)
@@ -937,6 +955,26 @@ mod tests {
         assert_eq!(vehicles[0].display_name, "Hammerhead");
         assert_eq!(vehicles[1].display_name, "Hammerhead (GS)");
         assert_eq!(vehicles[1].variant_label.as_deref(), Some("GS"));
+    }
+
+    #[test]
+    fn is_bis_variant_detects_best_in_show_ships() {
+        assert!(is_bis_variant(
+            "drak-cutlass-black-bis2950",
+            "Cutlass Black"
+        ));
+        assert!(is_bis_variant("orig-600i-bis2951", "600i 2951 BIS"));
+        assert!(is_bis_variant(
+            "aegs-hammerhead-showdown",
+            "Hammerhead 2949 Best In Show Edition"
+        ));
+        assert!(is_bis_variant(
+            "aegs-reclaimer-showdown",
+            "Reclaimer 2949 Best In Show Edition"
+        ));
+        assert!(!is_bis_variant("drak-cutlass-black", "Cutlass Black"));
+        assert!(!is_bis_variant("aegs-hammerhead-gs", "Hammerhead"));
+        assert!(!is_bis_variant("misc-starlancer-max", "Starlancer MAX"));
     }
 
     #[test]

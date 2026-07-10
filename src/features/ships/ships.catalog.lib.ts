@@ -94,10 +94,6 @@ export function humanizeSlugSuffix(suffix: string): string {
   switch (suffix) {
     case "gs":
       return "GS";
-    case "bis2950":
-      return "BIS 2950";
-    case "showdown":
-      return "Best In Show";
     case "exec-military":
       return "PYAM Exec Militaire";
     case "exec-stealth":

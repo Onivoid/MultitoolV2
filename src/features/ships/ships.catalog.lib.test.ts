@@ -19,7 +19,7 @@ describe("ships.catalog.lib", () => {
 
   it("humanise les suffixes de slug", () => {
     expect(humanizeSlugSuffix("gs")).toBe("GS");
-    expect(humanizeSlugSuffix("bis2950")).toBe("BIS 2950");
+    expect(humanizeSlugSuffix("exec-military")).toBe("PYAM Exec Militaire");
   });
 
   it("dérive le libellé variante depuis le slug", () => {

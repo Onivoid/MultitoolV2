@@ -20,8 +20,6 @@ export default function PaintsPage() {
     manufacturerOptions,
     activeManufacturer,
     setActiveManufacturer,
-    hideSkins,
-    setHideSkins,
   } = usePaintsCatalog();
 
   return (
@@ -38,8 +36,6 @@ export default function PaintsPage() {
         manufacturerOptions={manufacturerOptions}
         activeManufacturer={activeManufacturer}
         onSelectManufacturer={setActiveManufacturer}
-        hideSkins={hideSkins}
-        onHideSkinsChange={setHideSkins}
       />
 
       {isLoading ? (

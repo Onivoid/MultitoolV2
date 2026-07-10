@@ -114,13 +114,12 @@ export function ShipDetailModal({
   onClose,
   onAddCompare,
 }: ShipDetailModalProps) {
+  // Même sélection d'image que la liste (thumbnailUrl calculé côté Rust),
+  // avec la première image originale en secours.
   const heroImage =
-    detail?.images.find((img) => img.originalUrl)?.originalUrl ??
     detail?.thumbnailUrl ??
+    detail?.images.find((img) => img.originalUrl)?.originalUrl ??
     null;
-
-  const wikiUrl =
-    detail?.webUrl?.replace("api.star-citizen.wiki", "star-citizen.wiki") ?? null;
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -296,19 +295,6 @@ export function ShipDetailModal({
                 >
                   <GitCompare className="mr-2 h-4 w-4" />
                   Ajouter au comparateur VS
-                </Button>
-              )}
-
-              {wikiUrl && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="sm:flex-1"
-                  onClick={() => void openExternalUrl(wikiUrl)}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Ouvrir sur Star Citizen Wiki
                 </Button>
               )}
             </div>

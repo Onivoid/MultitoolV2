@@ -1562,6 +1562,68 @@ fn insert_requirement_child_uuids(
     }
 }
 
+fn insert_requirement_child_named(
+    child: &WikiRequirementChild,
+    map: &mut std::collections::HashMap<String, String>,
+) {
+    let name = child.name.clone().unwrap_or_default();
+    if !name.is_empty() {
+        for uuid in [child.uuid.as_ref(), child.ore_uuid.as_ref()]
+            .into_iter()
+            .flatten()
+        {
+            if !uuid.is_empty() {
+                map.entry(uuid.clone()).or_insert_with(|| name.clone());
+            }
+        }
+    }
+    for nested in &child.children {
+        insert_requirement_child_named(nested, map);
+    }
+}
+
+/// Agrège tous les ingrédients nommés du catalogue local : uuid → (nom, nb de blueprints).
+/// Complète les facets Wiki `/api/blueprints/filters` qui n'exposent que les minerais vaisseau.
+pub(crate) fn collect_ingredient_facets(
+    blueprints: &[WikiBlueprint],
+) -> Vec<(String, String, u64)> {
+    let mut counts: std::collections::HashMap<String, (String, u64)> =
+        std::collections::HashMap::new();
+    for bp in blueprints {
+        let mut by_uuid: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        for ing in &bp.ingredients {
+            let name = ing.name.clone().unwrap_or_default();
+            if name.is_empty() {
+                continue;
+            }
+            for uuid in [ing.resource_type_uuid.as_ref(), ing.item_uuid.as_ref()]
+                .into_iter()
+                .flatten()
+            {
+                if !uuid.is_empty() {
+                    by_uuid.entry(uuid.clone()).or_insert_with(|| name.clone());
+                }
+            }
+        }
+        for group in &bp.requirement_groups {
+            for child in &group.children {
+                insert_requirement_child_named(child, &mut by_uuid);
+            }
+        }
+        for (uuid, name) in by_uuid {
+            let entry = counts.entry(uuid).or_insert((name, 0));
+            entry.1 += 1;
+        }
+    }
+    let mut out: Vec<(String, String, u64)> = counts
+        .into_iter()
+        .map(|(uuid, (name, count))| (uuid, name, count))
+        .collect();
+    out.sort_by(|a, b| a.1.to_lowercase().cmp(&b.1.to_lowercase()));
+    out
+}
+
 fn collect_resource_uuids(bp: &WikiBlueprint) -> Vec<String> {
     let mut set = std::collections::HashSet::new();
     for ing in &bp.ingredients {
@@ -2518,6 +2580,34 @@ mod tests {
             }
         }
         None
+    }
+
+    #[test]
+    fn collect_ingredient_facets_aggregates_named_ingredients() {
+        let bp = |names: &[(&str, &str)]| WikiBlueprint {
+            ingredients: names
+                .iter()
+                .map(|(name, uuid)| WikiIngredient {
+                    name: Some((*name).to_string()),
+                    item_uuid: Some((*uuid).to_string()),
+                    ..WikiIngredient::default()
+                })
+                .collect(),
+            ..WikiBlueprint::default()
+        };
+        let blueprints = vec![
+            bp(&[("Hadanite", "uuid-hadanite"), ("Gold", "uuid-gold")]),
+            bp(&[("Hadanite", "uuid-hadanite")]),
+        ];
+
+        let facets = collect_ingredient_facets(&blueprints);
+        assert_eq!(facets.len(), 2);
+        // Tri alphabétique sur le nom.
+        assert_eq!(facets[0], ("uuid-gold".to_string(), "Gold".to_string(), 1));
+        assert_eq!(
+            facets[1],
+            ("uuid-hadanite".to_string(), "Hadanite".to_string(), 2)
+        );
     }
 
     /// Nécessite le réseau — vérifie l’API Wiki réelle.
