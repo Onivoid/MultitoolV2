@@ -28,6 +28,7 @@
       "executable": "Multitool.exe",
       "candidates": [
         "%LOCALAPPDATA%/Programs/Multitool/Multitool.exe",
+        "%LOCALAPPDATA%/Multitool/Multitool.exe",
         "%PROGRAMFILES%/Multitool/Multitool.exe",
         "%PROGRAMFILES(X86)%/Multitool/Multitool.exe"
       ]
