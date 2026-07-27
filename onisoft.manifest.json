@@ -27,10 +27,14 @@
     "windows": {
       "executable": "Multitool.exe",
       "candidates": [
-        "%LOCALAPPDATA%/Programs/Multitool/Multitool.exe",
-        "%LOCALAPPDATA%/Multitool/Multitool.exe",
         "%PROGRAMFILES%/Multitool/Multitool.exe",
-        "%PROGRAMFILES(X86)%/Multitool/Multitool.exe"
+        "%PROGRAMFILES%/Multitool/sandbox.exe",
+        "%PROGRAMFILES(X86)%/Multitool/Multitool.exe",
+        "%PROGRAMFILES(X86)%/Multitool/sandbox.exe",
+        "%LOCALAPPDATA%/Programs/Multitool/Multitool.exe",
+        "%LOCALAPPDATA%/Programs/Multitool/sandbox.exe",
+        "%LOCALAPPDATA%/Multitool/Multitool.exe",
+        "%LOCALAPPDATA%/Multitool/sandbox.exe"
       ]
     }
   }
