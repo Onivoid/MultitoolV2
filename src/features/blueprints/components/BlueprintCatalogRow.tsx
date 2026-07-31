@@ -15,7 +15,10 @@ import type { BlueprintCatalogFilterState } from "@/features/blueprints/blueprin
 import { bpCatalogRow } from "@/features/blueprints/blueprints.ui";
 import type { BlueprintCatalogSummary } from "@/features/blueprints/blueprints.catalog.types";
 import type { CatalogRowBadgeKind } from "@/features/blueprints/blueprints.catalog.lib";
-import { formatBlueprintDate } from "@/features/blueprints/blueprints.lib";
+import {
+  formatBlueprintDate,
+  formatBlueprintOwner,
+} from "@/features/blueprints/blueprints.lib";
 import { cn } from "@/lib/utils";
 
 export interface BlueprintCatalogRowProps {
@@ -27,6 +30,7 @@ export interface BlueprintCatalogRowProps {
   onToggleWishlist?: () => void;
   onToggleManualOwned?: () => void;
   unlockedAt?: number;
+  ownedBy?: string[];
   filterState?: BlueprintCatalogFilterState;
   onSelect: () => void;
   onBadgeFilter?: (filter: CatalogBadgeFilter) => void;
@@ -51,6 +55,7 @@ export function BlueprintCatalogRow({
   onToggleWishlist,
   onToggleManualOwned,
   unlockedAt,
+  ownedBy,
   filterState,
   onSelect,
   onBadgeFilter,
@@ -211,6 +216,11 @@ export function BlueprintCatalogRow({
           {unlockedAt != null && (
             <p className="mt-0.5 text-[10px] text-muted-foreground/80">
               {formatBlueprintDate(unlockedAt)}
+            </p>
+          )}
+          {isOwned && ownedBy != null && ownedBy.length > 0 && (
+            <p className="mt-0.5 text-[10px] text-muted-foreground/80">
+              Possédé par : {ownedBy.map(formatBlueprintOwner).join(", ")}
             </p>
           )}
         </div>

@@ -81,6 +81,8 @@ export interface OwnedResolveResult {
   ambiguousLinks: JournalAmbiguousLink[];
   /** Entrées journal mises à jour dans gamelog_blueprints.json. */
   persistedEntryCount: number;
+  /** Comptes journal par blueprintId (toutes entrées, sans filtre owner). */
+  ownersByBlueprintId: Map<string, string[]>;
 }
 
 export function buildAmbiguousLinks(
@@ -104,6 +106,38 @@ export function buildAmbiguousLinks(
       productNames,
     }))
     .sort((a, b) => b.productNames.length - a.productNames.length);
+}
+
+/** Agrège les handles RSI par blueprintId à partir de toutes les entrées journal. */
+export function buildOwnedOwnersByBlueprintId(
+  entries: BlueprintEntry[],
+  matchMap: Record<string, string>,
+): Map<string, string[]> {
+  const byId = new Map<string, Set<string>>();
+
+  for (const entry of entries) {
+    const owner = entry.owner?.trim() ?? "";
+    if (!owner) continue;
+
+    const productName = entry.productName?.trim();
+    if (!productName) continue;
+
+    const id = resolveProductToBlueprintId(productName, entry, matchMap);
+    if (!id) continue;
+
+    const owners = byId.get(id) ?? new Set<string>();
+    owners.add(owner);
+    byId.set(id, owners);
+  }
+
+  const result = new Map<string, string[]>();
+  for (const [id, owners] of byId) {
+    result.set(
+      id,
+      [...owners].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" })),
+    );
+  }
+  return result;
 }
 
 export async function resolveOwnedBlueprintIds(
@@ -130,6 +164,7 @@ export async function resolveOwnedBlueprints(
       unmatchedProductNames: [],
       ambiguousLinks: [],
       persistedEntryCount: 0,
+      ownersByBlueprintId: new Map(),
     };
   }
 
@@ -182,6 +217,7 @@ export async function resolveOwnedBlueprints(
   }
 
   const ambiguousLinks = buildAmbiguousLinks(uniqueNames, sampleByProduct, matchMap);
+  const ownersByBlueprintId = buildOwnedOwnersByBlueprintId(entries, matchMap);
 
   return {
     blueprintIds: ids,
@@ -190,6 +226,7 @@ export async function resolveOwnedBlueprints(
     unmatchedProductNames,
     ambiguousLinks,
     persistedEntryCount,
+    ownersByBlueprintId,
   };
 }
 
