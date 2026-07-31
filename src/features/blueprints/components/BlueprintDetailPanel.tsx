@@ -26,6 +26,7 @@ export interface BlueprintDetailPanelProps {
   onToggleManualOwned?: () => void;
   selectedId: string | null;
   unlockDate?: number | null;
+  ownedBy?: string[];
   ownedIds?: Set<string>;
   onFilterByResource?: (ids: string[], label: string) => void;
   onFilterMission?: (
@@ -51,6 +52,7 @@ export function BlueprintDetailPanel({
   onToggleManualOwned,
   selectedId,
   unlockDate,
+  ownedBy,
   ownedIds,
   onFilterByResource,
   onFilterMission,
@@ -133,6 +135,7 @@ export function BlueprintDetailPanel({
           onToggleWishlist={onToggleWishlist}
           onToggleManualOwned={onToggleManualOwned}
           unlockDate={unlockDate}
+          ownedBy={ownedBy}
         />
         <BlueprintDetailTabs
           detail={detail}

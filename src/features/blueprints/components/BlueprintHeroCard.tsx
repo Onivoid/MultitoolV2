@@ -11,6 +11,7 @@ import {
   catalogDisplayName,
   formatCraftDuration,
 } from "@/features/blueprints/blueprints.catalog.lib";
+import { formatBlueprintOwner } from "@/features/blueprints/blueprints.lib";
 import {
   FAMILY_LABEL_FR,
   resolveItemFamily,
@@ -27,6 +28,7 @@ export interface BlueprintHeroCardProps {
   onToggleWishlist?: () => void;
   onToggleManualOwned?: () => void;
   unlockDate?: number | null;
+  ownedBy?: string[];
 }
 
 function formatUnlockDate(ts: number): string {
@@ -45,6 +47,7 @@ export function BlueprintHeroCard({
   onToggleWishlist,
   onToggleManualOwned,
   unlockDate,
+  ownedBy,
 }: BlueprintHeroCardProps) {
   const family = resolveItemFamily(detail);
   const displayName = catalogDisplayName(detail, "fr");
@@ -128,6 +131,11 @@ export function BlueprintHeroCard({
             Possédé
             {isManualOwned && !unlockDate ? " · manuel" : ""}
             {unlockDate != null && ` · ${formatUnlockDate(unlockDate)}`}
+          </BlueprintMetaBadge>
+        )}
+        {isOwned && ownedBy != null && ownedBy.length > 0 && (
+          <BlueprintMetaBadge variant="neutral">
+            Possédé par : {ownedBy.map(formatBlueprintOwner).join(", ")}
           </BlueprintMetaBadge>
         )}
         {badges.map((b) => (

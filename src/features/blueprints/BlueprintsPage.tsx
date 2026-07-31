@@ -75,6 +75,9 @@ export default function BlueprintsPage() {
   const uniqueOwners = useMemo(() => getUniqueOwners(vm.blueprints), [vm.blueprints]);
 
   const [journalOwnedIds, setJournalOwnedIds] = useState<Set<string>>(new Set());
+  const [ownedOwnersByBlueprintId, setOwnedOwnersByBlueprintId] = useState<
+    Map<string, string[]>
+  >(new Map());
   const { manualOwnedIds, toggleManualOwned, isManualOwned } =
     useBlueprintManualOwned();
   const ownedIds = useMemo(() => {
@@ -118,6 +121,7 @@ export default function BlueprintsPage() {
         (id) => !catalogVm.catalogById.has(id),
       );
       setJournalOwnedIds(resolved.blueprintIds);
+      setOwnedOwnersByBlueprintId(resolved.ownersByBlueprintId);
       setUnlockDates(dates);
       setMatchStats({
         journalProducts: resolved.journalProductCount,
@@ -273,6 +277,9 @@ export default function BlueprintsPage() {
             onOpenAdvancedFilters={() => setAdvancedFiltersOpen(true)}
             filteredCount={filteredCatalog.length}
             totalCount={catalogVm.catalog.length}
+            uniqueOwners={uniqueOwners}
+            ownerFilter={vm.ownerFilter}
+            onOwnerFilterChange={vm.setOwnerFilter}
           />
 
           <BlueprintsCatalogFilters
@@ -369,6 +376,7 @@ export default function BlueprintsPage() {
                         isOwned={ownedIds.has(item.blueprintId)}
                         isManualOwned={isManualOwned(item.blueprintId)}
                         isWishlisted={isWishlisted(item.blueprintId)}
+                        ownedBy={ownedOwnersByBlueprintId.get(item.blueprintId)}
                         onToggleWishlist={() => void toggleWishlist(item.blueprintId)}
                         onToggleManualOwned={() =>
                           void toggleManualOwned(item.blueprintId)
@@ -419,6 +427,11 @@ export default function BlueprintsPage() {
                   catalogVm.selectedBlueprintId != null
                     ? (unlockDates.get(catalogVm.selectedBlueprintId) ?? null)
                     : null
+                }
+                ownedBy={
+                  catalogVm.selectedBlueprintId != null
+                    ? ownedOwnersByBlueprintId.get(catalogVm.selectedBlueprintId)
+                    : undefined
                 }
                 onSelectBlueprint={(id) => catalogVm.selectBlueprint(id)}
                 onFilterByResource={(ids, label) => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAmbiguousLinks,
+  buildOwnedOwnersByBlueprintId,
   normalizeBlueprintName,
 } from "@/features/blueprints/blueprints.match.lib";
 import type { BlueprintEntry } from "@/features/blueprints/blueprints.lib";
@@ -49,5 +50,54 @@ describe("buildAmbiguousLinks", () => {
     expect(links).toHaveLength(1);
     expect(links[0]?.catalogBlueprintId).toBe("bp_craft_same_charger");
     expect(links[0]?.productNames).toEqual(["Chargeur A", "Chargeur B"]);
+  });
+});
+
+describe("buildOwnedOwnersByBlueprintId", () => {
+  const matchMap: Record<string, string> = {
+    "Chargeur A": "bp_craft_same_charger",
+    "Chargeur B": "bp_craft_same_charger",
+    "Pistolet X": "bp_craft_unique_gun",
+  };
+
+  it("associe un owner à un blueprint", () => {
+    const entries: BlueprintEntry[] = [
+      {
+        owner: "AccountA",
+        productName: "Pistolet X",
+        ts: 1,
+        catalogBlueprintId: "bp_craft_unique_gun",
+      },
+    ];
+    const map = buildOwnedOwnersByBlueprintId(entries, matchMap);
+    expect(map.get("bp_craft_unique_gun")).toEqual(["AccountA"]);
+  });
+
+  it("agrège plusieurs owners pour le même blueprint", () => {
+    const entries: BlueprintEntry[] = [
+      {
+        owner: "AccountB",
+        productName: "Chargeur A",
+        ts: 1,
+        catalogBlueprintId: "bp_craft_same_charger",
+      },
+      {
+        owner: "AccountA",
+        productName: "Chargeur B",
+        ts: 2,
+        catalogBlueprintId: "bp_craft_same_charger",
+      },
+    ];
+    const map = buildOwnedOwnersByBlueprintId(entries, matchMap);
+    expect(map.get("bp_craft_same_charger")).toEqual(["AccountA", "AccountB"]);
+  });
+
+  it("ignore les entrées sans owner ou sans ID résolu", () => {
+    const entries: BlueprintEntry[] = [
+      { owner: "", productName: "Pistolet X", ts: 1 },
+      { owner: "AccountA", productName: "Inconnu", ts: 2 },
+    ];
+    const map = buildOwnedOwnersByBlueprintId(entries, matchMap);
+    expect(map.size).toBe(0);
   });
 });
